@@ -202,13 +202,14 @@ class Placeholder(_Element):
         stream.write(str(value))
 
 
-class Comment(_Element):
+class Null:
+    def evaluate(self, namespace, stream): pass
+
+
+class Comment(_Element, Null):
     COMMENT_PATTERN = re.compile('^#(?:#.*?(?:\n|$)|\*.*?\*#(?:[ \t]*\n)?)(.*)$', re.M + re.S)
     def __init__(self, text):
         self.remaining_text, = self.match_or_reject(self.COMMENT_PATTERN, text)
-
-    def evaluate(self, namespace, stream):
-        pass
 
 
 class Condition(_Element):
@@ -222,13 +223,12 @@ class Condition(_Element):
     def calculate(self, namespace):
         return self.expression.calculate(namespace)
 
+
 class End(_Element):
     END = re.compile(r'^#end(.*)', re.I + re.S)
     def __init__(self, text):
         self.remaining_text, = self.match_or_reject(self.END, text)
 
-class Null:
-    def evaluate(self, namespace, stream): pass
 
 class IfDirective(_Element):
     START = re.compile(r'^#if\b\s*(.*)$', re.S + re.I)

@@ -236,17 +236,19 @@ $email
 #
 # TODO:
 #
-#  Directives inside string literals
+#  Comparative operators >=, ==, !=, <=, !
 #  Math expressions
 #  Gobbling up whitespace (tricky!)
-#  #elseif
+#  range literals
+#  list literals
 #  #parse, #include
 #  #macro
-#  map literals, range literals, list literals
-#  Comparative operators >=, ==, !=, <=, !
+#  Directives inside string literals
+#  map literals
 #  Sub-object assignment:  #set( $customer.Behavior = $primate )
 #  Q. What is scope of #set ($customer.Name = 'john')  ???
 #  Scope of #set across if/elseif/else?
+#
 
 
 if __name__ == '__main__':
