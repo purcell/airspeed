@@ -145,6 +145,10 @@ class TemplateTestCase(TestCase):
         template.merge_to({"name": "Chris"}, output)
         self.assertEquals('Hello Chris!', output.getvalue())
 
+    def test_string_literal_can_contain_embedded_escaped_quotes(self):
+        template = airspeed.Template('#set ($name = "\\"batman\\"")$name')
+        self.assertEquals('"batman"', template.merge({}))
+
 #    def test_else_block_evaluated_if_if_expression_false(self):
 #        template = airspeed.Template('#if ($value) true #else false #end')
 #        self.assertEquals(" false ", template.merge({}))
@@ -162,6 +166,7 @@ class TemplateTestCase(TestCase):
 #  map literals
 #  Escaped $, #
 #  Sub-object assignment:  #set( $customer.Behavior = $primate )
+#  Q. What is scope of #set ($customer.Name = 'john')  ???
 #
 
 
