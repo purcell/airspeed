@@ -5,7 +5,7 @@ import re, operator
 try: import cStringIO as StringIO
 except ImportError: import StringIO
 
-__all__ = ['TemplateSyntaxError', 'Template']
+__all__ = ['Template', 'TemplateError', 'TemplateSyntaxError', 'FileLoader']
 
 
 ###############################################################################
@@ -17,18 +17,21 @@ class Template:
         self.content = content
         self.root_element = None
 
-    def merge(self, namespace):
+    def merge(self, namespace, loader=None):
         output = StringIO.StringIO()
-        self.merge_to(namespace, output)
+        self.merge_to(namespace, output, loader)
         return output.getvalue()
 
-    def merge_to(self, namespace, fileobj):
+    def merge_to(self, namespace, fileobj, loader=None):
+        if loader is None: loader = NullLoader()
         if not self.root_element:
             self.root_element = TemplateBody(self.content)
-        self.root_element.evaluate(namespace, fileobj)
+        self.root_element.evaluate(namespace, fileobj, loader)
 
+class TemplateError(Exception):
+    pass
 
-class TemplateSyntaxError(Exception):
+class TemplateSyntaxError(TemplateError):
     def __init__(self, element, expected):
         self.element = element
         self.text_understood = element.full_text()[:element.end]
@@ -48,6 +51,26 @@ class TemplateSyntaxError(Exception):
         error_line = self.element.full_text()[error_line_start:error_line_end]
         caret_pos = self.column
         return [error_line, ' ' * (caret_pos - 1) + '^']
+
+
+class NullLoader:
+    def merge_text(self, name, stream):
+        raise self.load_template(name)
+
+    def load_template(self, name):
+        raise TemplateError("no loader available for '%s'" % name)
+
+
+class FileLoader:
+    def merge_text(self, name, stream):
+        f = open(name)
+        try: stream.write(f.read())
+        finally: f.close()
+
+    def load_template(self, name):
+        f = open(name)
+        try: return Template(f.read())
+        finally: f.close()
 
 
 ###############################################################################
@@ -154,7 +177,7 @@ class Text(_Element):
             return match.group(1)
         self.text = self.ESCAPED_CHAR.sub(unescape, text)
 
-    def evaluate(self, namespace, stream):
+    def evaluate(self, namespace, stream, loader):
         stream.write(self.text)
 
 
@@ -269,7 +292,7 @@ class Placeholder(_Element):
         self.expression = self.require_next_element(VariableExpression, 'expression')
         if self.braces: self.require_match(self.CLOSING_BRACE, '}')
 
-    def evaluate(self, namespace, stream):
+    def evaluate(self, namespace, stream, loader):
         value = self.expression.calculate(namespace)
         if value is None:
             if self.silent: value = ''
@@ -287,7 +310,7 @@ class SimpleReference(_Element):
 
 
 class Null:
-    def evaluate(self, namespace, stream): pass
+    def evaluate(self, namespace, stream, loader): pass
 
 
 class Comment(_Element, Null):
@@ -374,15 +397,15 @@ class IfDirective(_Element):
         except NoMatch: pass
         self.require_next_element(End, '#else, #elseif or #end')
 
-    def evaluate(self, namespace, stream):
+    def evaluate(self, namespace, stream, loader):
         if self.condition.calculate(namespace):
-            self.block.evaluate(namespace, stream)
+            self.block.evaluate(namespace, stream, loader)
         else:
             for elseif in self.elseifs:
                 if elseif.calculate(namespace):
-                    elseif.evaluate(namespace, stream)
+                    elseif.evaluate(namespace, stream, loader)
                     return
-            self.else_block.evaluate(namespace, stream)
+            self.else_block.evaluate(namespace, stream, loader)
 
 
 class Assignment(_Element):
@@ -420,19 +443,19 @@ class MacroDefinition(_Element):
         self.block = self.require_next_element(Block, 'block')
         self.require_next_element(End, 'block')
 
-    def evaluate(self, namespace, stream):
+    def evaluate(self, namespace, stream, loader):
         macro_key = '#' + self.macro_name.lower()
         if macro_key in namespace:
             raise Exception("cannot redefine macro")
         namespace[macro_key] = self
 
-    def execute_macro(self, namespace, stream, arg_value_elements):
+    def execute_macro(self, namespace, stream, arg_value_elements, loader):
         if len(arg_value_elements) != len(self.arg_names):
             raise Exception("expected %d arguments, got %d" % (len(self.arg_names), len(arg_value_elements)))
         macro_namespace = LocalNamespace(namespace)
         for arg_name, arg_value in zip(self.arg_names, arg_value_elements):
             macro_namespace[arg_name] = arg_value.calculate(namespace)
-        self.block.evaluate(macro_namespace, stream)
+        self.block.evaluate(macro_namespace, stream, loader)
 
 
 class MacroCall(_Element):
@@ -454,10 +477,25 @@ class MacroCall(_Element):
             if not self.optional_match(self.SPACE): break
         self.require_match(self.CLOSE_PAREN, 'argument value or )')
 
-    def evaluate(self, namespace, stream):
+    def evaluate(self, namespace, stream, loader):
         try: macro = namespace['#' + self.macro_name]
         except KeyError: raise Exception('no such macro: ' + self.macro_name)
-        macro.execute_macro(namespace, stream, self.args)
+        macro.execute_macro(namespace, stream, self.args, loader)
+
+
+class IncludeDirective(_Element):
+    START = re.compile(r'#include\b(.*)', re.S + re.I)
+    OPEN_PAREN = re.compile(r'[ \t]*\(\s*(.*)$', re.S)
+    CLOSE_PAREN = re.compile(r'[ \t]*\)(.*)$', re.S)
+
+    def parse(self):
+        self.identity_match(self.START)
+        self.require_match(self.OPEN_PAREN, '(')
+        self.name = self.require_next_element((StringLiteral, SimpleReference), 'template name')
+        self.require_match(self.CLOSE_PAREN, ')')
+
+    def evaluate(self, namespace, stream, loader):
+        template = loader.merge_text(self.name.calculate(namespace), stream)
 
 
 class SetDirective(_Element):
@@ -467,7 +505,7 @@ class SetDirective(_Element):
         self.identity_match(self.START)
         self.assignment = self.require_next_element(Assignment, 'assignment')
 
-    def evaluate(self, namespace, stream):
+    def evaluate(self, namespace, stream, loader):
         self.assignment.calculate(namespace)
 
 
@@ -483,14 +521,14 @@ class ForeachDirective(_Element):
         self.block = self.next_element(Block)
         self.require_next_element(End, '#end')
 
-    def evaluate(self, namespace, stream):
+    def evaluate(self, namespace, stream, loader):
         iterable = self.value.calculate(namespace)
         counter = 1
         for item in iterable:
             namespace = LocalNamespace(namespace)
             namespace['velocityCount'] = counter
             namespace[self.loop_var_name] = item
-            self.block.evaluate(namespace, stream)
+            self.block.evaluate(namespace, stream, loader)
             counter += 1
 
 
@@ -500,18 +538,18 @@ class TemplateBody(_Element):
         if self.next_text():
             raise self.syntax_error('block element')
 
-    def evaluate(self, namespace, stream):
+    def evaluate(self, namespace, stream, loader):
         namespace = LocalNamespace(namespace)
-        self.block.evaluate(namespace, stream)
+        self.block.evaluate(namespace, stream, loader)
 
 
 class Block(_Element):
     def parse(self):
         self.children = []
         while True:
-            try: self.children.append(self.next_element((Text, Placeholder, Comment, IfDirective, SetDirective, ForeachDirective, MacroDefinition, MacroCall)))
+            try: self.children.append(self.next_element((Text, Placeholder, Comment, IfDirective, SetDirective, ForeachDirective, IncludeDirective, MacroDefinition, MacroCall)))
             except NoMatch: break
 
-    def evaluate(self, namespace, stream):
+    def evaluate(self, namespace, stream, loader):
         for child in self.children:
-            child.evaluate(namespace, stream)
+            child.evaluate(namespace, stream, loader)

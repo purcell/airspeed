@@ -326,6 +326,17 @@ $email
         template = airspeed.Template('#macro ( hello)hi#end#macro(hello)again#end')
         self.assertRaises(Exception, template.merge, {}) ## Should this be TemplateSyntaxError?
 
+    def test_include_directive_gives_error_if_no_loader_provided(self):
+        template = airspeed.Template('#include ("foo.tmpl")')
+        self.assertRaises(airspeed.TemplateError, template.merge, {})
+
+    def test_include_directive_yield_loader_error_if_included_content_not_found(self):
+        class BrokenLoader:
+            def merge_text(self, name, stream):
+                raise IOError(name)
+        template = airspeed.Template('#include ("foo.tmpl")')
+        self.assertRaises(IOError, template.merge, {}, loader=BrokenLoader())
+
 #
 # TODO:
 #
@@ -341,6 +352,7 @@ $email
 #  Sub-object assignment:  #set( $customer.Behavior = $primate )
 #  Q. What is scope of #set ($customer.Name = 'john')  ???
 #  Scope of #set across if/elseif/else?
+#  Scope of namespace for #include etc
 #
 
 
