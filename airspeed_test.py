@@ -130,6 +130,13 @@ class TemplateTestCase(TestCase):
         template = airspeed.Template('#set ($value = "Steve")$value')
         self.assertEquals("Steve", template.merge({}))
 
+    def test_single_line_comments_skipped(self):
+        template = airspeed.Template('## comment\nStuff\nMore stuff## more comments $blah')
+        self.assertEquals("Stuff\nMore stuff", template.merge({}))
+
+    def test_multi_line_comments_skipped(self):
+        template = airspeed.Template('Stuff#*\n more comments *#\n and more stuff')
+        self.assertEquals("Stuff and more stuff", template.merge({}))
 
 if __name__ == '__main__':
     reload(airspeed)

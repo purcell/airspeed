@@ -7,18 +7,22 @@ import cStringIO as StringIO
 class TemplateSyntaxError(Exception): pass
 
 class Tokeniser:
-    PLAIN, IF, PLACEHOLDER, FOREACH, END, SET = range(6)
+    PLAIN, IF, PLACEHOLDER, FOREACH, END, SET, ELSE = range(7)
 
     UP_TO_NEXT_TEMPLATE_BIT = re.compile('^(.*?)((?:#|\$).*)', re.MULTILINE + re.DOTALL)
     REST = '(.*)$'
     NAME = '[a-z0-9_]+'
     NAME_OR_CALL = NAME + '(?:\(\))?'
+    RE_FLAGS = re.IGNORECASE + re.DOTALL + re.MULTILINE
     EXPRESSION = '(' + NAME_OR_CALL + '(?:\.' + NAME_OR_CALL + ')*)'
-    PLACEHOLDER_PATTERN = re.compile('^\$(!?)({?)' + EXPRESSION + '(}?)' + REST, re.IGNORECASE + re.DOTALL + re.MULTILINE)
-    SET_PATTERN = re.compile('^#set[ \t]*\([ \t]*\$(' + NAME + ')[ \t]*=[ \t]*(\d+|"[^"]+")[ \t]*\)' + REST, re.IGNORECASE + re.DOTALL + re.MULTILINE)
-    BEGIN_IF_PATTERN = re.compile('^#if[ \t]*\([ \t]*\$' + EXPRESSION + '[ \t]*\)' + REST, re.IGNORECASE + re.DOTALL + re.MULTILINE)
-    BEGIN_FOREACH_PATTERN = re.compile('^#foreach[ \t]*\([ \t]*\$(' + NAME + ')[ \t]+in[ \t]+\$' + EXPRESSION + '[ \t]*\)' + REST, re.IGNORECASE + re.DOTALL + re.MULTILINE)
-    END_PATTERN = re.compile('^#end' + REST, re.IGNORECASE + re.DOTALL + re.MULTILINE)
+    PLACEHOLDER_PATTERN = re.compile('^\$(!?)({?)' + EXPRESSION + '(}?)' + REST, RE_FLAGS)
+    SET_PATTERN = re.compile('^#set[ \t]*\([ \t]*\$(' + NAME + ')[ \t]*=[ \t]*(\d+|"[^"]+")[ \t]*\)' + REST, RE_FLAGS)
+    BEGIN_IF_PATTERN = re.compile('^#if[ \t]*\([ \t]*\$' + EXPRESSION + '[ \t]*\)' + REST, RE_FLAGS)
+    BEGIN_FOREACH_PATTERN = re.compile('^#foreach[ \t]*\([ \t]*\$(' + NAME + ')[ \t]+in[ \t]+\$' + EXPRESSION + '[ \t]*\)' + REST, RE_FLAGS)
+    END_PATTERN = re.compile('^#end' + REST, RE_FLAGS)
+    ELSE_PATTERN = re.compile('^#else' + REST, RE_FLAGS)
+    COMMENT_PATTERN = re.compile('^##.*?(?:\n|$)' + REST, RE_FLAGS)
+    MULTI_LINE_COMMENT_PATTERN = re.compile('^#\*.*?\*#(?:[ \t]*\n)?' + REST, RE_FLAGS)
 
     def tokenise(self, text):
         while True:
@@ -52,6 +56,19 @@ class Tokeniser:
             if m:
                 (var_name, rvalue, text) = m.groups()
                 yield self.SET, (var_name, rvalue)
+                continue
+            m = self.ELSE_PATTERN.match(interesting)
+            if m:
+                (text,) = m.groups()
+                yield self.ELSE, None
+                continue
+            m = self.COMMENT_PATTERN.match(interesting)
+            if m:
+                (text,) = m.groups()
+                continue
+            m = self.MULTI_LINE_COMMENT_PATTERN.match(interesting)
+            if m:
+                (text,) = m.groups()
                 continue
             if interesting.startswith('$'):
                 text = interesting[1:]
