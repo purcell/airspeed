@@ -1,8 +1,9 @@
 #!/usr/bin/env python
 
-import re
-import cStringIO as StringIO
-import operator
+import re, operator
+
+try: import cStringIO as StringIO
+except ImportError: import StringIO
 
 __all__ = ['TemplateSyntaxError', 'Template']
 
@@ -90,6 +91,12 @@ class _Element:
     def identity_match(self, pattern):
         m = pattern.match(self._full_text, self.end)
         if not m: raise NoMatch()
+        self.end = m.start(pattern.groups)
+        return m.groups()[:-1]
+
+    def next_match(self, pattern):
+        m = pattern.match(self._full_text, self.end)
+        if not m: return False
         self.end = m.start(pattern.groups)
         return m.groups()[:-1]
 
@@ -211,13 +218,13 @@ class SubExpression(_Element):
 
     def parse(self):
         self.identity_match(self.DOT)
-        self.expression = self.next_element(Expression)
+        self.expression = self.next_element(VariableExpression)
 
     def calculate(self, current_object, global_namespace):
         return self.expression.calculate(current_object, global_namespace)
 
 
-class Expression(_Element):
+class VariableExpression(_Element):
     subexpression = None
 
     def parse(self):
@@ -259,7 +266,7 @@ class Placeholder(_Element):
 
     def parse(self):
         self.silent, self.braces = self.identity_match(self.START)
-        self.expression = self.require_next_element(Expression, 'expression')
+        self.expression = self.require_next_element(VariableExpression, 'expression')
         if self.braces: self.require_match(self.CLOSING_BRACE, '}')
 
     def evaluate(self, namespace, stream):
@@ -275,7 +282,7 @@ class SimpleReference(_Element):
 
     def parse(self):
         self.identity_match(self.LEADING_DOLLAR)
-        self.expression = self.require_next_element(Expression, 'name')
+        self.expression = self.require_next_element(VariableExpression, 'name')
         self.calculate = self.expression.calculate
 
 
@@ -391,6 +398,68 @@ class Assignment(_Element):
         namespace[self.var_name] = self.value.calculate(namespace)
 
 
+class MacroDefinition(_Element):
+    START = re.compile(r'#macro\b(.*)', re.S + re.I)
+    OPEN_PAREN = re.compile(r'[ \t]*\(\s*(.*)$', re.S)
+    NAME = re.compile(r'\s*([a-z][a-z_0-9]*)\b(.*)', re.S + re.I)
+    CLOSE_PAREN = re.compile(r'[ \t]*\)(.*)$', re.S)
+    ARG_NAME = re.compile(r'[ \t]+\$([a-z][a-z_0-9]*)(.*)$', re.S + re.I)
+    RESERVED_NAMES = ('if', 'else', 'elseif', 'set', 'macro', 'foreach', 'parse', 'include', 'stop', 'end')
+    def parse(self):
+        self.identity_match(self.START)
+        self.require_match(self.OPEN_PAREN, '(')
+        self.macro_name, = self.require_match(self.NAME, 'macro name')
+        if self.macro_name.lower() in self.RESERVED_NAMES:
+            raise self.syntax_error('non-reserved name')
+        self.arg_names = []
+        while True:
+            m = self.next_match(self.ARG_NAME)
+            if not m: break
+            self.arg_names.append(m[0])
+        self.require_match(self.CLOSE_PAREN, ') or arg name')
+        self.block = self.require_next_element(Block, 'block')
+        self.require_next_element(End, 'block')
+
+    def evaluate(self, namespace, stream):
+        macro_key = '#' + self.macro_name.lower()
+        if macro_key in namespace:
+            raise Exception("cannot redefine macro")
+        namespace[macro_key] = self
+
+    def execute_macro(self, namespace, stream, arg_value_elements):
+        if len(arg_value_elements) != len(self.arg_names):
+            raise Exception("expected %d arguments, got %d" % (len(self.arg_names), len(arg_value_elements)))
+        macro_namespace = LocalNamespace(namespace)
+        for arg_name, arg_value in zip(self.arg_names, arg_value_elements):
+            macro_namespace[arg_name] = arg_value.calculate(namespace)
+        self.block.evaluate(macro_namespace, stream)
+
+
+class MacroCall(_Element):
+    START = re.compile(r'#([a-z][a-z_0-9]*)\b(.*)', re.S + re.I)
+    OPEN_PAREN = re.compile(r'[ \t]*\(\s*(.*)$', re.S)
+    CLOSE_PAREN = re.compile(r'[ \t]*\)(.*)$', re.S)
+    SPACE = re.compile(r'[ \t]+(.*)$', re.S)
+
+    def parse(self):
+        self.macro_name, = self.identity_match(self.START)
+        self.macro_name = self.macro_name.lower()
+        self.args = []
+        if self.macro_name in MacroDefinition.RESERVED_NAMES or self.macro_name.startswith('end'):
+            raise NoMatch()
+        self.require_match(self.OPEN_PAREN, '(')
+        while True:
+            try: self.args.append(self.next_element(Value))
+            except NoMatch: break
+            if not self.optional_match(self.SPACE): break
+        self.require_match(self.CLOSE_PAREN, 'argument value or )')
+
+    def evaluate(self, namespace, stream):
+        try: macro = namespace['#' + self.macro_name]
+        except KeyError: raise Exception('no such macro: ' + self.macro_name)
+        macro.execute_macro(namespace, stream, self.args)
+
+
 class SetDirective(_Element):
     START = re.compile(r'#set\b(.*)', re.S + re.I)
 
@@ -440,10 +509,8 @@ class Block(_Element):
     def parse(self):
         self.children = []
         while True:
-            try:
-                self.children.append(self.next_element((Text, Placeholder, Comment, IfDirective, SetDirective, ForeachDirective)))
-            except NoMatch:
-                break
+            try: self.children.append(self.next_element((Text, Placeholder, Comment, IfDirective, SetDirective, ForeachDirective, MacroDefinition, MacroCall)))
+            except NoMatch: break
 
     def evaluate(self, namespace, stream):
         for child in self.children:

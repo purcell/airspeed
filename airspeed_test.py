@@ -294,16 +294,48 @@ $email
         self.assertEquals('', template.merge({'value': 0}))
         self.assertEquals('yes', template.merge({'value': 1}))
         self.assertEquals('', template.merge({'value': 2}))
+
+    def test_cannot_define_macro_to_override_reserved_statements(self):
+        for reserved in ('if', 'else', 'elseif', 'set', 'macro', 'foreach', 'parse', 'include', 'stop', 'end'):
+            template = airspeed.Template('#macro ( %s $value) $value #end' % reserved)
+            self.assertRaises(airspeed.TemplateSyntaxError, template.merge, {})
+
+    def test_cannot_call_undefined_macro(self):
+        template = airspeed.Template('#undefined()')
+        self.assertRaises(Exception, template.merge, {})
+
+    def test_define_and_use_macro_with_no_parameters(self):
+        template = airspeed.Template('#macro ( hello)hi#end#hello ()#hello()')
+        self.assertEquals('hihi', template.merge({'text': 'hello'}))
+
+    def test_define_and_use_macro_with_one_parameter(self):
+        template = airspeed.Template('#macro ( bold $value)<strong>$value</strong>#end#bold ($text)')
+        self.assertEquals('<strong>hello</strong>', template.merge({'text': 'hello'}))
+
+    def test_use_of_macro_name_is_case_insensitive(self):
+        template = airspeed.Template('#macro ( bold $value)<strong>$value</strong>#end#BoLd ($text)')
+        self.assertEquals('<strong>hello</strong>', template.merge({'text': 'hello'}))
+
+    def test_define_and_use_macro_with_two_parameter(self):
+        template = airspeed.Template('#macro (addition $value1 $value2 )$value1+$value2#end#addition (1 2)')
+        self.assertEquals('1+2', template.merge({}))
+        template = airspeed.Template('#macro (addition $value1 $value2 )$value1+$value2#end#addition( $one   $two )')
+        self.assertEquals('ONE+TWO', template.merge({'one': 'ONE', 'two': 'TWO'}))
+
+    def test_cannot_redefine_macro(self):
+        template = airspeed.Template('#macro ( hello)hi#end#macro(hello)again#end')
+        self.assertRaises(Exception, template.merge, {}) ## Should this be TemplateSyntaxError?
+
 #
 # TODO:
 #
-#  Comparative operators >=, ==, !=, <=, !
 #  Math expressions
 #  Gobbling up whitespace (tricky!)
 #  range literals
 #  list literals
 #  #parse, #include
-#  #macro
+#  Bind #macro calls at compile time?
+#  Interpolated strings
 #  Directives inside string literals
 #  map literals
 #  Sub-object assignment:  #set( $customer.Behavior = $primate )
