@@ -9,6 +9,8 @@ class TemplateSyntaxError(Exception):
         if len(got) > 40:
             got = got[:36] + ' ...'
         Exception.__init__(self,"%s: expected %s, got: %s ..." % (element.__class__.__name__, expected, got))
+
+
 class NoMatch(Exception): pass
 
 
@@ -20,8 +22,9 @@ class LocalNamespace(dict):
         try: return dict.__getitem__(self, key)
         except KeyError: return self.parent[key]
 
+
 class TextElement:
-    MY_PATTERN = re.compile(r'^((?:[^\\\$#]|\\[\$#])+|\$[^!\{\}a-z0-9_])(.*)$', re.S + re.I)
+    MY_PATTERN = re.compile(r'^((?:[^\\\$#]|\\[\$#])+|\$[^!\{a-z0-9_]|\$$)(.*)$', re.S + re.I)
     def __init__(self, text):
         m = self.MY_PATTERN.match(text)
         if not m: raise NoMatch()

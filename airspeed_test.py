@@ -17,6 +17,8 @@ class TemplateTestCase(TestCase):
     def test_dollar_left_untouched(self):
         template = airspeed.Template("Hello $ ")
         self.assertEquals("Hello $ ", template.merge({}))
+        template = airspeed.Template("Hello $")
+        self.assertEquals("Hello $", template.merge({}))
 
     def test_unmatched_name_does_not_get_substituted(self):
         template = airspeed.Template("Hello $name")
