@@ -185,20 +185,68 @@ class TemplateTestCase(TestCase):
         template = airspeed.Template('$multiply($value1,$value2)')
         self.assertEquals("48", template.merge(locals()))
 
+    def test_velocity_style_escaping(self): # example from Velocity docs
+        template = airspeed.Template('''\
+#set( $email = "foo" )
+$email
+\\$email
+\\\\$email
+\\\\\\$email''')
+        self.assertEquals('''\
+foo
+$email
+\\foo
+\\$email''', template.merge({}))
+
+#    def test_velocity_style_escaping_when_var_unset(self): # example from Velocity docs
+#        template = airspeed.Template('''\
+#$email
+#\$email
+#\\$email
+#\\\$email''')
+#        self.assertEquals('''\
+#$email
+#\$email
+#\\$email
+#\\\$email''', template.merge({}))
+
+    def test_true_elseif_evaluated_when_if_is_false(self):
+        template = airspeed.Template('#if ($value1) one #elseif ($value2) two #end')
+        value1, value2 = False, True
+        self.assertEquals(' two ', template.merge(locals()))
+
+    def test_false_elseif_skipped_when_if_is_true(self):
+        template = airspeed.Template('#if ($value1) one #elseif ($value2) two #end')
+        value1, value2 = True, False
+        self.assertEquals(' one ', template.merge(locals()))
+
+    def test_first_true_elseif_evaluated_when_if_is_false(self):
+        template = airspeed.Template('#if ($value1) one #elseif ($value2) two #elseif($value3) three #end')
+        value1, value2, value3 = False, True, True
+        self.assertEquals(' two ', template.merge(locals()))
+
+    def test_illegal_to_have_elseif_after_else(self):
+        template = airspeed.Template('#if ($value1) one #else two #elseif($value3) three #end')
+        self.assertRaises(airspeed.TemplateSyntaxError, template.merge, {})
+
+    def test_else_evaluated_when_if_and_elseif_are_false(self):
+        template = airspeed.Template('#if ($value1) one #elseif ($value2) two #else three #end')
+        value1, value2 = False, False
+        self.assertEquals(' three ', template.merge(locals()))
 #
 # TODO:
 #
-#  Escaped characters in string literals
 #  Directives inside string literals
+#  Math expressions
+#  Gobbling up whitespace (tricky!)
 #  #elseif
-#  Parameterised calls
 #  #parse, #include
 #  #macro
-#  map literals
-#  Escaped $, #
+#  map literals, range literals, list literals
+#  Comparative operators >=, ==, !=, <=, !
 #  Sub-object assignment:  #set( $customer.Behavior = $primate )
 #  Q. What is scope of #set ($customer.Name = 'john')  ???
-#
+#  Scope of #set across if/elseif/else?
 
 
 if __name__ == '__main__':

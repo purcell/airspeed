@@ -72,12 +72,17 @@ class _Element:
 
 
 class Text(_Element):
-    MY_PATTERN = re.compile(r'^((?:[^\\\$#]|\\[\$#])+|\$[^!\{a-z0-9_]|\$$)(.*)$', re.S + re.I)
+    MY_PATTERN = re.compile(r'^((?:[^\\\$#]|\\[\$#])+|\$[^!\{a-z0-9_]|\$$|\\\\)(.*)$', re.S + re.I)
+    ESCAPED_CHAR = re.compile(r'\\([\\\$#])')
     def __init__(self, text):
-        self.text, self.remaining_text = self.match_or_reject(self.MY_PATTERN, text)
+        text, self.remaining_text = self.match_or_reject(self.MY_PATTERN, text)
+        def unescape(match):
+            return match.group(1)
+        self.text = self.ESCAPED_CHAR.sub(unescape, text)
 
     def evaluate(self, namespace, stream):
         stream.write(self.text)
+
 
 
 class IntegerLiteral(_Element):
@@ -225,8 +230,9 @@ class End(_Element):
 class Null:
     def evaluate(self, namespace, stream): pass
 
-class If(_Element):
+class IfDirective(_Element):
     START = re.compile(r'^#if\b\s*(.*)$', re.S + re.I)
+    START_ELSEIF = re.compile(r'^#elseif\b\s*(.*)$', re.S + re.I)
     START_ELSE = re.compile(r'^#else(.*)$', re.S + re.I)
     else_block = Null()
 
@@ -234,21 +240,33 @@ class If(_Element):
         text, = self.match_or_reject(self.START, text)
         self.condition, text = self.next_element(Condition, text)
         self.block, text = self.next_element(Block, text)
+        self.elseif_conditions = []
+        while True:
+            m = self.START_ELSEIF.match(text)
+            if not m: break
+            text = m.group(1)
+            elseif_condition, text = self.require_next_element(Condition, text, 'condition')
+            elseif_block, text = self.require_next_element(Block, text, 'block')
+            self.elseif_conditions.append((elseif_condition, elseif_block))
         m = self.START_ELSE.match(text)
         if m:
             self.else_block, text = self.require_next_element(Block, m.group(1), 'block')
-        end, self.remaining_text = self.require_next_element(End, text, '#end')
+        end, self.remaining_text = self.require_next_element(End, text, '#else, #elseif or #end')
 
     def evaluate(self, namespace, stream):
         if self.condition.calculate(namespace):
             self.block.evaluate(namespace, stream)
         else:
+            for elseif, block in self.elseif_conditions:
+                if elseif.calculate(namespace):
+                    block.evaluate(namespace, stream)
+                    return
             self.else_block.evaluate(namespace, stream)
 
 
-class Set(_Element):
+class SetDirective(_Element):
     START = re.compile(r'^#set\s*\(\s*\$([a-z_][a-z0-9_]*)\s*=\s*(.*)$', re.S + re.I)
-    CLOSING_PATTERN = re.compile(r'^\s*\)(.*)$', re.S)
+    CLOSING_PATTERN = re.compile(r'^\s*\)(?:[ \t]*\r?\n)?(.*)$', re.S + re.M)
     def __init__(self, text):
         ## Could be cleaner b/c syntax error if no '('
         self.var_name, text = self.match_or_reject(self.START, text)
@@ -259,7 +277,7 @@ class Set(_Element):
         namespace[self.var_name] = self.value.calculate(namespace)
 
 
-class Foreach(_Element):
+class ForeachDirective(_Element):
     START = re.compile(r'^#foreach\s*\(\s*\$([a-z_][a-z0-9_]*)\s*in\s*(.*)$', re.S + re.I)
     CLOSING_PATTERN = re.compile(r'^\s*\)(.*)$', re.S)
     def __init__(self, text):
@@ -297,7 +315,7 @@ class Block(_Element):
         self.children = []
         while text:
             child = None
-            for child_type in (Text, Placeholder, Comment, If, Set, Foreach):
+            for child_type in (Text, Placeholder, Comment, IfDirective, SetDirective, ForeachDirective):
                 try:
                     child, text = self.next_element(child_type, text)
                     self.children.append(child)
