@@ -3,6 +3,28 @@
 import re
 import cStringIO as StringIO
 
+__all__ = ['TemplateSyntaxError', 'Template']
+
+###############################################################################
+# Public interface
+###############################################################################
+
+class Template:
+    def __init__(self, content):
+        self.content = content
+        self.evaluator = None
+
+    def merge(self, namespace):
+        output = StringIO.StringIO()
+        self.merge_to(namespace, output)
+        return output.getvalue()
+
+    def merge_to(self, namespace, fileobj):
+        output = []
+        if not self.evaluator:
+            self.evaluator = TemplateBody(self.content)
+        self.evaluator.evaluate(namespace, fileobj)
+
 
 class TemplateSyntaxError(Exception):
     def __init__(self, element, expected, got):
@@ -11,6 +33,10 @@ class TemplateSyntaxError(Exception):
         Exception.__init__(self,"%s: expected %s, got: %s ..." % (element.__class__.__name__, expected, got))
 
 
+###############################################################################
+# Internals
+###############################################################################
+
 class NoMatch(Exception): pass
 
 
@@ -18,65 +44,81 @@ class LocalNamespace(dict):
     def __init__(self, parent):
         dict.__init__(self)
         self.parent = parent
+
     def __getitem__(self, key):
         try: return dict.__getitem__(self, key)
         except KeyError: return self.parent[key]
 
 
-class TextElement:
+class _Element:
+    def match_or_reject(self, pattern, text):
+        m = pattern.match(text)
+        if not m: raise NoMatch()
+        return m.groups()
+
+    def require_match(self, pattern, text, expected):
+        m = pattern.match(text)
+        if not m: raise TemplateSyntaxError(self, expected, text)
+        return m.groups()
+
+    def next_element(self, element_class, text):
+        element = element_class(text)
+        return element, element.remaining_text
+
+    def require_next_element(self, element_class, text, expected):
+        try: element = element_class(text)
+        except NoMatch: raise TemplateSyntaxError(self, expected, text)
+        else: return element, element.remaining_text
+
+
+class Text(_Element):
     MY_PATTERN = re.compile(r'^((?:[^\\\$#]|\\[\$#])+|\$[^!\{a-z0-9_]|\$$)(.*)$', re.S + re.I)
     def __init__(self, text):
-        m = self.MY_PATTERN.match(text)
-        if not m: raise NoMatch()
-        self.text, self.remaining_text = m.groups()
+        self.text, self.remaining_text = self.match_or_reject(self.MY_PATTERN, text)
 
     def evaluate(self, namespace, stream):
         stream.write(self.text)
 
 
-class IntegerLiteralElement:
+class IntegerLiteral(_Element):
     MY_PATTERN = re.compile(r'^(\d+)(.*)', re.S)
     def __init__(self, text):
-        m = self.MY_PATTERN.match(text)
-        if not m: raise NoMatch()
-        self.value = int(m.group(1))
-        self.remaining_text = m.group(2)
+        self.value, self.remaining_text = self.match_or_reject(self.MY_PATTERN, text)
+        self.value = int(self.value)
 
     def calculate(self, namespace):
         return self.value
 
 
-class StringLiteralElement:
+class StringLiteral(_Element):
     MY_PATTERN = re.compile(r'^"((?:\\["nrbt\\\\]|[^"\n\r"\\])+)"(.*)', re.S)
     ESCAPED_CHAR = re.compile(r'\\([nrbt"\\])')
     def __init__(self, text):
-        m = self.MY_PATTERN.match(text)
-        if not m: raise NoMatch()
+        value, self.remaining_text = self.match_or_reject(self.MY_PATTERN, text)
         def unescape(match):
             return {'n': '\n', 'r': '\r', 'b': '\b', 't': '\t', '"': '"', '\\': '\\'}[match.group(1)]
-        self.value = self.ESCAPED_CHAR.sub(unescape, m.group(1))
-        self.remaining_text = m.group(2)
+        self.value = self.ESCAPED_CHAR.sub(unescape, value)
 
     def calculate(self, namespace):
         return self.value
 
 
-class ValueElement:
+class Value(_Element):
     def __init__(self, text):
         if text.startswith('$'):
-            self.expression = ExpressionElement(text[1:])
+            self.expression = Expression(text[1:])
         else:
             try:
-                self.expression = IntegerLiteralElement(text)
+                self.expression = IntegerLiteral(text)
             except NoMatch:
-                self.expression = StringLiteralElement(text)
+                self.expression = StringLiteral(text)
         self.remaining_text = self.expression.remaining_text
 
     def calculate(self, namespace):
         return self.expression.calculate(namespace)
 
 
-class ExpressionElement:
+class Expression(_Element):
     NAME_PATTERN = re.compile(r'^([a-zA-Z_][a-zA-Z0-9_]*)(.*)$', re.S)
     def __init__(self, text):
         self.names_and_calls = []
@@ -90,13 +132,10 @@ class ExpressionElement:
         self.remaining_text = text
 
     def read_name_or_call(self, text):
-        m = self.NAME_PATTERN.match(text)
-        if not m: raise NoMatch()
-        name, text = m.groups()
+        name, text = self.match_or_reject(self.NAME_PATTERN, text)
         parameter_list = None
         try:
-            parameter_list = ParameterListElement(text)
-            text = parameter_list.remaining_text
+            parameter_list, text = self.next_element(ParameterList, text)
         except NoMatch:
             pass
         self.names_and_calls.append((name, parameter_list))
@@ -116,46 +155,35 @@ class ExpressionElement:
         return result
 
 
-class ParameterListElement:
+class ParameterList(_Element):
     OPENING_PATTERN = re.compile(r'^\(\s*(.*)$', re.S)
     CLOSING_PATTERN = re.compile(r'^\s*\)(.*)$', re.S)
     COMMA_PATTERN = re.compile(r'^\s*,\s*(.*)$', re.S)
 
     def __init__(self, text):
         self.values = []
-        m = self.OPENING_PATTERN.match(text)
-        if not m: raise NoMatch()
-        text = m.group(1)
-        while True:   ## FIXME
-            m = self.COMMA_PATTERN.match(text)
-            if not m: break
-            value = ValueElement(m.group(1))
-            text = value.remaining_text
+        text, = self.match_or_reject(self.OPENING_PATTERN, text)
+        try: value, text = self.next_element(Value, text)
+        except NoMatch:
+            pass
+        else:
             self.values.append(value)
-        m = self.CLOSING_PATTERN.match(text)
-        if not m: raise TemplateSyntaxError(self, ')', text)
-        self.remaining_text = m.group(1)
+            while True:
+                m = self.COMMA_PATTERN.match(text)
+                if not m: break
+                value, text = self.require_next_element(Value, m.group(1), 'value')
+                self.values.append(value)
+        self.remaining_text, = self.require_match(self.CLOSING_PATTERN, text, ')')
 
 
-class PlaceholderElement:
+class Placeholder(_Element):
     MY_PATTERN = re.compile(r'^\$(!?)(\{?)(.*)$', re.S)
     CLOSING_BRACE_PATTERN = re.compile(r'^\}(.*)$', re.S)
     def __init__(self, text):
-        m = self.MY_PATTERN.match(text)
-        if not m: raise NoMatch()
-        self.silent = bool(m.group(1))
-        self.braces = bool(m.group(2))
-        text = m.group(3)
-        try:
-            self.expression = ExpressionElement(text)
-            text = self.expression.remaining_text
-        except NoMatch:
-            raise TemplateSyntaxError(self, 'expression', text)
+        self.silent, self.braces, text = self.match_or_reject(self.MY_PATTERN, text)
+        self.expression, text = self.require_next_element(Expression, text, 'expression')
         if self.braces:
-            m = self.CLOSING_BRACE_PATTERN.match(text)
-            if not m:
-                raise TemplateSyntaxError(self, '}', text)
-            text = m.group(1)
+            text, = self.require_match(self.CLOSING_BRACE_PATTERN, text, '}')
         self.remaining_text = text
 
     def evaluate(self, namespace, stream):
@@ -169,70 +197,47 @@ class PlaceholderElement:
         stream.write(str(value))
 
 
-class CommentElement:
-    COMMENT_PATTERN = re.compile('^##.*?(?:\n|$)(.*)$', re.M + re.S)
-    MULTI_LINE_COMMENT_PATTERN = re.compile('^#\*.*?\*#(?:[ \t]*\n)?(.*$)', re.M + re.S)
+class Comment(_Element):
+    COMMENT_PATTERN = re.compile('^#(?:#.*?(?:\n|$)|\*.*?\*#(?:[ \t]*\n)?)(.*)$', re.M + re.S)
     def __init__(self, text):
-        for pattern in (self.COMMENT_PATTERN, self.MULTI_LINE_COMMENT_PATTERN):
-            m = pattern.match(text)
-            if not m: continue
-            self.remaining_text = m.group(1)
-            return
-        raise NoMatch()
+        self.remaining_text, = self.match_or_reject(self.COMMENT_PATTERN, text)
 
     def evaluate(self, namespace, stream):
         pass
 
 
-class ConditionElement:
+class Condition(_Element):
     OPENING_PATTERN = re.compile(r'^\(\s*(.*)$', re.S)
     CLOSING_PATTERN = re.compile(r'^\s*\)(.*)$', re.S)
     def __init__(self, text):
-        m = self.OPENING_PATTERN.match(text)
-        if not m: raise TemplateSyntaxError(self, '(', text)
-        text = m.group(1)
-        self.expression = ValueElement(text)
-        text = self.expression.remaining_text
-        m = self.CLOSING_PATTERN.match(text)
-        if not m: raise TemplateSyntaxError(self, ')', text)
-        self.remaining_text = m.group(1)
+        text, = self.require_match(self.OPENING_PATTERN, text, '(')
+        self.expression, text = self.next_element(Value, text)
+        self.remaining_text, = self.require_match(self.CLOSING_PATTERN, text, ')')
 
     def calculate(self, namespace):
         return self.expression.calculate(namespace)
 
-class EndElement:
+class End(_Element):
     END = re.compile(r'^#end(.*)', re.I + re.S)
     def __init__(self, text):
-        m = self.END.match(text)
-        if not m: raise NoMatch()
-        self.remaining_text = m.group(1)
+        self.remaining_text, = self.match_or_reject(self.END, text)
 
-class NullElement:
+class Null:
     def evaluate(self, namespace, stream): pass
 
-class IfElement:
+class If(_Element):
     START = re.compile(r'^#if\b\s*(.*)$', re.S + re.I)
     START_ELSE = re.compile(r'^#else(.*)$', re.S + re.I)
-    else_block = NullElement()
+    else_block = Null()
 
     def __init__(self, text):
-        m = self.START.match(text)
-        if not m: raise NoMatch()
-        text = m.group(1)
-        self.condition = ConditionElement(text)
-        text = self.condition.remaining_text
-        self.block = BlockElement(text)
-        text = self.block.remaining_text
+        text, = self.match_or_reject(self.START, text)
+        self.condition, text = self.next_element(Condition, text)
+        self.block, text = self.next_element(Block, text)
         m = self.START_ELSE.match(text)
         if m:
-            text = m.group(1)
-            self.else_block = BlockElement(text)
-            text = self.else_block.remaining_text
-        try:
-            end = EndElement(text)
-            self.remaining_text = end.remaining_text
-        except NoMatch:
-            raise TemplateSyntaxError(self, '#end', text)
+            self.else_block, text = self.require_next_element(Block, m.group(1), 'block')
+        end, self.remaining_text = self.require_next_element(End, text, '#end')
 
     def evaluate(self, namespace, stream):
         if self.condition.calculate(namespace):
@@ -241,43 +246,29 @@ class IfElement:
             self.else_block.evaluate(namespace, stream)
 
 
-class SetElement:
+class Set(_Element):
     START = re.compile(r'^#set\s*\(\s*\$([a-z_][a-z0-9_]*)\s*=\s*(.*)$', re.S + re.I)
     CLOSING_PATTERN = re.compile(r'^\s*\)(.*)$', re.S)
     def __init__(self, text):
-        m = self.START.match(text)
-        if not m: raise NoMatch() ## Could be cleaner b/c syntax error if no '('
-        self.var_name, text = m.groups()
-        self.value = ValueElement(text)
-        text = self.value.remaining_text
-        m = self.CLOSING_PATTERN.match(text)
-        if not m:
-            raise TemplateSyntaxError(self, ')', text)
-        self.remaining_text = m.group(1)
+        ## Could be cleaner b/c syntax error if no '('
+        self.var_name, text = self.match_or_reject(self.START, text)
+        self.value, text = self.next_element(Value, text)
+        self.remaining_text, = self.require_match(self.CLOSING_PATTERN, text, ')')
 
     def evaluate(self, namespace, stream):
         namespace[self.var_name] = self.value.calculate(namespace)
 
 
-class ForeachElement:
+class Foreach(_Element):
     START = re.compile(r'^#foreach\s*\(\s*\$([a-z_][a-z0-9_]*)\s*in\s*(.*)$', re.S + re.I)
     CLOSING_PATTERN = re.compile(r'^\s*\)(.*)$', re.S)
     def __init__(self, text):
-        m = self.START.match(text)
-        if not m: raise NoMatch() ## Could be cleaner b/c syntax error if no '('
-        self.loop_var_name, text = m.groups()
-        self.value = ValueElement(text)
-        text = self.value.remaining_text
-        m = self.CLOSING_PATTERN.match(text)
-        if not m:
-            raise TemplateSyntaxError(self, ')', text)
-        text = m.group(1)
-        self.block = BlockElement(text)
-        text = self.block.remaining_text
-        try: end = EndElement(text)
-        except NoMatch: raise TemplateSyntaxError(self, '#end', text)
-        self.remaining_text = end.remaining_text
-
+        ## Could be cleaner b/c syntax error if no '('
+        self.loop_var_name, text = self.match_or_reject(self.START, text)
+        self.value, text = self.next_element(Value, text)
+        text, = self.require_match(self.CLOSING_PATTERN, text, ')')
+        self.block, text = self.next_element(Block, text)
+        end, self.remaining_text = self.require_next_element(End, text, '#end')
 
     def evaluate(self, namespace, stream):
         iterable = self.value.calculate(namespace)
@@ -289,10 +280,11 @@ class ForeachElement:
             self.block.evaluate(namespace, stream)
             counter += 1
 
-class TemplateElement:
+
+class TemplateBody(_Element):
     def __init__(self, text):
-        self.block = BlockElement(text)
-        if self.block.remaining_text:
+        self.block, text = self.next_element(Block, text)
+        if text:
             raise TemplateSyntaxError(self, 'block element', self.block.remaining_text)
 
     def evaluate(self, namespace, stream):
@@ -300,21 +292,19 @@ class TemplateElement:
         self.block.evaluate(namespace, stream)
 
 
-class BlockElement:
+class Block(_Element):
     def __init__(self, text):
         self.children = []
         while text:
-            child_matched = False
-            for child_type in (TextElement, PlaceholderElement, CommentElement, IfElement, SetElement, ForeachElement):
+            child = None
+            for child_type in (Text, Placeholder, Comment, If, Set, Foreach):
                 try:
-                    child = child_type(text)
-                    text = child.remaining_text
+                    child, text = self.next_element(child_type, text)
                     self.children.append(child)
-                    child_matched = True
                     break
                 except NoMatch:
                     continue
-            if not child_matched:
+            if child is None:
                 break
         self.remaining_text = text
 
@@ -323,19 +313,3 @@ class BlockElement:
             child.evaluate(namespace, stream)
 
 
-
-class Template:
-    def __init__(self, content):
-        self.content = content
-        self.evaluator = None
-
-    def merge(self, namespace):
-        output = StringIO.StringIO()
-        self.merge_to(namespace, output)
-        return output.getvalue()
-
-    def merge_to(self, namespace, fileobj):
-        output = []
-        if not self.evaluator:
-            self.evaluator = TemplateElement(self.content)
-        self.evaluator.evaluate(namespace, fileobj)

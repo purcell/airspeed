@@ -159,13 +159,38 @@ class TemplateTestCase(TestCase):
         template = airspeed.Template('#if ($value) true #else false #end')
         self.assertEquals(" false ", template.merge({}))
 
+    def test_too_many_end_clauses_trigger_error(self):
+        template = airspeed.Template('#if (1)true!#end #end ')
+        self.assertRaises(airspeed.TemplateSyntaxError, template.merge, {})
+
+    def test_can_call_function_with_one_parameter(self):
+        def squared(number):
+            return number * number
+        template = airspeed.Template('$squared(8)')
+        self.assertEquals("64", template.merge(locals()))
+        some_var = 6
+        template = airspeed.Template('$squared($some_var)')
+        self.assertEquals("36", template.merge(locals()))
+        template = airspeed.Template('$squared($squared($some_var))')
+        self.assertEquals("1296", template.merge(locals()))
+
+    def test_can_call_function_with_one_parameter(self):
+        def multiply(number1, number2):
+            return number1 * number2
+        template = airspeed.Template('$multiply(2, 4)')
+        self.assertEquals("8", template.merge(locals()))
+        template = airspeed.Template('$multiply( 2 , 4 )')
+        self.assertEquals("8", template.merge(locals()))
+        value1, value2 = 4, 12
+        template = airspeed.Template('$multiply($value1,$value2)')
+        self.assertEquals("48", template.merge(locals()))
 
 #
 # TODO:
 #
 #  Escaped characters in string literals
 #  Directives inside string literals
-#  #else, #elseif
+#  #elseif
 #  Parameterised calls
 #  #parse, #include
 #  #macro
