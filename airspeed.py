@@ -6,6 +6,7 @@ import operator
 
 __all__ = ['TemplateSyntaxError', 'Template']
 
+
 ###############################################################################
 # Public interface
 ###############################################################################
@@ -27,7 +28,6 @@ class Template:
 
 
 class TemplateSyntaxError(Exception):
-    line = 0
     def __init__(self, element, expected):
         self.element = element
         self.text_understood = element.full_text()[:element.end]
@@ -138,10 +138,11 @@ class _Element:
 
 
 class Text(_Element):
-    MY_PATTERN = re.compile(r'((?:[^\\\$#]|\\[\$#])+|\$[^!\{a-z0-9_]|\$$|\\\\)(.*)$', re.S + re.I)
+    PLAIN = re.compile(r'((?:[^\\\$#]|\\[\$#])+|\$[^!\{a-z0-9_]|\$$|\\\\)(.*)$', re.S + re.I)
     ESCAPED_CHAR = re.compile(r'\\([\\\$#])')
+
     def parse(self):
-        text, = self.identity_match(self.MY_PATTERN)
+        text, = self.identity_match(self.PLAIN)
         def unescape(match):
             return match.group(1)
         self.text = self.ESCAPED_CHAR.sub(unescape, text)
@@ -151,9 +152,10 @@ class Text(_Element):
 
 
 class IntegerLiteral(_Element):
-    MY_PATTERN = re.compile(r'(\d+)(.*)', re.S)
+    INTEGER = re.compile(r'(\d+)(.*)', re.S)
+
     def parse(self):
-        self.value, = self.identity_match(self.MY_PATTERN)
+        self.value, = self.identity_match(self.INTEGER)
         self.value = int(self.value)
 
     def calculate(self, namespace):
@@ -161,10 +163,11 @@ class IntegerLiteral(_Element):
 
 
 class StringLiteral(_Element):
-    MY_PATTERN = re.compile(r'"((?:\\["nrbt\\\\]|[^"\n\r"\\])+)"(.*)', re.S)
+    STRING = re.compile(r'"((?:\\["nrbt\\\\]|[^"\n\r"\\])+)"(.*)', re.S)
     ESCAPED_CHAR = re.compile(r'\\([nrbt"\\])')
+
     def parse(self):
-        value, = self.identity_match(self.MY_PATTERN)
+        value, = self.identity_match(self.STRING)
         def unescape(match):
             return {'n': '\n', 'r': '\r', 'b': '\b', 't': '\t', '"': '"', '\\': '\\'}[match.group(1)]
         self.value = self.ESCAPED_CHAR.sub(unescape, value)
@@ -182,17 +185,18 @@ class Value(_Element):
 
 
 class NameOrCall(_Element):
-    NAME_PATTERN = re.compile(r'([a-zA-Z_][a-zA-Z0-9_]*)(.*)$', re.S)
+    NAME = re.compile(r'([a-zA-Z_][a-zA-Z0-9_]*)(.*)$', re.S)
     parameters = None
+
     def parse(self):
-        self.name, = self.identity_match(self.NAME_PATTERN)
+        self.name, = self.identity_match(self.NAME)
         try: self.parameters = self.next_element(ParameterList)
         except NoMatch: pass
 
-    def calculate(self, namespace, top_namespace):
-        try: result = getattr(namespace, self.name)
+    def calculate(self, current_object, top_namespace):
+        try: result = getattr(current_object, self.name)
         except AttributeError:
-            try: result = namespace[self.name]
+            try: result = current_object[self.name]
             except KeyError: result = None
         if result is None:
             return None ## TODO: an explicit 'not found' exception?
@@ -202,52 +206,61 @@ class NameOrCall(_Element):
         return result
 
 
-class Expression(_Element):
+class SubExpression(_Element):
     DOT = re.compile('\.(.*)', re.S)
-    def parse(self):
-        self.parts = []
-        self.parts.append(self.require_next_element(NameOrCall, 'name'))
-        while self.optional_match(self.DOT):
-            try:
-                self.parts.append(self.next_element(NameOrCall))
-            except NoMatch:
-                self.end -= 1  ### HACK
-                break  # for the '$name. blah' case
 
-    def calculate(self, namespace):
-        value = namespace
-        for part in self.parts:
-            value = part.calculate(value, namespace)
-            if value is None: return None
+    def parse(self):
+        self.identity_match(self.DOT)
+        self.expression = self.next_element(Expression)
+
+    def calculate(self, current_object, global_namespace):
+        return self.expression.calculate(current_object, global_namespace)
+
+
+class Expression(_Element):
+    subexpression = None
+
+    def parse(self):
+        self.part = self.next_element(NameOrCall)
+        try: self.subexpression = self.next_element(SubExpression)
+        except NoMatch: pass
+
+    def calculate(self, namespace, global_namespace=None):
+        if global_namespace == None:
+            global_namespace = namespace
+        value = self.part.calculate(namespace, global_namespace)
+        if self.subexpression:
+            value = self.subexpression.calculate(value, namespace)
         return value
 
 
 class ParameterList(_Element):
-    OPENING_PATTERN = re.compile(r'\(\s*(.*)$', re.S)
-    CLOSING_PATTERN = re.compile(r'\s*\)(.*)$', re.S)
-    COMMA_PATTERN = re.compile(r'\s*,\s*(.*)$', re.S)
+    START = re.compile(r'\(\s*(.*)$', re.S)
+    END = re.compile(r'\s*\)(.*)$', re.S)
+    COMMA = re.compile(r'\s*,\s*(.*)$', re.S)
 
     def parse(self):
         self.values = []
-        self.identity_match(self.OPENING_PATTERN)
+        self.identity_match(self.START)
         try: value = self.next_element(Value)
         except NoMatch:
             pass
         else:
             self.values.append(value)
-            while self.optional_match(self.COMMA_PATTERN):
+            while self.optional_match(self.COMMA):
                 value = self.require_next_element(Value, 'value')
                 self.values.append(value)
-        self.require_match(self.CLOSING_PATTERN, ')')
+        self.require_match(self.END, ')')
 
 
 class Placeholder(_Element):
-    MY_PATTERN = re.compile(r'\$(!?)(\{?)(.*)$', re.S)
-    CLOSING_BRACE_PATTERN = re.compile(r'\}(.*)$', re.S)
+    START = re.compile(r'\$(!?)(\{?)(.*)$', re.S)
+    CLOSING_BRACE = re.compile(r'\}(.*)$', re.S)
+
     def parse(self):
-        self.silent, self.braces = self.identity_match(self.MY_PATTERN)
+        self.silent, self.braces = self.identity_match(self.START)
         self.expression = self.require_next_element(Expression, 'expression')
-        if self.braces: self.require_match(self.CLOSING_BRACE_PATTERN, '}')
+        if self.braces: self.require_match(self.CLOSING_BRACE, '}')
 
     def evaluate(self, namespace, stream):
         value = self.expression.calculate(namespace)
@@ -259,6 +272,7 @@ class Placeholder(_Element):
 
 class SimpleReference(_Element):
     LEADING_DOLLAR = re.compile('\$(.*)', re.S)
+
     def parse(self):
         self.identity_match(self.LEADING_DOLLAR)
         self.expression = self.require_next_element(Expression, 'name')
@@ -270,38 +284,37 @@ class Null:
 
 
 class Comment(_Element, Null):
-    COMMENT_PATTERN = re.compile('#(?:#.*?(?:\n|$)|\*.*?\*#(?:[ \t]*\n)?)(.*)$', re.M + re.S)
+    COMMENT = re.compile('#(?:#.*?(?:\n|$)|\*.*?\*#(?:[ \t]*\n)?)(.*)$', re.M + re.S)
+
     def parse(self):
-        self.identity_match(self.COMMENT_PATTERN)
+        self.identity_match(self.COMMENT)
 
 
 class BinaryOperator(_Element):
-    PATTERN = re.compile(r'\s*(>=|<=|<|==|!=|>)\s*(.*)$', re.S)
+    BINARY_OP = re.compile(r'\s*(>=|<=|<|==|!=|>)\s*(.*)$', re.S)
+    OPERATORS = {'>' : operator.__gt__, '>=': operator.__ge__,
+                 '<' : operator.__lt__, '<=': operator.__le__,
+                 '==': operator.__eq__, '!=': operator.__ne__}
     def parse(self):
-        self.operator, = self.identity_match(self.PATTERN)
-        op = operator
-        self.operator = {'>': op.__gt__, '>=': op.__ge__,
-                         '<': op.__lt__, '<=': op.__le__,
-                         '==': op.__eq__, '!=': op.__ne__}[self.operator]
-
-    def apply_to(self, value1, value2):
-        return self.operator(value1, value2)
+        op_string, = self.identity_match(self.BINARY_OP)
+        self.apply_to = self.OPERATORS[op_string]
 
 
 class Condition(_Element):
-    OPENING_PATTERN = re.compile(r'\(\s*(.*)$', re.S)
-    CLOSING_PATTERN = re.compile(r'\s*\)(.*)$', re.S)
+    START = re.compile(r'\(\s*(.*)$', re.S)
+    END = re.compile(r'\s*\)(.*)$', re.S)
     binary_operator = None
     value2 = None
+
     def parse(self):
-        self.require_match(self.OPENING_PATTERN, '(')
+        self.identity_match(self.START)
         self.value = self.next_element(Value)
         try:
             self.binary_operator = self.next_element(BinaryOperator)
             self.value2 = self.require_next_element(Value, 'value')
         except NoMatch:
             pass
-        self.require_match(self.CLOSING_PATTERN, ') or >')
+        self.require_match(self.END, ') or >')
 
     def calculate(self, namespace):
         if self.binary_operator is None:
@@ -313,12 +326,14 @@ class Condition(_Element):
 
 class End(_Element):
     END = re.compile(r'#end(.*)', re.I + re.S)
+
     def parse(self):
         self.identity_match(self.END)
 
 
 class ElseBlock(_Element):
     START = re.compile(r'#else(.*)$', re.S + re.I)
+
     def parse(self):
         self.identity_match(self.START)
         self.block = self.require_next_element(Block, 'block')
@@ -327,6 +342,7 @@ class ElseBlock(_Element):
 
 class ElseifBlock(_Element):
     START = re.compile(r'#elseif\b\s*(.*)$', re.S + re.I)
+
     def parse(self):
         self.identity_match(self.START)
         self.condition = self.require_next_element(Condition, 'condition')
@@ -337,7 +353,6 @@ class ElseifBlock(_Element):
 
 class IfDirective(_Element):
     START = re.compile(r'#if\b\s*(.*)$', re.S + re.I)
-    START_ELSEIF = re.compile(r'#elseif\b\s*(.*)$', re.S + re.I)
     else_block = Null()
 
     def parse(self):
@@ -346,14 +361,11 @@ class IfDirective(_Element):
         self.block = self.next_element(Block)
         self.elseifs = []
         while True:
-            try:
-                elseif_block = self.next_element(ElseifBlock)
-                self.elseifs.append(elseif_block)
-            except NoMatch:
-                break
+            try: self.elseifs.append(self.next_element(ElseifBlock))
+            except NoMatch: break
         try: self.else_block = self.next_element(ElseBlock)
         except NoMatch: pass
-        end = self.require_next_element(End, '#else, #elseif or #end')
+        self.require_next_element(End, '#else, #elseif or #end')
 
     def evaluate(self, namespace, stream):
         if self.condition.calculate(namespace):
@@ -368,11 +380,12 @@ class IfDirective(_Element):
 
 class Assignment(_Element):
     START = re.compile(r'\s*\(\s*\$([a-z_][a-z0-9_]*)\s*=\s*(.*)$', re.S)
-    CLOSING_PATTERN = re.compile(r'\s*\)(?:[ \t]*\r?\n)?(.*)$', re.S + re.M)
+    END = re.compile(r'\s*\)(?:[ \t]*\r?\n)?(.*)$', re.S + re.M)
+
     def parse(self):
         self.var_name, = self.identity_match(self.START)
         self.value = self.next_element(Value)
-        self.require_match(self.CLOSING_PATTERN, ')')
+        self.require_match(self.END, ')')
 
     def calculate(self, namespace):
         namespace[self.var_name] = self.value.calculate(namespace)
@@ -380,6 +393,7 @@ class Assignment(_Element):
 
 class SetDirective(_Element):
     START = re.compile(r'#set\b(.*)', re.S + re.I)
+
     def parse(self):
         self.identity_match(self.START)
         self.assignment = self.require_next_element(Assignment, 'assignment')
@@ -390,12 +404,13 @@ class SetDirective(_Element):
 
 class ForeachDirective(_Element):
     START = re.compile(r'#foreach\s*\(\s*\$([a-z_][a-z0-9_]*)\s*in\s*(.*)$', re.S + re.I)
-    CLOSING_PATTERN = re.compile(r'\s*\)(.*)$', re.S)
+    END = re.compile(r'\s*\)(.*)$', re.S)
+
     def parse(self):
         ## Could be cleaner b/c syntax error if no '('
         self.loop_var_name, = self.identity_match(self.START)
         self.value = self.next_element(Value)
-        self.require_match(self.CLOSING_PATTERN, ')')
+        self.require_match(self.END, ')')
         self.block = self.next_element(Block)
         self.require_next_element(End, '#end')
 
@@ -433,4 +448,3 @@ class Block(_Element):
     def evaluate(self, namespace, stream):
         for child in self.children:
             child.evaluate(namespace, stream)
-
