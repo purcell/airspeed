@@ -2,17 +2,19 @@
 
 import re
 
-class SyntaxError(Exception): pass
+class TemplateSyntaxError(Exception): pass
 
 class Tokeniser:
-    PLAIN, IF, PLACEHOLDER, END = range(4)
+    PLAIN, IF, PLACEHOLDER, FOREACH, END = range(5)
 
     UP_TO_NEXT_TEMPLATE_BIT = re.compile('^(.*?)((?:#|\$).*)', re.MULTILINE + re.DOTALL)
     REST = '(.*)$'
-    NAME_OR_CALL = '[a-z0-9_]+(?:\(\))?'
+    NAME = '[a-z0-9_]+'
+    NAME_OR_CALL = NAME + '(?:\(\))?'
     EXPRESSION = '(' + NAME_OR_CALL + '(?:\.' + NAME_OR_CALL + ')*)'
     PLACEHOLDER_PATTERN = re.compile('^\$(!?)({?)' + EXPRESSION + '(}?)' + REST, re.IGNORECASE + re.DOTALL + re.MULTILINE)
     BEGIN_IF_PATTERN = re.compile('^#if[ \t]*\([ \t]*\$' + EXPRESSION + '[ \t]*\)' + REST, re.IGNORECASE + re.DOTALL + re.MULTILINE)
+    BEGIN_FOREACH_PATTERN = re.compile('^#foreach[ \t]*\([ \t]*\$(' + NAME + ')[ \t]+in[ \t]+\$' + EXPRESSION + '[ \t]*\)' + REST, re.IGNORECASE + re.DOTALL + re.MULTILINE)
     END_PATTERN = re.compile('^#end' + REST, re.IGNORECASE + re.DOTALL + re.MULTILINE)
 
     def tokenise(self, text):
@@ -33,17 +35,22 @@ class Tokeniser:
                 expression, text = m.groups()
                 yield self.IF, expression
                 continue
+            m = self.BEGIN_FOREACH_PATTERN.match(interesting)
+            if m:
+                iter_var, expression, text = m.groups()
+                yield self.FOREACH, (expression, iter_var)
+                continue
             m = self.END_PATTERN.match(interesting)
             if m:
                 yield self.END, None
                 (text,) = m.groups()
                 continue
-            raise SyntaxError("invalid token: %s" % text[:40])
+            raise TemplateSyntaxError("invalid token: %s" % text[:40])
 
     def get_placeholder(self, match):
         silent, open_brace, var_name, close_brace, rest = match.groups()
         if open_brace and not close_brace:
-            raise SyntaxError("unmatched braces")
+            raise TemplateSyntaxError("unmatched braces")
         if close_brace and not open_brace:
             rest = close_brace + rest
             original_text = ''.join(('$', silent, var_name))
@@ -60,8 +67,10 @@ class Parser:
     def merge(self, content):
         output = []
         filter_output_at_nesting_level = [False]
-        tokens = Tokeniser().tokenise(str(content))
-        for token_type, token_value in tokens:
+        tokens = list(Tokeniser().tokenise(str(content)))
+        tokens.reverse()
+        while tokens:
+            token_type, token_value = tokens.pop()
             filter_at_this_level = filter_output_at_nesting_level[-1]
             if token_type == Tokeniser.PLAIN:
                 if not filter_at_this_level: output.append(token_value)
@@ -81,15 +90,24 @@ class Parser:
                 filter_my_content = filter_at_this_level or not bool(value)
                 filter_output_at_nesting_level.append(filter_my_content)
                 continue
+            if token_type == Tokeniser.FOREACH:
+                expression, iter_var = token_value
+                filter_output_at_nesting_level.append(filter_at_this_level)
+                token_type, token_value = tokens.pop()
+                values = self.find(expression)
+                if token_type == Tokeniser.PLAIN:
+                    for item in values:
+                        if not filter_at_this_level: output.append(token_value)
+                continue
             if token_type == Tokeniser.END:
                 if len(filter_output_at_nesting_level) == 1:
-                    raise SyntaxError("#end without beginning of block")
+                    raise TemplateSyntaxError("#end without beginning of block")
                 del filter_output_at_nesting_level[-1]
                 continue
-            raise SyntaxError("invalid token: %s" % text[:40])
+            raise TemplateSyntaxError("invalid token: %s" % text[:40])
 
         if len(filter_output_at_nesting_level) > 1:
-            raise SyntaxError("Unclosed block")
+            raise TemplateSyntaxError("Unclosed block")
         return ''.join(output)
 
 

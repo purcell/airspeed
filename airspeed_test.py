@@ -43,7 +43,7 @@ class ParserTestCase(TestCase):
         parser = airspeed.Parser()
         template = airspeed.Template("Hello ${name.")
         parser["name"] = "World"
-        self.assertRaises(airspeed.SyntaxError, parser.merge, template)
+        self.assertRaises(airspeed.TemplateSyntaxError, parser.merge, template)
 
     def test_unmatched_trailing_brace_preserved(self):
         parser = airspeed.Parser()
@@ -109,6 +109,11 @@ class ParserTestCase(TestCase):
         parser["is_birthday"] = True
         self.assertEquals("hello Steve.\nHappy Birthday\n.\nOff out later?", parser.merge(template))
 
+    def test_foreach_with_plain_content_loops_correctly(self):
+        parser = airspeed.Parser()
+        template = airspeed.Template("#foreach ($name in $names)Hello you. #end")
+        parser["names"] = ["Chris", "Steve"]
+        self.assertEquals("Hello you. Hello you. ", parser.merge(template))
 
 if __name__ == '__main__':
     reload(airspeed)
