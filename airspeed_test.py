@@ -24,8 +24,8 @@ class TemplateTestCase(TestCase):
 
     def test_silent_substitution_for_unmatched_values(self):
         template = airspeed.Template("Hello $!name")
-        self.assertEquals("Hello ", template.merge({}))
         self.assertEquals("Hello world", template.merge({"name": "world"}))
+        self.assertEquals("Hello ", template.merge({}))
 
     def test_embed_substitution_value_in_braces_gets_handled(self):
         template = airspeed.Template("Hello ${name}.")
@@ -137,6 +137,33 @@ class TemplateTestCase(TestCase):
     def test_multi_line_comments_skipped(self):
         template = airspeed.Template('Stuff#*\n more comments *#\n and more stuff')
         self.assertEquals("Stuff and more stuff", template.merge({}))
+
+    def test_merge_to_stream(self):
+        template = airspeed.Template('Hello $name!')
+        from cStringIO import StringIO
+        output = StringIO()
+        template.merge_to({"name": "Chris"}, output)
+        self.assertEquals('Hello Chris!', output.getvalue())
+
+#    def test_else_block_evaluated_if_if_expression_false(self):
+#        template = airspeed.Template('#if ($value) true #else false #end')
+#        self.assertEquals(" false ", template.merge({}))
+
+
+#
+# TODO:
+#
+#  Escaped characters in string literals
+#  Directives inside string literals
+#  #else, #elseif
+#  Parameterised calls
+#  #parse, #include
+#  #macro
+#  map literals
+#  Escaped $, #
+#  Sub-object assignment:  #set( $customer.Behavior = $primate )
+#
+
 
 if __name__ == '__main__':
     reload(airspeed)

@@ -6,6 +6,25 @@ import cStringIO as StringIO
 
 class TemplateSyntaxError(Exception): pass
 
+
+"""
+VARIABLE_NAME   ->   '[a-zA-Z]+'
+TEXT            ->   '(?:[^\$#\\]|\\\\|\\\$|\\#)+'
+TEMPLATE        ->   BLOCK
+BLOCK           ->   TEXT
+                   | PLACEHOLDER
+                   | IF_DIRECTIVE
+                   | BLOCK_DIRECTIVE
+REFERENCE        ->  '\$'  VARIABLE_VALUE
+SILENT_REFERENCE ->  '\$!' VARIABLE_VALUE
+VARIABLE_VALUE   ->  VARIABLE_NAME
+                   | VARIABLE_NAME '\.' VARIABLE_VALUE
+
+
+"""
+
+
+
 class Tokeniser:
     PLAIN, IF, PLACEHOLDER, FOREACH, END, SET, ELSE = range(7)
 
@@ -15,6 +34,7 @@ class Tokeniser:
     NAME_OR_CALL = NAME + '(?:\(\))?'
     RE_FLAGS = re.IGNORECASE + re.DOTALL + re.MULTILINE
     EXPRESSION = '(' + NAME_OR_CALL + '(?:\.' + NAME_OR_CALL + ')*)'
+    STRING_LITERAL = "'(?:\\\\|\\'|\\n|\\b|\\t)'"
     PLACEHOLDER_PATTERN = re.compile('^\$(!?)({?)' + EXPRESSION + '(}?)' + REST, RE_FLAGS)
     SET_PATTERN = re.compile('^#set[ \t]*\([ \t]*\$(' + NAME + ')[ \t]*=[ \t]*(\d+|"[^"]+")[ \t]*\)' + REST, RE_FLAGS)
     BEGIN_IF_PATTERN = re.compile('^#if[ \t]*\([ \t]*\$' + EXPRESSION + '[ \t]*\)' + REST, RE_FLAGS)
@@ -217,12 +237,14 @@ class Template:
         self.evaluator = None
 
     def merge(self, namespace):
+        output = StringIO.StringIO()
+        self.merge_to(namespace, output)
+        return output.getvalue()
+
+    def merge_to(self, namespace, fileobj):
         output = []
         if not self.evaluator:
             self.evaluator = BlockEvaluator()
             for token_type, token_value in Tokeniser().tokenise(self.content):
                 self.evaluator.feed(token_type, token_value)
-        output = StringIO.StringIO()
-        self.evaluator.evaluate(output, namespace)
-        return output.getvalue()
-
+        self.evaluator.evaluate(fileobj, namespace)
