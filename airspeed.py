@@ -510,14 +510,20 @@ class SetDirective(_Element):
 
 
 class ForeachDirective(_Element):
-    START = re.compile(r'#foreach\s*\(\s*\$([a-z_][a-z0-9_]*)\s*in\s*(.*)$', re.S + re.I)
-    END = re.compile(r'\s*\)(.*)$', re.S)
+    START = re.compile(r'#foreach\b(.*)$', re.S + re.I)
+    OPEN_PAREN = re.compile(r'[ \t]*\(\s*(.*)$', re.S)
+    IN = re.compile(r'[ \t]+in[ \t]+(.*)$', re.S)
+    LOOP_VAR_NAME = re.compile(r'\$([a-z_][a-z0-9_]*)(.*)$', re.S + re.I)
+    CLOSE_PAREN = re.compile(r'[ \t]*\)(.*)$', re.S)
 
     def parse(self):
         ## Could be cleaner b/c syntax error if no '('
-        self.loop_var_name, = self.identity_match(self.START)
+        self.identity_match(self.START)
+        self.require_match(self.OPEN_PAREN, '(')
+        self.loop_var_name, = self.require_match(self.LOOP_VAR_NAME, 'loop var name')
+        self.require_match(self.IN, 'in')
         self.value = self.next_element(Value)
-        self.require_match(self.END, ')')
+        self.require_match(self.CLOSE_PAREN, ')')
         self.block = self.next_element(Block)
         self.require_next_element(End, '#end')
 
