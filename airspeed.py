@@ -28,8 +28,10 @@ class Template:
             self.root_element = TemplateBody(self.content)
         self.root_element.evaluate(namespace, fileobj, loader)
 
+
 class TemplateError(Exception):
     pass
+
 
 class TemplateSyntaxError(TemplateError):
     def __init__(self, element, expected):
@@ -54,23 +56,21 @@ class TemplateSyntaxError(TemplateError):
 
 
 class NullLoader:
-    def merge_text(self, name, stream):
-        raise self.load_template(name)
+    def load_text(self, name):
+        raise TemplateError("no loader available for '%s'" % name)
 
     def load_template(self, name):
-        raise TemplateError("no loader available for '%s'" % name)
+        raise self.load_text(name)
 
 
 class FileLoader:
-    def merge_text(self, name, stream):
+    def load_text(self, name):
         f = open(name)
-        try: stream.write(f.read())
+        try: return f.read()
         finally: f.close()
 
     def load_template(self, name):
-        f = open(name)
-        try: return Template(f.read())
-        finally: f.close()
+        return Template(self.load_text(name))
 
 
 ###############################################################################
@@ -495,7 +495,24 @@ class IncludeDirective(_Element):
         self.require_match(self.CLOSE_PAREN, ')')
 
     def evaluate(self, namespace, stream, loader):
-        template = loader.merge_text(self.name.calculate(namespace), stream)
+        stream.write(loader.load_text(self.name.calculate(namespace)))
+
+
+class ParseDirective(_Element):
+    START = re.compile(r'#parse\b(.*)', re.S + re.I)
+    OPEN_PAREN = re.compile(r'[ \t]*\(\s*(.*)$', re.S)
+    CLOSE_PAREN = re.compile(r'[ \t]*\)(.*)$', re.S)
+
+    def parse(self):
+        self.identity_match(self.START)
+        self.require_match(self.OPEN_PAREN, '(')
+        self.name = self.require_next_element((StringLiteral, SimpleReference), 'template name')
+        self.require_match(self.CLOSE_PAREN, ')')
+
+    def evaluate(self, namespace, stream, loader):
+        template = loader.load_template(self.name.calculate(namespace))
+        ## TODO: local namespace?
+        template.merge_to(namespace, stream, loader=loader)
 
 
 class SetDirective(_Element):
@@ -553,7 +570,7 @@ class Block(_Element):
     def parse(self):
         self.children = []
         while True:
-            try: self.children.append(self.next_element((Text, Placeholder, Comment, IfDirective, SetDirective, ForeachDirective, IncludeDirective, MacroDefinition, MacroCall)))
+            try: self.children.append(self.next_element((Text, Placeholder, Comment, IfDirective, SetDirective, ForeachDirective, IncludeDirective, ParseDirective, MacroDefinition, MacroCall)))
             except NoMatch: break
 
     def evaluate(self, namespace, stream, loader):

@@ -330,12 +330,39 @@ $email
         template = airspeed.Template('#include ("foo.tmpl")')
         self.assertRaises(airspeed.TemplateError, template.merge, {})
 
-    def test_include_directive_yield_loader_error_if_included_content_not_found(self):
+    def test_include_directive_yields_loader_error_if_included_content_not_found(self):
         class BrokenLoader:
-            def merge_text(self, name, stream):
+            def load_text(self, name):
                 raise IOError(name)
         template = airspeed.Template('#include ("foo.tmpl")')
         self.assertRaises(IOError, template.merge, {}, loader=BrokenLoader())
+
+    def test_valid_include_directive_include_content(self):
+        class WorkingLoader:
+            def load_text(self, name):
+                if name == 'foo.tmpl':
+                    return "howdy"
+        template = airspeed.Template('Message is: #include ("foo.tmpl")!')
+        self.assertEquals('Message is: howdy!', template.merge({}, loader=WorkingLoader()))
+
+    def test_parse_directive_gives_error_if_no_loader_provided(self):
+        template = airspeed.Template('#parse ("foo.tmpl")')
+        self.assertRaises(airspeed.TemplateError, template.merge, {})
+
+    def test_parse_directive_yields_loader_error_if_parsed_content_not_found(self):
+        class BrokenLoader:
+            def load_template(self, name):
+                raise IOError(name)
+        template = airspeed.Template('#parse ("foo.tmpl")')
+        self.assertRaises(IOError, template.merge, {}, loader=BrokenLoader())
+
+    def test_valid_parse_directive_outputs_parsed_content(self):
+        class WorkingLoader:
+            def load_template(self, name):
+                if name == 'foo.tmpl':
+                    return airspeed.Template("$message")
+        template = airspeed.Template('Message is: #parse ("foo.tmpl")!')
+        self.assertEquals('Message is: hola!', template.merge({'message': 'hola'}, loader=WorkingLoader()))
 
 #
 # TODO:
@@ -344,7 +371,7 @@ $email
 #  Gobbling up whitespace (tricky!)
 #  range literals
 #  list literals
-#  #parse, #include
+#  #parse
 #  Bind #macro calls at compile time?
 #  Interpolated strings
 #  Directives inside string literals
