@@ -102,6 +102,15 @@ class TemplateTestCase(TestCase):
         namespace = {"greetings": ["Hello", "Goodbye"], "names": ["Chris", "Steve"]}
         self.assertEquals("Hello to Chris Steve. Goodbye to Chris Steve. ", template.merge(namespace))
 
+    def test_loop_counter_variable_available_in_loops(self):
+        template = airspeed.Template("#foreach ($word in $greetings)$velocityCount,#end")
+        namespace = {"greetings": ["Hello", "Goodbye"]}
+        self.assertEquals("1,2,", template.merge(namespace))
+
+    def test_loop_counter_variables_do_not_clash_in_nested_loops(self):
+        template = airspeed.Template("#foreach ($word in $greetings)outer $velocityCount#foreach ($word in $names), inner $velocityCount#end. #end")
+        namespace = {"greetings": ["Hello", "Goodbye"], "names": ["Chris", "Steve"]}
+        self.assertEquals("outer 1, inner 1, inner 2. outer 2, inner 1, inner 2. ", template.merge(namespace))
 
 
 if __name__ == '__main__':

@@ -159,10 +159,13 @@ class ForeachEvaluator(BlockEvaluator):
 
     def evaluate(self, output_stream, namespace):
         values = self.eval_expression(self.expression, namespace)
+        counter = 1
         for value in values:
             local_namespace = BlockEvaluator.LocalNamespace(namespace)
             local_namespace[self.iter_var] = value
+            local_namespace['velocityCount'] = counter
             BlockEvaluator.evaluate(self, output_stream, local_namespace)
+            counter += 1
 
 
 class Template:
