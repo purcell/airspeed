@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import re
+import cStringIO as StringIO
 
 class TemplateSyntaxError(Exception): pass
 
@@ -59,62 +60,100 @@ class Tokeniser:
         return var_name, bool(silent), original_text, rest
 
 
-class Parser:
+class BlockEvaluator:
+    def __init__(self):
+        self.children = []
+        self.delegate = None
 
+    def evaluate(self, output_stream, expression_lookup):
+        for child in self.children:
+            child.evaluate(output_stream, expression_lookup)
+
+    def add_evaluator(self, evaluator):
+        self.children.append(evaluator)
+        if hasattr(evaluator, 'add_evaluator'):
+            self.delegate = evaluator
+
+    def delegate_token(self, token_type, token_value):
+        if self.delegate:
+            if self.delegate.feed(token_type, token_value):
+                return True
+            else: self.delegate = None
+        return False
+
+    def feed(self, token_type, token_value):
+        if self.delegate_token(token_type, token_value):
+            return True
+        if token_type == Tokeniser.END: return False
+        elif token_type == Tokeniser.PLAIN: self.add_evaluator(PlainTextEvaluator(token_value))
+        elif token_type == Tokeniser.PLACEHOLDER: self.add_evaluator(PlaceholderEvaluator(token_value))
+        elif token_type == Tokeniser.FOREACH: self.add_evaluator(ForeachEvaluator(token_value))
+        elif token_type == Tokeniser.IF: self.add_evaluator(IfEvaluator(token_value))
+        else: raise TemplateSyntaxError("illegal token in block: %s, %s" % (token_type, token_value))
+        return True
+
+
+class PlainTextEvaluator:
+    def __init__(self, text):
+        self.text = text
+
+    def evaluate(self, output_stream, expression_lookup):
+        output_stream.write(self.text)
+
+
+class PlaceholderEvaluator:
+    def __init__(self, token_value):
+        self.expression, self.silent, self.original_text = token_value
+
+    def evaluate(self, output_stream, expression_lookup):
+        value = expression_lookup(self.expression)
+        if value is None:
+            if self.silent: expression_value = ''
+            else: expression_value = self.original_text
+        else:
+            expression_value = str(value)
+        output_stream.write(expression_value)
+
+
+class IfEvaluator(BlockEvaluator):
+    def __init__(self, token_value):
+        BlockEvaluator.__init__(self)
+        self.condition_expression = token_value
+
+    def evaluate(self, output_stream, expression_lookup):
+        value = expression_lookup(self.condition_expression)
+        if value:
+            BlockEvaluator.evaluate(self, output_stream, expression_lookup)
+
+
+class ForeachEvaluator(BlockEvaluator):
+    def __init__(self, token_value):
+        BlockEvaluator.__init__(self)
+        self.expression, self.iter_var = token_value
+
+    def evaluate(self, output_stream, expression_lookup):
+        values = expression_lookup(self.expression)
+        for value in values:
+            BlockEvaluator.evaluate(self, output_stream, expression_lookup)
+
+
+class Parser:
     def __init__(self):
         self.data = {}
 
     def merge(self, content):
         output = []
-        filter_output_at_nesting_level = [False]
-        tokens = list(Tokeniser().tokenise(str(content)))
-        tokens.reverse()
-        while tokens:
-            token_type, token_value = tokens.pop()
-            filter_at_this_level = filter_output_at_nesting_level[-1]
-            if token_type == Tokeniser.PLAIN:
-                if not filter_at_this_level: output.append(token_value)
-                continue
-            if token_type == Tokeniser.PLACEHOLDER:
-                expression, silent, original_text = token_value
-                value = self.find(expression)
-                if value is None:
-                    if silent: expression_value = ''
-                    else: expression_value = original_text
-                else:
-                    expression_value = str(value)
-                if not filter_at_this_level: output.append(expression_value)
-                continue
-            if token_type == Tokeniser.IF:
-                value = self.find(token_value)
-                filter_my_content = filter_at_this_level or not bool(value)
-                filter_output_at_nesting_level.append(filter_my_content)
-                continue
-            if token_type == Tokeniser.FOREACH:
-                expression, iter_var = token_value
-                filter_output_at_nesting_level.append(filter_at_this_level)
-                token_type, token_value = tokens.pop()
-                values = self.find(expression)
-                if token_type == Tokeniser.PLAIN:
-                    for item in values:
-                        if not filter_at_this_level: output.append(token_value)
-                continue
-            if token_type == Tokeniser.END:
-                if len(filter_output_at_nesting_level) == 1:
-                    raise TemplateSyntaxError("#end without beginning of block")
-                del filter_output_at_nesting_level[-1]
-                continue
-            raise TemplateSyntaxError("invalid token: %s" % text[:40])
-
-        if len(filter_output_at_nesting_level) > 1:
-            raise TemplateSyntaxError("Unclosed block")
-        return ''.join(output)
-
+        evaluator = BlockEvaluator()
+        for token_type, token_value in Tokeniser().tokenise(str(content)):
+            evaluator.feed(token_type, token_value)
+        output = StringIO.StringIO()
+        evaluator.evaluate(output, self.find)
+        return output.getvalue()
 
     def find(self, expression):
         o = self.data
         for part in expression.split('.'):
-            if part.endswith('()'):
+            if part.endswith('()'):  ## FIXME
                 part = part[:-2]
                 try: o = getattr(o, part)
                 except AttributeError: pass
@@ -139,5 +178,6 @@ class Template:
 
     def __str__(self):
         return self.content
+
 
 
