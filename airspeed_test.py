@@ -409,6 +409,13 @@ $email
         template = airspeed.Template('#macro(hi $person)$person says hello#end#set($hello="#hi($name)")$hello')
         self.assertEquals("Steve says hello", template.merge({'name':'Steve'}))
 
+    def test_large_areas_of_text_handled_without_error(self):
+        text = "qwerty uiop asdfgh jkl zxcvbnm. 1234"
+        for count in range(1,20):
+            text = text + text
+            template = airspeed.Template(text)
+        self.assertEquals(text, template.merge({}))
+
 #
 # TODO:
 #
