@@ -233,6 +233,39 @@ $email
         template = airspeed.Template('#if ($value1) one #elseif ($value2) two #else three #end')
         value1, value2 = False, False
         self.assertEquals(' three ', template.merge(locals()))
+
+    def test_syntax_error_contains_line_and_column_pos(self):
+        try: airspeed.Template('#if ( $hello )\n\n#elseif blah').merge({})
+        except airspeed.TemplateSyntaxError, e:
+            self.assertEquals((3, 9), (e.line, e.column))
+        else: self.fail('expected error')
+        try: airspeed.Template('#else blah').merge({})
+        except airspeed.TemplateSyntaxError, e:
+            self.assertEquals((1, 1), (e.line, e.column))
+        else: self.fail('expected error')
+
+    def test_get_position_strings_in_syntax_error(self):
+        try: airspeed.Template('#else whatever').merge({})
+        except airspeed.TemplateSyntaxError, e:
+            self.assertEquals(['#else whatever',
+                               '^'], e.get_position_strings())
+        else: self.fail('expected error')
+
+    def test_get_position_strings_in_syntax_error_when_newline_after_error(self):
+        try: airspeed.Template('#else whatever\n').merge({})
+        except airspeed.TemplateSyntaxError, e:
+            self.assertEquals(['#else whatever',
+                               '^'], e.get_position_strings())
+        else: self.fail('expected error')
+
+    def test_get_position_strings_in_syntax_error_when_newline_before_error(self):
+        try: airspeed.Template('foobar\n  #else whatever\n').merge({})
+        except airspeed.TemplateSyntaxError, e:
+            self.assertEquals(['  #else whatever',
+                               '  ^'], e.get_position_strings())
+        else: self.fail('expected error')
+
+
 #
 # TODO:
 #
