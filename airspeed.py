@@ -189,7 +189,7 @@ class _Element:
 
 
 class Text(_Element):
-    PLAIN = re.compile(r'((?:[^\\\$#]|\\[\$#])+|\$[^!\{a-z0-9_]|\$$|\\.)(.*)$', re.S + re.I)
+    PLAIN = re.compile(r'((?:[^\\\$#]+|\\[\$#])+|\$[^!\{a-z0-9_]|\$$|\\.)(.*)$', re.S + re.I)
     ESCAPED_CHAR = re.compile(r'\\([\\\$#])')
 
     def parse(self):
