@@ -60,14 +60,40 @@ class Tokeniser:
         return var_name, bool(silent), original_text, rest
 
 
-class BlockEvaluator:
+
+class Evaluator:
+    def eval_expression(self, expression, namespace_dict):
+        o = namespace_dict
+        for part in expression.split('.'):
+            if part.endswith('()'):  ## FIXME
+                part = part[:-2]
+                try: o = getattr(o, part)
+                except AttributeError: pass
+                else: o = o()
+            else:
+                try: o = getattr(o, part)
+                except AttributeError:
+                    try: o = o[part]
+                    except KeyError: pass
+            if o in (None, namespace_dict): return None
+        return o
+
+
+class BlockEvaluator(Evaluator):
+    class LocalNamespace(dict):
+        def __init__(self, parent_namespace):
+            self.parent_namespace = parent_namespace
+        def __getitem__(self, key):
+            try: return dict.__getitem__(self, key)
+            except KeyError: return self.parent_namespace[key]
+
     def __init__(self):
         self.children = []
         self.delegate = None
 
-    def evaluate(self, output_stream, expression_lookup):
+    def evaluate(self, output_stream, namespace):
         for child in self.children:
-            child.evaluate(output_stream, expression_lookup)
+            child.evaluate(output_stream, namespace)
 
     def add_evaluator(self, evaluator):
         self.children.append(evaluator)
@@ -93,20 +119,20 @@ class BlockEvaluator:
         return True
 
 
-class PlainTextEvaluator:
+class PlainTextEvaluator(Evaluator):
     def __init__(self, text):
         self.text = text
 
-    def evaluate(self, output_stream, expression_lookup):
+    def evaluate(self, output_stream, namespace):
         output_stream.write(self.text)
 
 
-class PlaceholderEvaluator:
+class PlaceholderEvaluator(Evaluator):
     def __init__(self, token_value):
         self.expression, self.silent, self.original_text = token_value
 
-    def evaluate(self, output_stream, expression_lookup):
-        value = expression_lookup(self.expression)
+    def evaluate(self, output_stream, namespace):
+        value = self.eval_expression(self.expression, namespace)
         if value is None:
             if self.silent: expression_value = ''
             else: expression_value = self.original_text
@@ -120,10 +146,10 @@ class IfEvaluator(BlockEvaluator):
         BlockEvaluator.__init__(self)
         self.condition_expression = token_value
 
-    def evaluate(self, output_stream, expression_lookup):
-        value = expression_lookup(self.condition_expression)
+    def evaluate(self, output_stream, namespace):
+        value = self.eval_expression(self.condition_expression, namespace)
         if value:
-            BlockEvaluator.evaluate(self, output_stream, expression_lookup)
+            BlockEvaluator.evaluate(self, output_stream, namespace)
 
 
 class ForeachEvaluator(BlockEvaluator):
@@ -131,10 +157,12 @@ class ForeachEvaluator(BlockEvaluator):
         BlockEvaluator.__init__(self)
         self.expression, self.iter_var = token_value
 
-    def evaluate(self, output_stream, expression_lookup):
-        values = expression_lookup(self.expression)
+    def evaluate(self, output_stream, namespace):
+        values = self.eval_expression(self.expression, namespace)
         for value in values:
-            BlockEvaluator.evaluate(self, output_stream, expression_lookup)
+            local_namespace = BlockEvaluator.LocalNamespace(namespace)
+            local_namespace[self.iter_var] = value
+            BlockEvaluator.evaluate(self, output_stream, local_namespace)
 
 
 class Parser:
@@ -147,25 +175,8 @@ class Parser:
         for token_type, token_value in Tokeniser().tokenise(str(content)):
             evaluator.feed(token_type, token_value)
         output = StringIO.StringIO()
-        evaluator.evaluate(output, self.find)
+        evaluator.evaluate(output, self.data)
         return output.getvalue()
-
-    def find(self, expression):
-        o = self.data
-        for part in expression.split('.'):
-            if part.endswith('()'):  ## FIXME
-                part = part[:-2]
-                try: o = getattr(o, part)
-                except AttributeError: pass
-                else: o = o()
-            else:
-                try: o = getattr(o, part)
-                except AttributeError:
-                    try: o = o[part]
-                    except KeyError: pass
-            if o in (None, self.data): return None
-        return o
-
 
     def __setitem__(self, name, value):
         self.data[name] = value

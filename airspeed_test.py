@@ -122,6 +122,21 @@ class ParserTestCase(TestCase):
         parser["names"] = ["Chris", "Steve"]
         self.assertEquals("", parser.merge(template))
 
+    def test_foreach_with_expression_content_loops_correctly(self):
+        parser = airspeed.Parser()
+        template = airspeed.Template("#foreach ($name in $names)Hello $you. #end")
+        parser["you"] = "You"
+        parser["names"] = ["Chris", "Steve"]
+        self.assertEquals("Hello You. Hello You. ", parser.merge(template))
+
+    def test_foreach_makes_loop_variable_accessible(self):
+        parser = airspeed.Parser()
+        template = airspeed.Template("#foreach ($name in $names)Hello $name. #end")
+        parser["names"] = ["Chris", "Steve"]
+        self.assertEquals("Hello Chris. Hello Steve. ", parser.merge(template))
+
+
+
 if __name__ == '__main__':
     reload(airspeed)
     try: main()
