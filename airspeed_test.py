@@ -265,7 +265,35 @@ $email
                                '  ^'], e.get_position_strings())
         else: self.fail('expected error')
 
+    def test_compare_greater_than_operator(self):
+        template = airspeed.Template('#if ( $value > 1 )yes#end')
+        self.assertEquals('', template.merge({'value': 0}))
+        self.assertEquals('', template.merge({'value': 1}))
+        self.assertEquals('yes', template.merge({'value': 2}))
 
+    def test_compare_greater_than_or_equal_operator(self):
+        template = airspeed.Template('#if ( $value >= 1 )yes#end')
+        self.assertEquals('', template.merge({'value': 0}))
+        self.assertEquals('yes', template.merge({'value': 1}))
+        self.assertEquals('yes', template.merge({'value': 2}))
+
+    def test_compare_less_than_operator(self):
+        template = airspeed.Template('#if ( $value < 1 )yes#end')
+        self.assertEquals('yes', template.merge({'value': 0}))
+        self.assertEquals('', template.merge({'value': 1}))
+        self.assertEquals('', template.merge({'value': 2}))
+
+    def test_compare_less_than_or_equal_operator(self):
+        template = airspeed.Template('#if ( $value <= 1 )yes#end')
+        self.assertEquals('yes', template.merge({'value': 0}))
+        self.assertEquals('yes', template.merge({'value': 1}))
+        self.assertEquals('', template.merge({'value': 2}))
+
+    def test_compare_equality_operator(self):
+        template = airspeed.Template('#if ( $value == 1 )yes#end')
+        self.assertEquals('', template.merge({'value': 0}))
+        self.assertEquals('yes', template.merge({'value': 1}))
+        self.assertEquals('', template.merge({'value': 2}))
 #
 # TODO:
 #

@@ -2,6 +2,7 @@
 
 import re
 import cStringIO as StringIO
+import operator
 
 __all__ = ['TemplateSyntaxError', 'Template']
 
@@ -274,14 +275,40 @@ class Comment(_Element, Null):
         self.identity_match(self.COMMENT_PATTERN)
 
 
+class BinaryOperator(_Element):
+    PATTERN = re.compile(r'\s*(>=|<=|<|==|!=|>)\s*(.*)$', re.S)
+    def parse(self):
+        self.operator, = self.identity_match(self.PATTERN)
+        op = operator
+        self.operator = {'>': op.__gt__, '>=': op.__ge__,
+                         '<': op.__lt__, '<=': op.__le__,
+                         '==': op.__eq__, '!=': op.__ne__}[self.operator]
+
+    def apply_to(self, value1, value2):
+        return self.operator(value1, value2)
+
+
 class Condition(_Element):
     OPENING_PATTERN = re.compile(r'\(\s*(.*)$', re.S)
     CLOSING_PATTERN = re.compile(r'\s*\)(.*)$', re.S)
+    binary_operator = None
+    value2 = None
     def parse(self):
         self.require_match(self.OPENING_PATTERN, '(')
-        self.expression = self.next_element(Value)
-        self.require_match(self.CLOSING_PATTERN, ')')
-        self.calculate = self.expression.calculate
+        self.value = self.next_element(Value)
+        try:
+            self.binary_operator = self.next_element(BinaryOperator)
+            self.value2 = self.require_next_element(Value, 'value')
+        except NoMatch:
+            pass
+        self.require_match(self.CLOSING_PATTERN, ') or >')
+
+    def calculate(self, namespace):
+        if self.binary_operator is None:
+            return self.value.calculate(namespace)
+        else:
+            value1, value2 = self.value.calculate(namespace), self.value2.calculate(namespace)
+            return self.binary_operator.apply_to(value1, value2)
 
 
 class End(_Element):
