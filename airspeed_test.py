@@ -415,7 +415,6 @@ $email
 #  Report locations for template errors in strings
 #  Math expressions
 #  Gobbling up whitespace (tricky!)
-#  list literals
 #  Bind #macro calls at compile time?
 #  #stop ?
 #  map literals
