@@ -659,7 +659,7 @@ class ForeachDirective(_Element):
                 return
             if hasattr(iterable, 'keys'): iterable = iterable.keys()
             if not hasattr(iterable, '__getitem__'):
-                raise AttributeError("value for $%s is not iterable in #foreach: %s" % (self.loop_var_name, iterable))
+                raise ValueError("value for $%s is not iterable in #foreach: %s" % (self.loop_var_name, iterable))
             for item in iterable:
                 namespace = LocalNamespace(namespace)
                 namespace['velocityCount'] = counter

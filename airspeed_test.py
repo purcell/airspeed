@@ -425,6 +425,10 @@ $email
         template = airspeed.Template('#foreach($value in $values)foo#end')
         self.assertEquals('', template.merge({}))
 
+    def test_foreach_with_non_iterable_variable_raises_error(self):
+        template = airspeed.Template('#foreach($value in $values)foo#end')
+        self.assertRaises(ValueError, template.merge, {'values': 1})
+
 #
 # TODO:
 #
