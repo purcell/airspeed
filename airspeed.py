@@ -312,6 +312,7 @@ class NameOrCall(_Element):
             try: result = current_object[self.name]
             except KeyError: result = None
             except TypeError: result = None
+            except AttributeError: result = None
         if result is None:
             return None ## TODO: an explicit 'not found' exception?
         if self.parameters is not None:

@@ -391,6 +391,12 @@ $email
     def test_when_dictionary_does_not_contain_referenced_attribute_no_substitution_occurs(self):
         template = airspeed.Template(" $user.name ")
         self.assertEquals(" $user.name ", template.merge({'user':self}))
+
+    def test_when_non_dictionary_object_does_not_contain_referenced_attribute_no_substitution_occurs(self):
+        class MyObject: pass
+        template = airspeed.Template(" $user.name ")
+        self.assertEquals(" $user.name ", template.merge({'user':MyObject()}))
+
 #
 # TODO:
 #
