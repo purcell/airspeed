@@ -277,8 +277,8 @@ class _EmptyValues:
 
 
 class ArrayLiteral(_Element):
-    START = re.compile(r'\[[ \t]*(.*)$')
-    END = re.compile(r'[ \t]*\](.*)$')
+    START = re.compile(r'\[[ \t]*(.*)$', re.S)
+    END =   re.compile(r'[ \t]*\](.*)$', re.S)
     values = _EmptyValues()
 
     def parse(self):
@@ -497,7 +497,7 @@ class IfDirective(_Element):
 
 
 class Assignment(_Element):
-    START = re.compile(r'\s*\(\s*\$([a-z_][a-z0-9_]*)\s*=\s*(.*)$', re.S)
+    START = re.compile(r'\s*\(\s*\$([a-z_][a-z0-9_]*)\s*=\s*(.*)$', re.S + re.I)
     END = re.compile(r'\s*\)(?:[ \t]*\r?\n)?(.*)$', re.S + re.M)
 
     def parse(self):

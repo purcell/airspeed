@@ -381,8 +381,8 @@ $email
         self.assertEquals('$values', template.merge({}))
 
     def test_array_literal(self):
-        template = airspeed.Template('blah\n#set($values = ["Hello ", $person, ", your lucky number is ", 7])\n#foreach($value in $values)$value#end')
-        self.assertEquals('blah\nHello Chris, your lucky number is 7', template.merge({'person': 'Chris'}))
+        template = airspeed.Template('blah\n#set($valuesInList = ["Hello ", $person, ", your lucky number is ", 7])\n#foreach($value in $valuesInList)$value#end\nblah')
+        self.assertEquals('blah\nHello Chris, your lucky number is 7\nblah', template.merge({'person': 'Chris'}))
 
     def test_nested_array_literals(self):
         template = airspeed.Template('#set($values = [["Hello ", "Steve"], ["Hello", " Chris"]])#foreach($pair in $values)#foreach($word in $pair)$word#end. #end')
