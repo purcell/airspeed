@@ -38,7 +38,7 @@ class ParserTestCase(TestCase):
         template = airspeed.Template("Hello ${name}.")
         parser["name"] = "World"
         self.assertEquals("Hello World.", parser.merge(template))
-        
+
     def test_unmatched_braces_raises_exception(self):
         parser = airspeed.Parser()
         template = airspeed.Template("Hello ${name.")
@@ -50,7 +50,7 @@ class ParserTestCase(TestCase):
         template = airspeed.Template("Hello $name}.")
         parser["name"] = "World"
         self.assertEquals("Hello World}.", parser.merge(template))
-        
+
     def test_can_return_value_from_an_attribute_of_a_context_object(self):
         parser = airspeed.Parser()
         template = airspeed.Template("Hello $name.first_name")
@@ -68,7 +68,7 @@ class ParserTestCase(TestCase):
         o.first_name = 'Chris'
         parser["name"] = o
         self.assertEquals("Hello Chris", parser.merge(template))
-        
+
     def test_can_return_value_from_a_method_of_a_context_object(self):
         parser = airspeed.Parser()
         template = airspeed.Template("Hello $name.first_name()")
@@ -82,7 +82,7 @@ class ParserTestCase(TestCase):
         template = airspeed.Template("Hello #if ($name)your name is ${name}#end Good to see you")
         parser["name"] = "Steve"
         self.assertEquals("Hello your name is Steve Good to see you", parser.merge(template))
-        
+
     def test_when_if_statement_resolves_to_false_the_content_is_skipped(self):
         parser = airspeed.Parser()
         template = airspeed.Template("Hello #if ($show_greeting)your name is ${name}#end Good to see you")
@@ -107,9 +107,10 @@ class ParserTestCase(TestCase):
         parser["name"] = "Steve"
         parser["show_greeting"] = True
         parser["is_birthday"] = True
-        self.assertEquals("Hello Steve.\nHappy Birthday\n.\nOff out later?", parser.merge(template))
-        
-        
+        self.assertEquals("hello Steve.\nHappy Birthday\n.\nOff out later?", parser.merge(template))
+
+
 if __name__ == '__main__':
+    reload(airspeed)
     try: main()
     except SystemExit: pass
