@@ -371,7 +371,7 @@ class VariableExpression(_Element):
             global_namespace = namespace
         value = self.part.calculate(namespace, loader, global_namespace)
         if self.subexpression:
-            value = self.subexpression.calculate(value, loader, namespace)
+            value = self.subexpression.calculate(value, loader, global_namespace)
         return value
 
 

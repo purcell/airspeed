@@ -429,6 +429,16 @@ $email
         template = airspeed.Template('#foreach($value in $values)foo#end')
         self.assertRaises(ValueError, template.merge, {'values': 1})
 
+    def test_correct_scope_for_parameters_of_method_calls(self):
+        template = airspeed.Template('$obj.get_self().method($param)')
+        class C:
+            def get_self(self):
+                return self
+            def method(self, p):
+                if p == 'bat': return 'monkey'
+        value = template.merge({'obj': C(), 'param':'bat'})
+        self.assertEquals('monkey', value)
+
 #
 # TODO:
 #
