@@ -165,30 +165,18 @@ class ForeachEvaluator(BlockEvaluator):
             BlockEvaluator.evaluate(self, output_stream, local_namespace)
 
 
-class Parser:
-    def __init__(self):
-        self.data = {}
-
-    def merge(self, content):
-        output = []
-        evaluator = BlockEvaluator()
-        for token_type, token_value in Tokeniser().tokenise(str(content)):
-            evaluator.feed(token_type, token_value)
-        output = StringIO.StringIO()
-        evaluator.evaluate(output, self.data)
-        return output.getvalue()
-
-    def __setitem__(self, name, value):
-        self.data[name] = value
-
-
 class Template:
-
     def __init__(self, content):
         self.content = content
+        self.evaluator = None
 
-    def __str__(self):
-        return self.content
-
-
+    def merge(self, namespace):
+        output = []
+        if not self.evaluator:
+            self.evaluator = BlockEvaluator()
+            for token_type, token_value in Tokeniser().tokenise(self.content):
+                self.evaluator.feed(token_type, token_value)
+        output = StringIO.StringIO()
+        self.evaluator.evaluate(output, namespace)
+        return output.getvalue()
 
