@@ -370,6 +370,16 @@ $email
         template = airspeed.Template('Message is: #parse ($foo)!')
         self.assertEquals('Message is: hola!', template.merge({'foo': 'foo.tmpl', 'message': 'hola'}, loader=WorkingLoader()))
 
+    def test_assign_range_literal(self):
+        template = airspeed.Template('#set($values = [1..5])#foreach($value in $values)$value,#end')
+        self.assertEquals('1,2,3,4,5,', template.merge({}))
+        template = airspeed.Template('#set($values = [2..-2])#foreach($value in $values)$value,#end')
+        self.assertEquals('2,1,0,-1,-2,', template.merge({}))
+
+    def test_local_namespace_methods_not_available(self):
+        template = airspeed.Template('#macro(tryme)$values#end#tryme()')
+        self.assertEquals('$values', template.merge({}))
+
 #
 # TODO:
 #
@@ -378,13 +388,14 @@ $email
 #  range literals
 #  list literals
 #  Bind #macro calls at compile time?
+#  #stop ?
 #  Interpolated strings
 #  Directives inside string literals
 #  map literals
 #  Sub-object assignment:  #set( $customer.Behavior = $primate )
 #  Q. What is scope of #set ($customer.Name = 'john')  ???
 #  Scope of #set across if/elseif/else?
-#  Scope of namespace for #include etc
+#  Scope of namespace for #parse etc
 #
 
 

@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 
-import re, operator
+import re, operator, os
 
 try: import cStringIO as StringIO
 except ImportError: import StringIO
 
-__all__ = ['Template', 'TemplateError', 'TemplateSyntaxError', 'FileLoader']
+__all__ = ['Template', 'TemplateError', 'TemplateSyntaxError', 'CachingFileLoader']
 
 
 ###############################################################################
@@ -22,10 +22,13 @@ class Template:
         self.merge_to(namespace, output, loader)
         return output.getvalue()
 
-    def merge_to(self, namespace, fileobj, loader=None):
-        if loader is None: loader = NullLoader()
+    def ensure_compiled(self):
         if not self.root_element:
             self.root_element = TemplateBody(self.content)
+
+    def merge_to(self, namespace, fileobj, loader=None):
+        if loader is None: loader = NullLoader()
+        self.ensure_compiled()
         self.root_element.evaluate(namespace, fileobj, loader)
 
 
@@ -63,18 +66,29 @@ class NullLoader:
         raise self.load_text(name)
 
 
-class FileLoader:
+class CachingFileLoader:
     def __init__(self, basedir):
         self.basedir = basedir
+        self.known_templates = {} # name -> (template, file_mod_time)
+
+    def filename_of(self, name):
+        return os.path.join(self.basedir, name)
 
     def load_text(self, name):
-        import os
         f = open(os.path.join(self.basedir, name))
         try: return f.read()
         finally: f.close()
 
     def load_template(self, name):
-        return Template(self.load_text(name))
+        mtime = os.path.getmtime(self.filename_of(name))
+        if name in self.known_templates:
+            template, prev_mtime = self.known_templates[name]
+            if mtime <= prev_mtime:
+                return template
+        template = Template(self.load_text(name))
+        template.ensure_compiled()
+        self.known_templates[name] = (template, mtime)
+        return template
 
 
 ###############################################################################
@@ -215,9 +229,21 @@ class SingleQuotedStringLiteral(StringLiteral):
     ESCAPED_CHAR = re.compile(r"\\([nrbt'\\])")
 
 
+class RangeLiteral(_Element):
+    RANGE = re.compile(r'\[[ \t]*(\-?\d+)[ \t]*\.\.[ \t]*(\-?\d+)[ \t]*\](.*)$')
+
+    def parse(self):
+        self.value1, self.value2 = map(int, self.identity_match(self.RANGE))
+
+    def calculate(self, namespace):
+        if self.value2 < self.value1:
+            return xrange(self.value1, self.value2 - 1, -1)
+        return xrange(self.value1, self.value2 + 1)
+
+
 class Value(_Element):
     def parse(self):
-        self.expression = self.next_element((SimpleReference, IntegerLiteral, StringLiteral, SingleQuotedStringLiteral))
+        self.expression = self.next_element((SimpleReference, IntegerLiteral, StringLiteral, SingleQuotedStringLiteral, RangeLiteral))
 
     def calculate(self, namespace):
         return self.expression.calculate(namespace)
@@ -233,8 +259,14 @@ class NameOrCall(_Element):
         except NoMatch: pass
 
     def calculate(self, current_object, top_namespace):
-        try: result = getattr(current_object, self.name)
-        except AttributeError:
+        look_in_dict = True
+        if not isinstance(current_object, LocalNamespace):
+            try:
+                result = getattr(current_object, self.name)
+                look_in_dict = False
+            except AttributeError:
+                pass
+        if look_in_dict:
             try: result = current_object[self.name]
             except KeyError: result = None
         if result is None:
@@ -422,7 +454,7 @@ class Assignment(_Element):
 
     def parse(self):
         self.var_name, = self.identity_match(self.START)
-        self.value = self.next_element(Value)
+        self.value = self.require_next_element(Value, "value")
         self.require_match(self.END, ')')
 
     def calculate(self, namespace):
@@ -555,12 +587,16 @@ class ForeachDirective(_Element):
     def evaluate(self, namespace, stream, loader):
         iterable = self.value.calculate(namespace)
         counter = 1
-        for item in iterable:
-            namespace = LocalNamespace(namespace)
-            namespace['velocityCount'] = counter
-            namespace[self.loop_var_name] = item
-            self.block.evaluate(namespace, stream, loader)
-            counter += 1
+        try:
+            for item in iterable:
+                namespace = LocalNamespace(namespace)
+                namespace['velocityCount'] = counter
+                namespace[self.loop_var_name] = item
+                self.block.evaluate(namespace, stream, loader)
+                counter += 1
+        except TypeError:
+            print iterable
+            raise
 
 
 class TemplateBody(_Element):
