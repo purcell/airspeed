@@ -376,20 +376,27 @@ $email
         template = airspeed.Template('#set($values = [2..-2])#foreach($value in $values)$value,#end')
         self.assertEquals('2,1,0,-1,-2,', template.merge({}))
 
-    def test_local_namespace_methods_not_available(self):
+    def test_local_namespace_methods_are_not_available_in_context(self):
         template = airspeed.Template('#macro(tryme)$values#end#tryme()')
         self.assertEquals('$values', template.merge({}))
+
+    def test_array_literal(self):
+        template = airspeed.Template('#set($values = ["Hello ", $person, ", your lucky number is ", 7])#foreach($value in $values)$value#end')
+        self.assertEquals('Hello Chris, your lucky number is 7', template.merge({'person': 'Chris'}))
+
+    def test_nested_array_literals(self):
+        template = airspeed.Template('#set($values = [["Hello ", "Steve"], ["Hello", " Chris"]])#foreach($pair in $values)#foreach($word in $pair)$word#end. #end')
+        self.assertEquals('Hello Steve. Hello Chris. ', template.merge({}))
 
 #
 # TODO:
 #
 #  Math expressions
 #  Gobbling up whitespace (tricky!)
-#  range literals
 #  list literals
 #  Bind #macro calls at compile time?
 #  #stop ?
-#  Interpolated strings
+#  Interpolated strings -- what about \$ etc?
 #  Directives inside string literals
 #  map literals
 #  Sub-object assignment:  #set( $customer.Behavior = $primate )

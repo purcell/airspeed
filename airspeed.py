@@ -45,7 +45,7 @@ class TemplateSyntaxError(TemplateError):
         got = element.next_text()
         if len(got) > 40:
             got = got[:36] + ' ...'
-        Exception.__init__(self, "line %d, column %d: expected %s, got: %s ..." % (self.line, self.column, expected, got))
+        Exception.__init__(self, "line %d, column %d: expected %s in %s, got: %s ..." % (self.line, self.column, expected, self.element_name(), got))
 
     def get_position_strings(self):
         error_line_start = 1 + self.text_understood.rfind('\n')
@@ -56,6 +56,9 @@ class TemplateSyntaxError(TemplateError):
         error_line = self.element.full_text()[error_line_start:error_line_end]
         caret_pos = self.column
         return [error_line, ' ' * (caret_pos - 1) + '^']
+
+    def element_name(self):
+        return re.sub('([A-Z])', lambda m: ' ' + m.group(1).lower(), self.element.__class__.__name__).strip()
 
 
 class NullLoader:
@@ -229,8 +232,8 @@ class SingleQuotedStringLiteral(StringLiteral):
     ESCAPED_CHAR = re.compile(r"\\([nrbt'\\])")
 
 
-class RangeLiteral(_Element):
-    RANGE = re.compile(r'\[[ \t]*(\-?\d+)[ \t]*\.\.[ \t]*(\-?\d+)[ \t]*\](.*)$')
+class Range(_Element):
+    RANGE = re.compile(r'(\-?\d+)[ \t]*\.\.[ \t]*(\-?\d+)(.*)$')
 
     def parse(self):
         self.value1, self.value2 = map(int, self.identity_match(self.RANGE))
@@ -241,9 +244,48 @@ class RangeLiteral(_Element):
         return xrange(self.value1, self.value2 + 1)
 
 
+class ValueList(_Element):
+    COMMA = re.compile(r'\s*,\s*(.*)$', re.S)
+
+    def parse(self):
+        self.values = []
+        try: value = self.next_element(Value)
+        except NoMatch:
+            pass
+        else:
+            self.values.append(value)
+            while self.optional_match(self.COMMA):
+                value = self.require_next_element(Value, 'value')
+                self.values.append(value)
+
+    def calculate(self, namespace):
+        for value in self.values:
+            yield value.calculate(namespace)
+
+
+class _EmptyValues:
+    def calculate(self, namespace):
+        return []
+
+
+class ArrayLiteral(_Element):
+    START = re.compile(r'\[[ \t]*(.*)$')
+    END = re.compile(r'[ \t]*\](.*)$')
+    values = _EmptyValues()
+
+    def parse(self):
+        self.identity_match(self.START)
+        try:
+            self.values = self.next_element((Range, ValueList))
+        except NoMatch:
+            pass
+        self.require_match(self.END, ']')
+        self.calculate = self.values.calculate
+
+
 class Value(_Element):
     def parse(self):
-        self.expression = self.next_element((SimpleReference, IntegerLiteral, StringLiteral, SingleQuotedStringLiteral, RangeLiteral))
+        self.expression = self.next_element((SimpleReference, IntegerLiteral, StringLiteral, SingleQuotedStringLiteral, ArrayLiteral))
 
     def calculate(self, namespace):
         return self.expression.calculate(namespace)
@@ -272,8 +314,7 @@ class NameOrCall(_Element):
         if result is None:
             return None ## TODO: an explicit 'not found' exception?
         if self.parameters is not None:
-            values = [value.calculate(top_namespace) for value in self.parameters.values]
-            result = result(*values)
+            result = result(*self.parameters.calculate(top_namespace))
         return result
 
 
@@ -307,21 +348,18 @@ class VariableExpression(_Element):
 
 class ParameterList(_Element):
     START = re.compile(r'\(\s*(.*)$', re.S)
-    END = re.compile(r'\s*\)(.*)$', re.S)
     COMMA = re.compile(r'\s*,\s*(.*)$', re.S)
+    END = re.compile(r'\s*\)(.*)$', re.S)
+    values = _EmptyValues()
 
     def parse(self):
-        self.values = []
         self.identity_match(self.START)
-        try: value = self.next_element(Value)
-        except NoMatch:
-            pass
-        else:
-            self.values.append(value)
-            while self.optional_match(self.COMMA):
-                value = self.require_next_element(Value, 'value')
-                self.values.append(value)
+        try: self.values = self.next_element(ValueList)
+        except NoMatch: pass
         self.require_match(self.END, ')')
+
+    def calculate(self, namespace):
+        return self.values.calculate(namespace)
 
 
 class Placeholder(_Element):
