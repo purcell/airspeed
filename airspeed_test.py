@@ -135,6 +135,19 @@ class ParserTestCase(TestCase):
         parser["names"] = ["Chris", "Steve"]
         self.assertEquals("Hello Chris. Hello Steve. ", parser.merge(template))
 
+    def test_loop_variable_not_accessible_after_loop(self):
+        parser = airspeed.Parser()
+        template = airspeed.Template("#foreach ($name in $names)Hello $name. #end$name")
+        parser["names"] = ["Chris", "Steve"]
+        self.assertEquals("Hello Chris. Hello Steve. $name", parser.merge(template))
+
+    def test_loop_variables_do_not_clash_in_nested_loops(self):
+        parser = airspeed.Parser()
+        template = airspeed.Template("#foreach ($word in $greetings)$word to#foreach ($word in $names) $word#end. #end")
+        parser["greetings"] = ["Hello", "Goodbye"]
+        parser["names"] = ["Chris", "Steve"]
+        self.assertEquals("Hello to Chris Steve. Goodbye to Chris Steve. ", parser.merge(template))
+
 
 
 if __name__ == '__main__':

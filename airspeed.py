@@ -102,9 +102,9 @@ class BlockEvaluator(Evaluator):
 
     def delegate_token(self, token_type, token_value):
         if self.delegate:
-            if self.delegate.feed(token_type, token_value):
-                return True
-            else: self.delegate = None
+            if not self.delegate.feed(token_type, token_value):
+                self.delegate = None
+            return True
         return False
 
     def feed(self, token_type, token_value):
