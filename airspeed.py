@@ -2,8 +2,7 @@
 
 import re, operator, os
 
-try: import cStringIO as StringIO
-except ImportError: import StringIO
+import StringIO   # cStringIO has issues with unicode
 
 __all__ = ['Template', 'TemplateError', 'TemplateSyntaxError', 'CachingFileLoader']
 
@@ -27,6 +26,11 @@ except AttributeError:
     operator.__le__ = lambda a, b: a <= b
     operator.__eq__ = lambda a, b: a == b
     operator.__ne__ = lambda a, b: a != b
+try:
+    basestring
+    def is_string(s): return isinstance(s, basestring)
+except NameError:
+    def is_string(s): return type(s) == type('')
 
 ###############################################################################
 # Public interface
@@ -405,7 +409,10 @@ class Placeholder(_Element):
         if value is None:
             if self.silent: value = ''
             else: value = self.my_text()
-        stream.write(str(value))
+        if is_string(value):
+            stream.write(value)
+        else:
+            stream.write(str(value))
 
 
 class SimpleReference(_Element):

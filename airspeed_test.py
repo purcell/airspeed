@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# -*- coding: latin1 -*-
 
 from unittest import TestCase, main
 import airspeed
@@ -438,6 +439,12 @@ $email
                 if p == 'bat': return 'monkey'
         value = template.merge({'obj': C(), 'param':'bat'})
         self.assertEquals('monkey', value)
+
+    def test_preserves_unicode_strings(self):
+        template = airspeed.Template('$value')
+        value = unicode('Grüße', 'latin1')
+        self.assertEquals(value, template.merge(locals()))
+
 
 #
 # TODO:
