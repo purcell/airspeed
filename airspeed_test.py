@@ -115,6 +115,13 @@ class ParserTestCase(TestCase):
         parser["names"] = ["Chris", "Steve"]
         self.assertEquals("Hello you. Hello you. ", parser.merge(template))
 
+    def test_foreach_skipped_when_nested_in_a_failing_if(self):
+        parser = airspeed.Parser()
+        template = airspeed.Template("#if ($false_value)#foreach ($name in $names)Hello you. #end#end")
+        parser["false_value"] = False
+        parser["names"] = ["Chris", "Steve"]
+        self.assertEquals("", parser.merge(template))
+
 if __name__ == '__main__':
     reload(airspeed)
     try: main()
