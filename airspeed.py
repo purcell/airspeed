@@ -15,7 +15,7 @@ class Tokeniser:
     NAME_OR_CALL = NAME + '(?:\(\))?'
     EXPRESSION = '(' + NAME_OR_CALL + '(?:\.' + NAME_OR_CALL + ')*)'
     PLACEHOLDER_PATTERN = re.compile('^\$(!?)({?)' + EXPRESSION + '(}?)' + REST, re.IGNORECASE + re.DOTALL + re.MULTILINE)
-    SET_PATTERN = re.compile('^#set[ \t]*\([ \t]*\$(' + NAME + ')[ \t]*=[ \t]*(\d+)[ \t]*\)' + REST, re.IGNORECASE + re.DOTALL + re.MULTILINE)
+    SET_PATTERN = re.compile('^#set[ \t]*\([ \t]*\$(' + NAME + ')[ \t]*=[ \t]*(\d+|"[^"]+")[ \t]*\)' + REST, re.IGNORECASE + re.DOTALL + re.MULTILINE)
     BEGIN_IF_PATTERN = re.compile('^#if[ \t]*\([ \t]*\$' + EXPRESSION + '[ \t]*\)' + REST, re.IGNORECASE + re.DOTALL + re.MULTILINE)
     BEGIN_FOREACH_PATTERN = re.compile('^#foreach[ \t]*\([ \t]*\$(' + NAME + ')[ \t]+in[ \t]+\$' + EXPRESSION + '[ \t]*\)' + REST, re.IGNORECASE + re.DOTALL + re.MULTILINE)
     END_PATTERN = re.compile('^#end' + REST, re.IGNORECASE + re.DOTALL + re.MULTILINE)
@@ -187,7 +187,11 @@ class SetEvaluator(Evaluator):
         self.var_name, self.rvalue = token_value
 
     def evaluate(self, output_stream, namespace):
-        namespace[self.var_name] = int(self.rvalue)
+        if self.rvalue.startswith('"'):
+            value = self.rvalue[1:-1]
+        else:
+            value = int(self.rvalue)
+        namespace[self.var_name] = value
 
 
 class Template:

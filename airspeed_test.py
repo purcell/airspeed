@@ -126,6 +126,10 @@ class TemplateTestCase(TestCase):
         template.merge(namespace)
         self.assertEquals({}, namespace)
 
+    def test_can_use_a_string_variable_defined_in_template(self):
+        template = airspeed.Template('#set ($value = "Steve")$value')
+        self.assertEquals("Steve", template.merge({}))
+
 
 if __name__ == '__main__':
     reload(airspeed)
