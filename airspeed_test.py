@@ -14,6 +14,10 @@ class TemplateTestCase(TestCase):
         template = airspeed.Template("Hello $name")
         self.assertEquals("Hello Chris", template.merge({"name": "Chris"}))
 
+    def test_dollar_left_untouched(self):
+        template = airspeed.Template("Hello $ ")
+        self.assertEquals("Hello $ ", template.merge({}))
+
     def test_unmatched_name_does_not_get_substituted(self):
         template = airspeed.Template("Hello $name")
         self.assertEquals("Hello $name", template.merge({}))
@@ -108,9 +112,19 @@ class TemplateTestCase(TestCase):
         self.assertEquals("1,2,", template.merge(namespace))
 
     def test_loop_counter_variables_do_not_clash_in_nested_loops(self):
-        template = airspeed.Template("#foreach ($word in $greetings)outer $velocityCount#foreach ($word in $names), inner $velocityCount#end. #end")
+        template = airspeed.Template("#foreach ($word in $greetings)Outer $velocityCount#foreach ($word in $names), inner $velocityCount#end. #end")
         namespace = {"greetings": ["Hello", "Goodbye"], "names": ["Chris", "Steve"]}
-        self.assertEquals("outer 1, inner 1, inner 2. outer 2, inner 1, inner 2. ", template.merge(namespace))
+        self.assertEquals("Outer 1, inner 1, inner 2. Outer 2, inner 1, inner 2. ", template.merge(namespace))
+
+    def test_can_use_an_integer_variable_defined_in_template(self):
+        template = airspeed.Template("#set ($value = 10)$value")
+        self.assertEquals("10", template.merge({}))
+
+    def test_passed_in_namespace_not_modified_by_set(self):
+        template = airspeed.Template("#set ($value = 10)$value")
+        namespace = {}
+        template.merge(namespace)
+        self.assertEquals({}, namespace)
 
 
 if __name__ == '__main__':

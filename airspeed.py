@@ -3,10 +3,11 @@
 import re
 import cStringIO as StringIO
 
+
 class TemplateSyntaxError(Exception): pass
 
 class Tokeniser:
-    PLAIN, IF, PLACEHOLDER, FOREACH, END = range(5)
+    PLAIN, IF, PLACEHOLDER, FOREACH, END, SET = range(6)
 
     UP_TO_NEXT_TEMPLATE_BIT = re.compile('^(.*?)((?:#|\$).*)', re.MULTILINE + re.DOTALL)
     REST = '(.*)$'
@@ -14,6 +15,7 @@ class Tokeniser:
     NAME_OR_CALL = NAME + '(?:\(\))?'
     EXPRESSION = '(' + NAME_OR_CALL + '(?:\.' + NAME_OR_CALL + ')*)'
     PLACEHOLDER_PATTERN = re.compile('^\$(!?)({?)' + EXPRESSION + '(}?)' + REST, re.IGNORECASE + re.DOTALL + re.MULTILINE)
+    SET_PATTERN = re.compile('^#set[ \t]*\([ \t]*\$(' + NAME + ')[ \t]*=[ \t]*(\d+)[ \t]*\)' + REST, re.IGNORECASE + re.DOTALL + re.MULTILINE)
     BEGIN_IF_PATTERN = re.compile('^#if[ \t]*\([ \t]*\$' + EXPRESSION + '[ \t]*\)' + REST, re.IGNORECASE + re.DOTALL + re.MULTILINE)
     BEGIN_FOREACH_PATTERN = re.compile('^#foreach[ \t]*\([ \t]*\$(' + NAME + ')[ \t]+in[ \t]+\$' + EXPRESSION + '[ \t]*\)' + REST, re.IGNORECASE + re.DOTALL + re.MULTILINE)
     END_PATTERN = re.compile('^#end' + REST, re.IGNORECASE + re.DOTALL + re.MULTILINE)
@@ -45,6 +47,15 @@ class Tokeniser:
             if m:
                 yield self.END, None
                 (text,) = m.groups()
+                continue
+            m = self.SET_PATTERN.match(interesting)
+            if m:
+                (var_name, rvalue, text) = m.groups()
+                yield self.SET, (var_name, rvalue)
+                continue
+            if interesting.startswith('$'):
+                text = interesting[1:]
+                yield self.PLAIN, '$'
                 continue
             raise TemplateSyntaxError("invalid token: %s" % text[:40])
 
@@ -92,6 +103,9 @@ class BlockEvaluator(Evaluator):
         self.delegate = None
 
     def evaluate(self, output_stream, namespace):
+        self.evaluate_block(output_stream, BlockEvaluator.LocalNamespace(namespace))
+
+    def evaluate_block(self, output_stream, namespace):
         for child in self.children:
             child.evaluate(output_stream, namespace)
 
@@ -115,6 +129,7 @@ class BlockEvaluator(Evaluator):
         elif token_type == Tokeniser.PLACEHOLDER: self.add_evaluator(PlaceholderEvaluator(token_value))
         elif token_type == Tokeniser.FOREACH: self.add_evaluator(ForeachEvaluator(token_value))
         elif token_type == Tokeniser.IF: self.add_evaluator(IfEvaluator(token_value))
+        elif token_type == Tokeniser.SET: self.add_evaluator(SetEvaluator(token_value))
         else: raise TemplateSyntaxError("illegal token in block: %s, %s" % (token_type, token_value))
         return True
 
@@ -146,10 +161,10 @@ class IfEvaluator(BlockEvaluator):
         BlockEvaluator.__init__(self)
         self.condition_expression = token_value
 
-    def evaluate(self, output_stream, namespace):
+    def evaluate_block(self, output_stream, namespace):
         value = self.eval_expression(self.condition_expression, namespace)
         if value:
-            BlockEvaluator.evaluate(self, output_stream, namespace)
+            BlockEvaluator.evaluate_block(self, output_stream, namespace)
 
 
 class ForeachEvaluator(BlockEvaluator):
@@ -157,15 +172,22 @@ class ForeachEvaluator(BlockEvaluator):
         BlockEvaluator.__init__(self)
         self.expression, self.iter_var = token_value
 
-    def evaluate(self, output_stream, namespace):
+    def evaluate_block(self, output_stream, namespace):
         values = self.eval_expression(self.expression, namespace)
         counter = 1
         for value in values:
-            local_namespace = BlockEvaluator.LocalNamespace(namespace)
-            local_namespace[self.iter_var] = value
-            local_namespace['velocityCount'] = counter
-            BlockEvaluator.evaluate(self, output_stream, local_namespace)
+            namespace[self.iter_var] = value
+            namespace['velocityCount'] = counter
+            BlockEvaluator.evaluate_block(self, output_stream, namespace)
             counter += 1
+
+
+class SetEvaluator(Evaluator):
+    def __init__(self, token_value):
+        self.var_name, self.rvalue = token_value
+
+    def evaluate(self, output_stream, namespace):
+        namespace[self.var_name] = int(self.rvalue)
 
 
 class Template:
