@@ -421,6 +421,10 @@ $email
         template = airspeed.Template(text)
         self.assertEquals(text, template.merge({}))
 
+    def test_foreach_with_unset_variable_expands_to_nothing(self):
+        template = airspeed.Template('#foreach($value in $values)foo#end')
+        self.assertEquals('', template.merge({}))
+
 #
 # TODO:
 #
