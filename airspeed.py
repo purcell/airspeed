@@ -64,8 +64,12 @@ class NullLoader:
 
 
 class FileLoader:
+    def __init__(self, basedir):
+        self.basedir = basedir
+
     def load_text(self, name):
-        f = open(name)
+        import os
+        f = open(os.path.join(self.basedir, name))
         try: return f.read()
         finally: f.close()
 
@@ -193,22 +197,27 @@ class IntegerLiteral(_Element):
 
 
 class StringLiteral(_Element):
-    STRING = re.compile(r'"((?:\\["nrbt\\\\]|[^"\n\r"\\])+)"(.*)', re.S)
+    STRING = re.compile(r'"((?:\\["nrbt\\\\]|[^"\n\r\\])+)"(.*)', re.S)
     ESCAPED_CHAR = re.compile(r'\\([nrbt"\\])')
 
     def parse(self):
         value, = self.identity_match(self.STRING)
         def unescape(match):
-            return {'n': '\n', 'r': '\r', 'b': '\b', 't': '\t', '"': '"', '\\': '\\'}[match.group(1)]
+            return {'n': '\n', 'r': '\r', 'b': '\b', 't': '\t', '"': '"', '\\': '\\', "'": "'"}[match.group(1)]
         self.value = self.ESCAPED_CHAR.sub(unescape, value)
 
     def calculate(self, namespace):
         return self.value
 
 
+class SingleQuotedStringLiteral(StringLiteral):
+    STRING = re.compile(r"'((?:\\['nrbt\\\\]|[^'\n\r\\])+)'(.*)", re.S)
+    ESCAPED_CHAR = re.compile(r"\\([nrbt'\\])")
+
+
 class Value(_Element):
     def parse(self):
-        self.expression = self.next_element((SimpleReference, IntegerLiteral, StringLiteral))
+        self.expression = self.next_element((SimpleReference, IntegerLiteral, StringLiteral, SingleQuotedStringLiteral))
 
     def calculate(self, namespace):
         return self.expression.calculate(namespace)
@@ -349,9 +358,8 @@ class Condition(_Element):
     def calculate(self, namespace):
         if self.binary_operator is None:
             return self.value.calculate(namespace)
-        else:
-            value1, value2 = self.value.calculate(namespace), self.value2.calculate(namespace)
-            return self.binary_operator.apply_to(value1, value2)
+        value1, value2 = self.value.calculate(namespace), self.value2.calculate(namespace)
+        return self.binary_operator.apply_to(value1, value2)
 
 
 class End(_Element):
@@ -388,7 +396,7 @@ class IfDirective(_Element):
     def parse(self):
         self.identity_match(self.START)
         self.condition = self.next_element(Condition)
-        self.block = self.next_element(Block)
+        self.block = self.require_next_element(Block, "block")
         self.elseifs = []
         while True:
             try: self.elseifs.append(self.next_element(ElseifBlock))
@@ -491,7 +499,7 @@ class IncludeDirective(_Element):
     def parse(self):
         self.identity_match(self.START)
         self.require_match(self.OPEN_PAREN, '(')
-        self.name = self.require_next_element((StringLiteral, SimpleReference), 'template name')
+        self.name = self.require_next_element((StringLiteral, SingleQuotedStringLiteral, SimpleReference), 'template name')
         self.require_match(self.CLOSE_PAREN, ')')
 
     def evaluate(self, namespace, stream, loader):
@@ -506,7 +514,7 @@ class ParseDirective(_Element):
     def parse(self):
         self.identity_match(self.START)
         self.require_match(self.OPEN_PAREN, '(')
-        self.name = self.require_next_element((StringLiteral, SimpleReference), 'template name')
+        self.name = self.require_next_element((StringLiteral, SingleQuotedStringLiteral, SimpleReference), 'template name')
         self.require_match(self.CLOSE_PAREN, ')')
 
     def evaluate(self, namespace, stream, loader):

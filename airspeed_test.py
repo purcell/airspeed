@@ -132,6 +132,10 @@ class TemplateTestCase(TestCase):
         template = airspeed.Template('#set ($value = "Steve")$value')
         self.assertEquals("Steve", template.merge({}))
 
+    def test_can_use_a_single_quoted_string_variable_defined_in_template(self):
+        template = airspeed.Template("#set ($value = 'Steve')$value")
+        self.assertEquals("Steve", template.merge({}))
+
     def test_single_line_comments_skipped(self):
         template = airspeed.Template('## comment\nStuff\nMore stuff## more comments $blah')
         self.assertEquals("Stuff\nMore stuff", template.merge({}))
@@ -363,6 +367,8 @@ $email
                     return airspeed.Template("$message")
         template = airspeed.Template('Message is: #parse ("foo.tmpl")!')
         self.assertEquals('Message is: hola!', template.merge({'message': 'hola'}, loader=WorkingLoader()))
+        template = airspeed.Template('Message is: #parse ($foo)!')
+        self.assertEquals('Message is: hola!', template.merge({'foo': 'foo.tmpl', 'message': 'hola'}, loader=WorkingLoader()))
 
 #
 # TODO:
@@ -371,7 +377,6 @@ $email
 #  Gobbling up whitespace (tricky!)
 #  range literals
 #  list literals
-#  #parse
 #  Bind #macro calls at compile time?
 #  Interpolated strings
 #  Directives inside string literals
