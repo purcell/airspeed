@@ -311,6 +311,7 @@ class NameOrCall(_Element):
         if look_in_dict:
             try: result = current_object[self.name]
             except KeyError: result = None
+            except TypeError: result = None
         if result is None:
             return None ## TODO: an explicit 'not found' exception?
         if self.parameters is not None:

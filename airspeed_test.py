@@ -388,6 +388,9 @@ $email
         template = airspeed.Template('#set($values = [["Hello ", "Steve"], ["Hello", " Chris"]])#foreach($pair in $values)#foreach($word in $pair)$word#end. #end')
         self.assertEquals('Hello Steve. Hello Chris. ', template.merge({}))
 
+    def test_when_dictionary_does_not_contain_referenced_attribute_no_substitution_occurs(self):
+        template = airspeed.Template(" $user.name ")
+        self.assertEquals(" $user.name ", template.merge({'user':self}))
 #
 # TODO:
 #
