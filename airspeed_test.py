@@ -178,7 +178,7 @@ class TemplateTestCase(TestCase):
         template = airspeed.Template('$squared($squared($some_var))')
         self.assertEquals("1296", template.merge(locals()))
 
-    def test_can_call_function_with_one_parameter(self):
+    def test_can_call_function_with_two_parameters(self):
         def multiply(number1, number2):
             return number1 * number2
         template = airspeed.Template('$multiply(2, 4)')
@@ -397,16 +397,27 @@ $email
         template = airspeed.Template(" $user.name ")
         self.assertEquals(" $user.name ", template.merge({'user':MyObject()}))
 
+    def test_variables_expanded_in_double_quoted_strings(self):
+        template = airspeed.Template('#set($hello="hello, $name is my name")$hello')
+        self.assertEquals("hello, Steve is my name", template.merge({'name':'Steve'}))
+
+    def test_escaped_variable_references_not_expanded_in_double_quoted_strings(self):
+        template = airspeed.Template('#set($hello="hello, \\$name is my name")$hello')
+        self.assertEquals("hello, $name is my name", template.merge({'name':'Steve'}))
+
+    def test_macros_expanded_in_double_quoted_strings(self):
+        template = airspeed.Template('#macro(hi $person)$person says hello#end#set($hello="#hi($name)")$hello')
+        self.assertEquals("Steve says hello", template.merge({'name':'Steve'}))
+
 #
 # TODO:
 #
+#  Report locations for template errors in strings
 #  Math expressions
 #  Gobbling up whitespace (tricky!)
 #  list literals
 #  Bind #macro calls at compile time?
 #  #stop ?
-#  Interpolated strings -- what about \$ etc?
-#  Directives inside string literals
 #  map literals
 #  Sub-object assignment:  #set( $customer.Behavior = $primate )
 #  Q. What is scope of #set ($customer.Name = 'john')  ???
