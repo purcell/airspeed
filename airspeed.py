@@ -44,7 +44,7 @@ class IntegerLiteralElement:
 
 
 class StringLiteralElement:
-    MY_PATTERN = re.compile(r'^"((?:\\["nrbt\\]|[^"\n\r"\\])+)"(.*)', re.S)
+    MY_PATTERN = re.compile(r'^"((?:\\["nrbt\\\\]|[^"\n\r"\\])+)"(.*)', re.S)
     ESCAPED_CHAR = re.compile(r'\\([nrbt"\\])')
     def __init__(self, text):
         m = self.MY_PATTERN.match(text)
@@ -204,9 +204,14 @@ class EndElement:
         if not m: raise NoMatch()
         self.remaining_text = m.group(1)
 
+class NullElement:
+    def evaluate(self, namespace, stream): pass
 
 class IfElement:
-    START = re.compile(r'^#if\b\s*(.*)', re.S + re.I)
+    START = re.compile(r'^#if\b\s*(.*)$', re.S + re.I)
+    START_ELSE = re.compile(r'^#else(.*)$', re.S + re.I)
+    else_block = NullElement()
+
     def __init__(self, text):
         m = self.START.match(text)
         if not m: raise NoMatch()
@@ -215,6 +220,11 @@ class IfElement:
         text = self.condition.remaining_text
         self.block = BlockElement(text)
         text = self.block.remaining_text
+        m = self.START_ELSE.match(text)
+        if m:
+            text = m.group(1)
+            self.else_block = BlockElement(text)
+            text = self.else_block.remaining_text
         try:
             end = EndElement(text)
             self.remaining_text = end.remaining_text
@@ -224,6 +234,8 @@ class IfElement:
     def evaluate(self, namespace, stream):
         if self.condition.calculate(namespace):
             self.block.evaluate(namespace, stream)
+        else:
+            self.else_block.evaluate(namespace, stream)
 
 
 class SetElement:

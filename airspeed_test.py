@@ -149,9 +149,13 @@ class TemplateTestCase(TestCase):
         template = airspeed.Template('#set ($name = "\\"batman\\"")$name')
         self.assertEquals('"batman"', template.merge({}))
 
-#    def test_else_block_evaluated_if_if_expression_false(self):
-#        template = airspeed.Template('#if ($value) true #else false #end')
-#        self.assertEquals(" false ", template.merge({}))
+    def test_string_literal_can_contain_embedded_escaped_newlines(self):
+        template = airspeed.Template('#set ($name = "\\\\batman\\nand robin")$name')
+        self.assertEquals('\\batman\nand robin', template.merge({}))
+
+    def test_else_block_evaluated_when_if_expression_false(self):
+        template = airspeed.Template('#if ($value) true #else false #end')
+        self.assertEquals(" false ", template.merge({}))
 
 
 #
