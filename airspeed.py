@@ -9,6 +9,26 @@ __all__ = ['Template', 'TemplateError', 'TemplateSyntaxError', 'CachingFileLoade
 
 
 ###############################################################################
+# Compatibility for old Pythons & Jython
+###############################################################################
+try: True
+except NameError:
+    False, True = 0, 1
+try: dict
+except NameError:
+    from UserDict import UserDict
+    class dict(UserDict):
+        def __init__(self): self.data = {}
+try: operator.__gt__
+except AttributeError:
+    operator.__gt__ = lambda a, b: a > b
+    operator.__lt__ = lambda a, b: a < b
+    operator.__ge__ = lambda a, b: a >= b
+    operator.__le__ = lambda a, b: a <= b
+    operator.__eq__ = lambda a, b: a == b
+    operator.__ne__ = lambda a, b: a != b
+
+###############################################################################
 # Public interface
 ###############################################################################
 
@@ -84,7 +104,7 @@ class CachingFileLoader:
 
     def load_template(self, name):
         mtime = os.path.getmtime(self.filename_of(name))
-        if name in self.known_templates:
+        if self.known_templates.has_key(name):
             template, prev_mtime = self.known_templates[name]
             if mtime <= prev_mtime:
                 return template
@@ -267,8 +287,7 @@ class ValueList(_Element):
                 self.values.append(value)
 
     def calculate(self, namespace, loader):
-        for value in self.values:
-            yield value.calculate(namespace, loader)
+        return [value.calculate(namespace, loader) for value in self.values]
 
 
 class _EmptyValues:
@@ -533,7 +552,7 @@ class MacroDefinition(_Element):
 
     def evaluate(self, stream, namespace, loader):
         macro_key = '#' + self.macro_name.lower()
-        if macro_key in namespace:
+        if namespace.has_key(macro_key):
             raise Exception("cannot redefine macro")
         namespace[macro_key] = self
 
@@ -636,6 +655,9 @@ class ForeachDirective(_Element):
         iterable = self.value.calculate(namespace, loader)
         counter = 1
         try:
+            if hasattr(iterable, 'keys'): iterable = iterable.keys()
+            if not hasattr(iterable, '__getitem__'):
+                raise AttributeError("value for $%s is not iterable in #foreach: %s" % (self.loop_var_name, iterable))
             for item in iterable:
                 namespace = LocalNamespace(namespace)
                 namespace['velocityCount'] = counter

@@ -3,6 +3,13 @@
 from unittest import TestCase, main
 import airspeed
 
+###############################################################################
+# Compatibility for old Pythons & Jython
+###############################################################################
+try: True
+except NameError:
+    False, True = 0, 1
+
 
 class TemplateTestCase(TestCase):
 
