@@ -320,6 +320,18 @@ $email
         self.assertEquals('', template.merge({'value1': False, 'value2': True}))
         self.assertEquals('yes', template.merge({'value1': True, 'value2': True}))
 
+    def test_parenthesised_value(self):
+        template = airspeed.Template('#if ( ($value1 == 1) && ($value2 == 2) )yes#end')
+        self.assertEquals('', template.merge({'value1': 0, 'value2': 1}))
+        self.assertEquals('', template.merge({'value1': 1, 'value2': 1}))
+        self.assertEquals('', template.merge({'value1': 0, 'value2': 2}))
+        self.assertEquals('yes', template.merge({'value1': 1, 'value2': 2}))
+
+    def test_compound_condition(self):
+        template = airspeed.Template('#if ( ($value) )yes#end')
+        self.assertEquals('', template.merge({'value': False}))
+        self.assertEquals('yes', template.merge({'value': True}))
+
     def test_cannot_define_macro_to_override_reserved_statements(self):
         for reserved in ('if', 'else', 'elseif', 'set', 'macro', 'foreach', 'parse', 'include', 'stop', 'end'):
             template = airspeed.Template('#macro ( %s $value) $value #end' % reserved)

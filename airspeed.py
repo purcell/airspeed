@@ -318,7 +318,7 @@ class ArrayLiteral(_Element):
 
 class Value(_Element):
     def parse(self):
-        self.expression = self.next_element((SimpleReference, IntegerLiteral, StringLiteral, InterpolatedStringLiteral, ArrayLiteral))
+        self.expression = self.next_element((SimpleReference, IntegerLiteral, StringLiteral, InterpolatedStringLiteral, ArrayLiteral, Condition))
 
     def calculate(self, namespace, loader):
         return self.expression.calculate(namespace, loader)
