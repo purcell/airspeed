@@ -318,7 +318,7 @@ class ArrayLiteral(_Element):
 
 class Value(_Element):
     def parse(self):
-        self.expression = self.next_element((SimpleReference, IntegerLiteral, StringLiteral, InterpolatedStringLiteral, ArrayLiteral, Condition))
+        self.expression = self.next_element((SimpleReference, IntegerLiteral, StringLiteral, InterpolatedStringLiteral, ArrayLiteral, Condition, UnaryOperatorValue))
 
     def calculate(self, namespace, loader):
         return self.expression.calculate(namespace, loader)
@@ -446,6 +446,18 @@ class BinaryOperator(_Element):
     def parse(self):
         op_string, = self.identity_match(self.BINARY_OP)
         self.apply_to = self.OPERATORS[op_string]
+
+
+class UnaryOperatorValue(_Element):
+    UNARY_OP = re.compile(r'\s*(!)\s*(.*)$', re.S)
+    OPERATORS = {'!': operator.__not__}
+    def parse(self):
+        op_string, = self.identity_match(self.UNARY_OP)
+        self.value = self.next_element(Value)
+        self.op = self.OPERATORS[op_string]
+
+    def calculate(self, namespace, loader):
+        return self.op(self.value.calculate(namespace, loader))
 
 
 class Condition(_Element):
