@@ -91,6 +91,15 @@ class TemplateTestCase(TestCase):
         self.assertEquals('', template.merge({}))
         self.assertEquals('', template.merge({'some_value': None}))
 
+    def test_if_statement_honours_custom_truth_value_of_objects(self):
+        class BooleanValue:
+            def __init__(self, value): self.value = value
+            def __nonzero__(self): return self.value
+        template = airspeed.Template("#if ($v)yes#end")
+        self.assertEquals('', template.merge({'v': BooleanValue(False)}))
+        self.assertEquals('yes', template.merge({'v': BooleanValue(True)}))
+
+
     def test_new_lines_in_templates_are_permitted(self):
         template = airspeed.Template("hello #if ($show_greeting)${name}.\n#if($is_birthday)Happy Birthday\n#end.\n#endOff out later?")
         namespace = {"name": "Steve", "show_greeting": True, "is_birthday": True}
@@ -359,6 +368,14 @@ $email
     def test_logical_negation_operator_yields_true_for_None(self):
         template = airspeed.Template('#if ( !$value )yes#end')
         self.assertEquals('yes', template.merge({'value': None}))
+
+    def test_logical_negation_operator_honours_custom_truth_values(self):
+        class BooleanValue:
+            def __init__(self, value): self.value = value
+            def __nonzero__(self): return self.value
+        template = airspeed.Template('#if ( !$v)yes#end')
+        self.assertEquals('yes', template.merge({'v': BooleanValue(False)}))
+        self.assertEquals('', template.merge({'v': BooleanValue(True)}))
 
     def test_compound_binary_and_unary_operators(self):
         template = airspeed.Template('#if ( !$value1 && !$value2 )yes#end')
