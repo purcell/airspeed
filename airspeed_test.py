@@ -86,6 +86,11 @@ class TemplateTestCase(TestCase):
         namespace["is_birthday"] = True
         self.assertEquals("Hello your name is Steve. Happy Birthday. Good to see you", template.merge(namespace))
 
+    def test_if_statement_considers_None_to_be_false(self):
+        template = airspeed.Template("#if ($some_value)hide me#end")
+        self.assertEquals('', template.merge({}))
+        self.assertEquals('', template.merge({'some_value': None}))
+
     def test_new_lines_in_templates_are_permitted(self):
         template = airspeed.Template("hello #if ($show_greeting)${name}.\n#if($is_birthday)Happy Birthday\n#end.\n#endOff out later?")
         namespace = {"name": "Steve", "show_greeting": True, "is_birthday": True}
@@ -313,12 +318,26 @@ $email
         self.assertEquals('yes', template.merge({'value1': True, 'value2': False}))
         self.assertEquals('yes', template.merge({'value1': False, 'value2': True}))
 
+    def test_or_operator_considers_not_None_values_true(self):
+        class SomeClass: pass
+        template = airspeed.Template('#if ( $value1 || $value2 )yes#end')
+        self.assertEquals('', template.merge({'value1': None, 'value2': None}))
+        self.assertEquals('yes', template.merge({'value1': SomeClass(), 'value2': False}))
+        self.assertEquals('yes', template.merge({'value1': False, 'value2': SomeClass()}))
+
     def test_and_operator(self):
         template = airspeed.Template('#if ( $value1 && $value2 )yes#end')
         self.assertEquals('', template.merge({'value1': False, 'value2': False}))
         self.assertEquals('', template.merge({'value1': True, 'value2': False}))
         self.assertEquals('', template.merge({'value1': False, 'value2': True}))
         self.assertEquals('yes', template.merge({'value1': True, 'value2': True}))
+
+    def test_and_operator_considers_not_None_values_true(self):
+        class SomeClass: pass
+        template = airspeed.Template('#if ( $value1 && $value2 )yes#end')
+        self.assertEquals('', template.merge({'value1': None, 'value2': None}))
+        self.assertEquals('yes', template.merge({'value1': SomeClass(), 'value2': True}))
+        self.assertEquals('yes', template.merge({'value1': True, 'value2': SomeClass()}))
 
     def test_parenthesised_value(self):
         template = airspeed.Template('#if ( ($value1 == 1) && ($value2 == 2) )yes#end')
@@ -336,6 +355,10 @@ $email
         template = airspeed.Template('#if ( !$value )yes#end')
         self.assertEquals('yes', template.merge({'value': False}))
         self.assertEquals('', template.merge({'value': True}))
+
+    def test_logical_negation_operator_yields_true_for_None(self):
+        template = airspeed.Template('#if ( !$value )yes#end')
+        self.assertEquals('yes', template.merge({'value': None}))
 
     def test_compound_binary_and_unary_operators(self):
         template = airspeed.Template('#if ( !$value1 && !$value2 )yes#end')

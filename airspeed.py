@@ -26,8 +26,6 @@ except AttributeError:
     operator.__le__ = lambda a, b: a <= b
     operator.__eq__ = lambda a, b: a == b
     operator.__ne__ = lambda a, b: a != b
-    operator.__or__ = lambda a, b: a or b
-    operator.__and__ = lambda a, b: a and b
 try:
     basestring
     def is_string(s): return isinstance(s, basestring)
@@ -37,6 +35,11 @@ except NameError:
 ###############################################################################
 # Public interface
 ###############################################################################
+
+def boolean_value(variable_value):
+    if variable_value == False: return False
+    return not (variable_value is None)
+
 
 class Template:
     def __init__(self, content):
@@ -442,7 +445,8 @@ class BinaryOperator(_Element):
     OPERATORS = {'>' : operator.__gt__, '>=': operator.__ge__,
                  '<' : operator.__lt__, '<=': operator.__le__,
                  '==': operator.__eq__, '!=': operator.__ne__,
-                 '||': operator.__or__, '&&': operator.__and__}
+                 '||': lambda a,b : boolean_value(a) or boolean_value(b),
+                 '&&': lambda a,b : boolean_value(a) and boolean_value(b)}
     def parse(self):
         op_string, = self.identity_match(self.BINARY_OP)
         self.apply_to = self.OPERATORS[op_string]
