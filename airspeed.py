@@ -137,7 +137,10 @@ class LocalNamespace(dict):
 
     def __getitem__(self, key):
         try: return dict.__getitem__(self, key)
-        except KeyError: return self.parent[key]
+        except KeyError:
+            parent_value = self.parent[key]
+            self[key] = parent_value
+            return parent_value
 
     def __repr__(self):
         return dict.__repr__(self) + '->' + repr(self.parent)
