@@ -522,6 +522,14 @@ $email
         value = unicode('Grüße', 'latin1')
         self.assertEquals(value, template.merge(locals()))
 
+    def test_can_define_macros_in_parsed_files(self):
+        class Loader:
+            def load_template(self, name):
+                if name == 'foo.tmpl':
+                    return airspeed.Template('#macro(themacro)works#end')
+        template = airspeed.Template('#parse("foo.tmpl")#themacro()')
+        self.assertEquals('works', template.merge({}, loader=Loader()))
+
 
 #
 # TODO:

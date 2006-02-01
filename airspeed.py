@@ -142,6 +142,11 @@ class LocalNamespace(dict):
             self[key] = parent_value
             return parent_value
 
+    def top(self):
+        if hasattr(self.parent, "top"):
+            return self.parent.top()
+        return self.parent
+
     def __repr__(self):
         return dict.__repr__(self) + '->' + repr(self.parent)
 
@@ -580,10 +585,11 @@ class MacroDefinition(_Element):
         self.require_next_element(End, 'block')
 
     def evaluate(self, stream, namespace, loader):
+        global_ns = namespace.top()
         macro_key = '#' + self.macro_name.lower()
-        if namespace.has_key(macro_key):
+        if global_ns.has_key(macro_key):
             raise Exception("cannot redefine macro")
-        namespace[macro_key] = self
+        global_ns[macro_key] = self
 
     def execute_macro(self, stream, namespace, arg_value_elements, loader):
         if len(arg_value_elements) != len(self.arg_names):
