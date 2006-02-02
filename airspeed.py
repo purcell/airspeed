@@ -26,6 +26,7 @@ except AttributeError:
     operator.__le__ = lambda a, b: a <= b
     operator.__eq__ = lambda a, b: a == b
     operator.__ne__ = lambda a, b: a != b
+    operator.mod = lambda a, b: a % b
 try:
     basestring
     def is_string(s): return isinstance(s, basestring)
@@ -449,10 +450,11 @@ class Comment(_Element, Null):
 
 
 class BinaryOperator(_Element):
-    BINARY_OP = re.compile(r'\s*(>=|<=|<|==|!=|>|\|\||&&)\s*(.*)$', re.S)
+    BINARY_OP = re.compile(r'\s*(>=|<=|<|==|!=|>|%|\|\||&&)\s*(.*)$', re.S)
     OPERATORS = {'>' : operator.__gt__, '>=': operator.__ge__,
                  '<' : operator.__lt__, '<=': operator.__le__,
                  '==': operator.__eq__, '!=': operator.__ne__,
+                 '%' : operator.mod,
                  '||': lambda a,b : boolean_value(a) or boolean_value(b),
                  '&&': lambda a,b : boolean_value(a) and boolean_value(b)}
     def parse(self):

@@ -530,12 +530,16 @@ $email
         template = airspeed.Template('#parse("foo.tmpl")#themacro()')
         self.assertEquals('works', template.merge({}, loader=Loader()))
 
+    def test_modulus_operator(self):
+        template = airspeed.Template('#set( $modulus = ($value % 2) )$modulus')
+        self.assertEquals('1', template.merge({'value': 3}))
+
 
 #
 # TODO:
 #
 #  Report locations for template errors in strings
-#  Math expressions
+#  Math expressions (requires operator precedence)
 #  Gobbling up whitespace (tricky!)
 #  Bind #macro calls at compile time?
 #  #stop ?
@@ -543,7 +547,6 @@ $email
 #  Sub-object assignment:  #set( $customer.Behavior = $primate )
 #  Q. What is scope of #set ($customer.Name = 'john')  ???
 #  Scope of #set across if/elseif/else?
-#  Scope of namespace for #parse etc
 #
 
 
