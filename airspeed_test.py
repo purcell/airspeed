@@ -534,6 +534,10 @@ $email
         template = airspeed.Template('#set( $modulus = ($value % 2) )$modulus')
         self.assertEquals('1', template.merge({'value': 3}))
 
+    def test_can_assign_empty_string(self):
+        template = airspeed.Template('#set( $v = "" )#set( $y = \'\' ).$v.$y.')
+        self.assertEquals('...', template.merge({}))
+
 
 #
 # TODO:

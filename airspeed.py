@@ -252,7 +252,7 @@ class IntegerLiteral(_Element):
 
 
 class StringLiteral(_Element):
-    STRING = re.compile(r"'((?:\\['nrbt\\\\\\$]|[^'\n\r\\])+)'(.*)", re.S)
+    STRING = re.compile(r"'((?:\\['nrbt\\\\\\$]|[^'\n\r\\])*)'(.*)", re.S)
     ESCAPED_CHAR = re.compile(r"\\([nrbt'\\])")
 
     def parse(self):
@@ -265,7 +265,7 @@ class StringLiteral(_Element):
         return self.value
 
 class InterpolatedStringLiteral(StringLiteral):
-    STRING = re.compile(r'"((?:\\["nrbt\\\\\\$]|[^"\n\r\\])+)"(.*)', re.S)
+    STRING = re.compile(r'"((?:\\["nrbt\\\\\\$]|[^"\n\r\\])*)"(.*)', re.S)
     ESCAPED_CHAR = re.compile(r'\\([nrbt"\\])')
 
     def parse(self):
