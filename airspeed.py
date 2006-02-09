@@ -385,7 +385,7 @@ class VariableExpression(_Element):
         except NoMatch: pass
 
     def calculate(self, namespace, loader, global_namespace=None):
-        if global_namespace == None:
+        if global_namespace is None:
             global_namespace = namespace
         value = self.part.calculate(namespace, loader, global_namespace)
         if self.subexpression:
