@@ -538,6 +538,11 @@ $email
         template = airspeed.Template('#set( $v = "" )#set( $y = \'\' ).$v.$y.')
         self.assertEquals('...', template.merge({}))
 
+    def test_can_loop_over_numeric_ranges(self):
+        ## Test for bug #15
+        template = airspeed.Template('#foreach( $v in [1..5] )$v\n#end')
+        self.assertEquals('1\n2\n3\n4\n5\n', template.merge({}))
+
 
 #
 # TODO:

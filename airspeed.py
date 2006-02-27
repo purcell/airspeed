@@ -279,7 +279,7 @@ class InterpolatedStringLiteral(StringLiteral):
 
 
 class Range(_Element):
-    RANGE = re.compile(r'(\-?\d+)[ \t]*\.\.[ \t]*(\-?\d+)(.*)$')
+    RANGE = re.compile(r'(\-?\d+)[ \t]*\.\.[ \t]*(\-?\d+)(.*)$', re.S)
 
     def parse(self):
         self.value1, self.value2 = map(int, self.identity_match(self.RANGE))
