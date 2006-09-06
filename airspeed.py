@@ -223,7 +223,7 @@ class _Element:
                     self.end = element.end
                     return element
             expected = ', '.join([cls.__name__ for cls in element_spec])
-            raise self.syntax_error(self, 'one of: ' + expected)
+            raise self.syntax_error('one of: ' + expected)
 
 
 class Text(_Element):
