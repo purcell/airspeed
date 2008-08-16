@@ -3,6 +3,7 @@
 
 from unittest import TestCase, main
 import airspeed
+import re
 
 ###############################################################################
 # Compatibility for old Pythons & Jython
@@ -36,6 +37,40 @@ class TemplateTestCase(TestCase):
         template = airspeed.Template("Hello $!name")
         self.assertEquals("Hello world", template.merge({"name": "world"}))
         self.assertEquals("Hello ", template.merge({}))
+
+    def test_formal_reference_in_an_if_condition(self):
+        template = airspeed.Template("#if(${a.b.c})yes!#end")
+        ## reference in an if statement used to be a problem
+        self.assertEquals("yes!", template.merge({'a':{'b':{'c':'d'}}}))
+        self.assertEquals("", template.merge({}))
+
+    def test_silent_formal_reference_in_an_if_condition(self):
+        # the silent modifier shouldn't make a difference here
+        template = airspeed.Template("#if($!{a.b.c})yes!#end")
+        self.assertEquals("yes!", template.merge({'a':{'b':{'c':'d'}}}))
+        self.assertEquals("", template.merge({}))
+        # with or without curly braces
+        template = airspeed.Template("#if($!a.b.c)yes!#end")
+        self.assertEquals("yes!", template.merge({'a':{'b':{'c':'d'}}}))
+        self.assertEquals("", template.merge({}))
+
+    def test_reference_function_calls_in_if_conditions(self):
+        template = airspeed.Template("#if(${a.b.c('cheese')})yes!#end")
+        self.assertEquals("yes!", template.merge({'a':{'b':{'c':lambda x: "hello %s" % x}}}))
+        self.assertEquals("", template.merge({'a':{'b':{'c':lambda x: None}}}))
+        self.assertEquals("", template.merge({}))
+
+    def test_silent_reference_function_calls_in_if_conditions(self):
+        # again, this shouldn't make any difference
+        template = airspeed.Template("#if($!{a.b.c('cheese')})yes!#end")
+        self.assertEquals("yes!", template.merge({'a':{'b':{'c':lambda x: "hello %s" % x}}}))
+        self.assertEquals("", template.merge({'a':{'b':{'c':lambda x: None}}}))
+        self.assertEquals("", template.merge({}))
+        # with or without braces
+        template = airspeed.Template("#if($!a.b.c('cheese'))yes!#end")
+        self.assertEquals("yes!", template.merge({'a':{'b':{'c':lambda x: "hello %s" % x}}}))
+        self.assertEquals("", template.merge({'a':{'b':{'c':lambda x: None}}}))
+        self.assertEquals("", template.merge({}))
 
     def test_embed_substitution_value_in_braces_gets_handled(self):
         template = airspeed.Template("Hello ${name}.")
@@ -99,6 +134,13 @@ class TemplateTestCase(TestCase):
         self.assertEquals('', template.merge({'v': BooleanValue(False)}))
         self.assertEquals('yes', template.merge({'v': BooleanValue(True)}))
 
+    def test_understands_boolean_literal_true(self):
+        template = airspeed.Template("#set ($v = true)$v")
+        self.assertEquals('True', template.merge({}))
+
+    def test_understands_boolean_literal_false(self):
+        template = airspeed.Template("#set ($v = false)$v")
+        self.assertEquals('False', template.merge({}))
 
     def test_new_lines_in_templates_are_permitted(self):
         template = airspeed.Template("hello #if ($show_greeting)${name}.\n#if($is_birthday)Happy Birthday\n#end.\n#endOff out later?")
@@ -184,6 +226,14 @@ class TemplateTestCase(TestCase):
     def test_else_block_evaluated_when_if_expression_false(self):
         template = airspeed.Template('#if ($value) true #else false #end')
         self.assertEquals(" false ", template.merge({}))
+
+    def test_curly_else(self):
+        template = airspeed.Template('#if($value)true#{else}false#end')
+        self.assertEquals("false", template.merge({}))
+
+    def test_curly_end(self):
+        template = airspeed.Template('#if($value)true#{end}monkey')
+        self.assertEquals("monkey", template.merge({}))
 
     def test_too_many_end_clauses_trigger_error(self):
         template = airspeed.Template('#if (1)true!#end #end ')
@@ -327,6 +377,12 @@ $email
         self.assertEquals('yes', template.merge({'value1': True, 'value2': False}))
         self.assertEquals('yes', template.merge({'value1': False, 'value2': True}))
 
+    def test_or_operator_otherform(self):
+        template = airspeed.Template('#if ( $value1 or $value2 )yes#end')
+        self.assertEquals('', template.merge({'value1': False, 'value2': False}))
+        self.assertEquals('yes', template.merge({'value1': True, 'value2': False}))
+        self.assertEquals('yes', template.merge({'value1': False, 'value2': True}))
+
     def test_or_operator_considers_not_None_values_true(self):
         class SomeClass: pass
         template = airspeed.Template('#if ( $value1 || $value2 )yes#end')
@@ -341,6 +397,13 @@ $email
         self.assertEquals('', template.merge({'value1': False, 'value2': True}))
         self.assertEquals('yes', template.merge({'value1': True, 'value2': True}))
 
+    def test_and_operator_otherform(self):
+        template = airspeed.Template('#if ( $value1 and $value2 )yes#end')
+        self.assertEquals('', template.merge({'value1': False, 'value2': False}))
+        self.assertEquals('', template.merge({'value1': True, 'value2': False}))
+        self.assertEquals('', template.merge({'value1': False, 'value2': True}))
+        self.assertEquals('yes', template.merge({'value1': True, 'value2': True}))
+
     def test_and_operator_considers_not_None_values_true(self):
         class SomeClass: pass
         template = airspeed.Template('#if ( $value1 && $value2 )yes#end')
@@ -350,6 +413,13 @@ $email
 
     def test_parenthesised_value(self):
         template = airspeed.Template('#if ( ($value1 == 1) && ($value2 == 2) )yes#end')
+        self.assertEquals('', template.merge({'value1': 0, 'value2': 1}))
+        self.assertEquals('', template.merge({'value1': 1, 'value2': 1}))
+        self.assertEquals('', template.merge({'value1': 0, 'value2': 2}))
+        self.assertEquals('yes', template.merge({'value1': 1, 'value2': 2}))
+
+    def test_multiterm_expression(self):
+        template = airspeed.Template('#if ( $value1 == 1 && $value2 == 2 )yes#end')
         self.assertEquals('', template.merge({'value1': 0, 'value2': 1}))
         self.assertEquals('', template.merge({'value1': 1, 'value2': 1}))
         self.assertEquals('', template.merge({'value1': 0, 'value2': 2}))
@@ -400,6 +470,20 @@ $email
     def test_define_and_use_macro_with_one_parameter(self):
         template = airspeed.Template('#macro ( bold $value)<strong>$value</strong>#end#bold ($text)')
         self.assertEquals('<strong>hello</strong>', template.merge({'text': 'hello'}))
+
+    def test_define_and_use_macro_with_two_parameters_no_comma(self):
+        template = airspeed.Template('#macro ( bold $value $other)<strong>$value</strong>$other#end#bold ($text $monkey)')
+        self.assertEquals('<strong>hello</strong>cheese', template.merge({'text': 'hello','monkey':'cheese'}))
+
+    # we use commas with our macros and it seems to work
+    # so it's correct behavior by definition; the real
+    # question is whether using them w/o a comma is a legal variant
+    # or not.  This should effect the above test; the following test
+    # should be legal by defintion
+
+    def test_define_and_use_macro_with_two_parameters_with_comma(self):
+        template = airspeed.Template('#macro ( bold $value, $other)<strong>$value</strong>$other#end#bold ($text, $monkey)')
+        self.assertEquals('<strong>hello</strong>cheese', template.merge({'text': 'hello','monkey':'cheese'}))
 
     def test_use_of_macro_name_is_case_insensitive(self):
         template = airspeed.Template('#macro ( bold $value)<strong>$value</strong>#end#BoLd ($text)')
@@ -466,8 +550,21 @@ $email
         self.assertEquals('$values', template.merge({}))
 
     def test_array_literal(self):
-        template = airspeed.Template('blah\n#set($valuesInList = ["Hello ", $person, ", your lucky number is ", 7])\n#foreach($value in $valuesInList)$value#end\nblah')
+        template = airspeed.Template('blah\n#set($valuesInList = ["Hello ", $person, ", your lucky number is ", 7])\n#foreach($value in $valuesInList)$value#end\n\nblah')
         self.assertEquals('blah\nHello Chris, your lucky number is 7\nblah', template.merge({'person': 'Chris'}))
+        # NOTE: the original version of this test incorrectly preserved
+        # the newline at the end of the #end line
+
+    def test_dictionary_literal(self):
+        template = airspeed.Template('#set($a = {"dog": "cat" , "horse":15})$a.dog')
+        self.assertEquals('cat', template.merge({}))
+        template = airspeed.Template('#set($a = {"dog": "$horse"})$a.dog')
+        self.assertEquals('cow', template.merge({'horse':'cow'}))
+
+    def test_dictionary_literal_as_parameter(self):
+        template = airspeed.Template('$a({"color":"blue"})')
+        ns = {'a':lambda x: x['color'] + ' food'}
+        self.assertEquals('blue food', template.merge(ns))
 
     def test_nested_array_literals(self):
         template = airspeed.Template('#set($values = [["Hello ", "Steve"], ["Hello", " Chris"]])#foreach($pair in $values)#foreach($word in $pair)$word#end. #end')
@@ -493,6 +590,23 @@ $email
     def test_macros_expanded_in_double_quoted_strings(self):
         template = airspeed.Template('#macro(hi $person)$person says hello#end#set($hello="#hi($name)")$hello')
         self.assertEquals("Steve says hello", template.merge({'name':'Steve'}))
+
+    def test_color_spec(self):
+        template = airspeed.Template('<span style="color: #13ff93">')
+        self.assertEquals('<span style="color: #13ff93">', template.merge({}))
+
+    # check for a plain hash outside of a context where it could be
+    # confused with a directive or macro call.
+    # this is useful for cases where someone put a hash in the target
+    # of a link, which is typical when javascript is associated with the link
+
+    def test_standalone_hashes(self):
+        template = airspeed.Template('#')
+        self.assertEquals('#', template.merge({}))
+        template = airspeed.Template('"#"')
+        self.assertEquals('"#"', template.merge({}))
+        template = airspeed.Template('<a href="#">bob</a>')
+        self.assertEquals('<a href="#">bob</a>', template.merge({}))
 
     def test_large_areas_of_text_handled_without_error(self):
         text = "qwerty uiop asdfgh jkl zxcvbnm. 1234" * 300
@@ -543,20 +657,112 @@ $email
         template = airspeed.Template('#foreach( $v in [1..5] )$v\n#end')
         self.assertEquals('1\n2\n3\n4\n5\n', template.merge({}))
 
+    def test_can_loop_over_numeric_ranges_backwards(self):
+        template = airspeed.Template('#foreach( $v in [5..-2] )$v,#end')
+        self.assertEquals('5,4,3,2,1,0,-1,-2,', template.merge({}))
 
-#
+    def test_ranges_over_references(self):
+        template = airspeed.Template("#set($start = 1)#set($end = 5)#foreach($i in [$start .. $end])$i-#end")
+        self.assertEquals('1-2-3-4-5-', template.merge({}))
+
+    def test_user_defined_directive(self):
+        class DummyDirective(airspeed._Element):
+            PLAIN = re.compile(r'#(monkey)man(.*)$', re.S + re.I)
+
+            def parse(self):
+                self.text, = self.identity_match(self.PLAIN)
+
+            def evaluate(self, stream, namespace, loader):
+                stream.write(self.text)
+
+        airspeed.UserDefinedDirective.DIRECTIVES.append(DummyDirective)
+        template = airspeed.Template("hello #monkeyman")
+        self.assertEquals('hello monkey', template.merge({}))
+        airspeed.UserDefinedDirective.DIRECTIVES.remove(DummyDirective)
+
+    def test_stop_directive(self):
+        template = airspeed.Template("hello #stop world")
+        self.assertEquals('hello ', template.merge({}))
+
+
+    def test_assignment_of_parenthesized_math_expression(self):
+        template = airspeed.Template('#set($a = (5 + 4))$a')
+        self.assertEquals('9', template.merge({}))
+
+    def test_assignment_of_parenthesized_math_expression_with_reference(self):
+        template = airspeed.Template('#set($b = 5)#set($a = ($b + 4))$a')
+        self.assertEquals('9', template.merge({}))
+
+    def test_recursive_macro(self):
+        template = airspeed.Template('#macro ( recur $number)#if ($number > 0)#set($number = $number - 1)#recur($number)X#end#end#recur(5)')
+        self.assertEquals('XXXXX', template.merge({}))
+
+    def test_addition_has_higher_precedence_than_comparison(self):
+        template = airspeed.Template('#set($a = 4 > 2 + 5)$a')
+        self.assertEquals('False', template.merge({}))
+
+    def test_parentheses_work(self):
+        template = airspeed.Template('#set($a = (5 + 4) > 2)$a')
+        self.assertEquals('True', template.merge({}))
+
+    def test_addition_has_higher_precedence_than_comparison_other_direction(self):
+        template = airspeed.Template('#set($a = 5 + 4 > 2)$a')
+        self.assertEquals('True', template.merge({}))
+
+    # Note: this template:
+    # template = airspeed.Template('#set($a = (4 > 2) + 5)$a')
+    # prints 6.  That's because Python automatically promotes True to 1
+    # and False to 0.
+    # This is weird, but I can't say it's wrong.
+
+    def test_multiplication_has_higher_precedence_than_addition(self):
+        template = airspeed.Template("#set($a = 5 * 4 - 2)$a")
+        self.assertEquals('18', template.merge({}))
+
+    def test_parse_empty_dictionary(self):
+        template = airspeed.Template('#set($a = {})$a')
+        self.assertEquals('{}', template.merge({}))
+
+    def test_macro_whitespace_and_newlines_ignored(self):
+        template = airspeed.Template('''#macro ( blah )
+hello##
+#end
+#blah()''')
+        self.assertEquals('hello', template.merge({}))
+
+    def test_if_whitespace_and_newlines_ignored(self):
+        template = airspeed.Template('''#if(true)
+hello##
+#end''')
+        self.assertEquals('hello', template.merge({}))
+
+    def test_subobject_assignment(self):
+        template = airspeed.Template("#set($outer.inner = 'monkey')")
+        x = {'outer':{}}
+        template.merge(x)
+        self.assertEquals('monkey', x['outer']['inner'])
+
+    def test_expressions_with_numbers_with_fractions(self):
+        template = airspeed.Template('#set($a = 100.0 / 50)$a')
+        self.assertEquals('2.0', template.merge({}))
+        # TODO: is that how Velocity would format a floating point?
+
+    def test_multiline_arguments_to_function_calls(self):
+        class Thing:
+            def func(self, arg):
+                return 'y'
+        template = airspeed.Template('''$x.func("multi
+line")''')
+        self.assertEquals('y', template.merge({'x':Thing()}))
+
+
 # TODO:
 #
 #  Report locations for template errors in strings
-#  Math expressions (requires operator precedence)
-#  Gobbling up whitespace (tricky!)
+#  Gobbling up whitespace (see WHITESPACE_TO_END_OF_LINE above, but need to apply in more places)
 #  Bind #macro calls at compile time?
-#  #stop ?
-#  map literals
-#  Sub-object assignment:  #set( $customer.Behavior = $primate )
-#  Q. What is scope of #set ($customer.Name = 'john')  ???
 #  Scope of #set across if/elseif/else?
-#
+#  there seems to be some confusion about the semantics of parameter passing to macros; an assignment in a macro body should persist past the macro call.  Confirm against Velocity.
 
 
 if __name__ == '__main__':
