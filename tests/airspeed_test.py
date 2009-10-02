@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: latin1 -*-
 
-from unittest import TestCase, main
+from unittest import TestCase
 import airspeed
 import re
 
@@ -763,9 +763,3 @@ line")''')
 #  Bind #macro calls at compile time?
 #  Scope of #set across if/elseif/else?
 #  there seems to be some confusion about the semantics of parameter passing to macros; an assignment in a macro body should persist past the macro call.  Confirm against Velocity.
-
-
-if __name__ == '__main__':
-    reload(airspeed)
-    try: main()
-    except SystemExit: pass
