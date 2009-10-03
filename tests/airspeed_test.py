@@ -1,5 +1,4 @@
-#!/usr/bin/env python
-# -*- coding: latin1 -*-
+# -*- coding: latin-1 -*-
 
 from unittest import TestCase
 import airspeed
