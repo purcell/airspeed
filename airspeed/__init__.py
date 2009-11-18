@@ -432,7 +432,7 @@ class Value(_Element):
 
 
 class NameOrCall(_Element):
-    NAME = re.compile(r'([a-zA-Z_][a-zA-Z0-9_]*)(.*)$', re.S)
+    NAME = re.compile(r'([a-zA-Z0-9_]+)(.*)$', re.S)
     parameters = None
 
     def parse(self):

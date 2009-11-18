@@ -760,6 +760,11 @@ hello##
 line")''')
         self.assertEquals('y', template.merge({'x':Thing()}))
 
+    def test_accepts_dollar_digit_identifiers(self):
+        template = airspeed.Template('$Something$0')
+        self.assertEquals("$Something$0", template.merge({}))
+
+
 
 # TODO:
 #
