@@ -187,6 +187,10 @@ class TemplateTestCase(TestCase):
         namespace = {"greetings": ["Hello", "Goodbye"], "names": ["Chris", "Steve"]}
         self.assertEquals("Outer 1, inner 1, inner 2. Outer 2, inner 1, inner 2. ", template.merge(namespace))
 
+    def test_has_next(self):
+        template = airspeed.Template("#foreach ($i in [1, 2, 3])$i. #if ($velocityHasNext)yes#end, #end")
+        self.assertEquals("1. yes, 2. yes, 3. , ", template.merge({}))
+
     def test_can_use_an_integer_variable_defined_in_template(self):
         template = airspeed.Template("#set ($value = 10)$value")
         self.assertEquals("10", template.merge({}))
