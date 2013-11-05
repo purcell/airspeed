@@ -34,12 +34,14 @@ A simple example:
 t = airspeed.Template("""
 Old people:
 #foreach ($person in $people)
- #if($person.age > 95)
+ #if($person.age > 70)
   $person.name
  #end
 #end
+
+Third person is $people[2].name
 """)
-people = [{'name': 'Bill', 'age': 100}, {'name': 'Bob', 'age': 90}]
+people = [{'name': 'Bill', 'age': 100}, {'name': 'Bob', 'age': 90}, {'name': 'Mark', 'age': 25}]
 print t.merge(locals())
 ```
 
@@ -88,7 +90,7 @@ https://github.com/purcell/sanityinc
 ### Getting started
 
 The
-[Velocity User Guide](http://jakarta.apache.org/velocity/user-guide.html)
+[Velocity User Guide](http://velocity.apache.org/engine/devel/vtl-reference-guide.html)
 shows how to write templates.  Our unit tests show how to use the
 templates from your code.
 
