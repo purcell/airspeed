@@ -668,7 +668,7 @@ class Condition(_Element):
 
 
 class End(_Element):
-    END = re.compile(r'#(?:end|{end})(.*)', re.I + re.S)
+    END = re.compile(r'#(?:end|\{end\})(.*)', re.I + re.S)
 
     def parse(self):
         self.identity_match(self.END)
@@ -676,7 +676,7 @@ class End(_Element):
 
 
 class ElseBlock(_Element):
-    START = re.compile(r'#(?:else|{else})(.*)$', re.S + re.I)
+    START = re.compile(r'#(?:else|\{else\})(.*)$', re.S + re.I)
 
     def parse(self):
         self.identity_match(self.START)
