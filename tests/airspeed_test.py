@@ -780,6 +780,7 @@ line")''')
         try: airspeed.Template('$a["plain wrong"]').merge({"a":["foo", "bar"]})
         except airspeed.TemplateSyntaxError, e:
             self.assertEquals((1, 4), (e.line, e.column))
+        else: self.fail('expected error')
 
         template = airspeed.Template('#set($i = "baz")$a[$i]')
         self.assertRaises(Exception, template.merge, {"a":["foo", "bar"]})
