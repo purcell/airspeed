@@ -462,7 +462,8 @@ class NameOrCall(_Element):
             result = result(*self.parameters.calculate(top_namespace, loader))
         elif self.index is not None:
             array_index = self.index.calculate(top_namespace, loader)
-            if not isinstance(array_index, (int, long)):
+            # If list make sure index is an integer
+            if isinstance(result, list) and not isinstance(array_index, (int, long)):
                 raise ValueError("expected integer for array index, got '%s'" % (array_index))
             result = result[array_index]
         return result
@@ -519,8 +520,8 @@ class ArrayIndex(_Element):
 
     def parse(self):
         self.identity_match(self.START)
-        self.index = self.require_next_element((FormalReference, IntegerLiteral, ParenthesizedExpression),
-                                               'array integer index')
+        self.index = self.require_next_element((FormalReference, IntegerLiteral, InterpolatedStringLiteral,
+                                                ParenthesizedExpression), 'array or object index')
         self.require_match(self.END, ']')
 
     def calculate(self, namespace, loader):
