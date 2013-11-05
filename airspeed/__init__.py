@@ -434,11 +434,14 @@ class Value(_Element):
 class NameOrCall(_Element):
     NAME = re.compile(r'([a-zA-Z0-9_]+)(.*)$', re.S)
     parameters = None
+    index = None
 
     def parse(self):
         self.name, = self.identity_match(self.NAME)
         try: self.parameters = self.next_element(ParameterList)
-        except NoMatch: pass
+        except NoMatch:
+          try: self.index = self.next_element(ArrayIndex)
+          except NoMatch: pass
 
     def calculate(self, current_object, loader, top_namespace):
         look_in_dict = True
@@ -457,6 +460,11 @@ class NameOrCall(_Element):
             return None ## TODO: an explicit 'not found' exception?
         if self.parameters is not None:
             result = result(*self.parameters.calculate(top_namespace, loader))
+        elif self.index is not None:
+            array_index = self.index.calculate(top_namespace, loader)
+            if not isinstance(array_index, (int, long)):
+                raise ValueError("expected integer for array index, got '%s'" % (array_index))
+            result = result[array_index]
         return result
 
 
@@ -502,6 +510,22 @@ class ParameterList(_Element):
 
     def calculate(self, namespace, loader):
         return self.values.calculate(namespace, loader)
+
+
+class ArrayIndex(_Element):
+    START = re.compile(r'\[[ \t]*(.*)$', re.S)
+    END = re.compile(r'[ \t]*\](.*)$', re.S)
+    index = 0
+
+    def parse(self):
+        self.identity_match(self.START)
+        self.index = self.require_next_element((FormalReference, IntegerLiteral, ParenthesizedExpression),
+                                               'array integer index')
+        self.require_match(self.END, ']')
+
+    def calculate(self, namespace, loader):
+        result = self.index.calculate(namespace, loader)
+        return result
 
 
 class FormalReference(_Element):
@@ -668,7 +692,7 @@ class Condition(_Element):
 
 
 class End(_Element):
-    END = re.compile(r'#(?:end|{end})(.*)', re.I + re.S)
+    END = re.compile(r'#(?:end|\{end\})(.*)', re.I + re.S)
 
     def parse(self):
         self.identity_match(self.END)
@@ -676,7 +700,7 @@ class End(_Element):
 
 
 class ElseBlock(_Element):
-    START = re.compile(r'#(?:else|{else})(.*)$', re.S + re.I)
+    START = re.compile(r'#(?:else|\{else\})(.*)$', re.S + re.I)
 
     def parse(self):
         self.identity_match(self.START)
