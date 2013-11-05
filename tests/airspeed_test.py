@@ -768,6 +768,21 @@ line")''')
         template = airspeed.Template('$Something$0')
         self.assertEquals("$Something$0", template.merge({}))
 
+    def test_array_notation_int_index(self):
+      template = airspeed.Template('$a[1]')
+      self.assertEquals("bar", template.merge({"a":["foo", "bar"]}))
+
+    def test_array_notation_variable_index(self):
+        template = airspeed.Template('#set($i = 1)$a[ $i ]')
+        self.assertEquals("bar", template.merge({"a":["foo", "bar"]}))
+
+    def test_array_notation_invalid_index(self):
+        try: airspeed.Template('$a["plain wrong"]').merge({"a":["foo", "bar"]})
+        except airspeed.TemplateSyntaxError, e:
+            self.assertEquals((1, 4), (e.line, e.column))
+
+        template = airspeed.Template('#set($i = "baz")$a[$i]')
+        self.assertRaises(Exception, template.merge, {"a":["foo", "bar"]})
 
 
 # TODO:
