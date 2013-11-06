@@ -105,6 +105,9 @@ a test-driven manner by Steve Purcell and Chris Tarttelin. We can be
 contacted by e-mail by using our first names (at) pythonconsulting dot
 com.
 
+Extensions for compatibility with Velocity 1.7 were kindly provided by
+[Giannis Dzegoutanis](https://github.com/erasmospunk).
+
 <hr>
 
 [![](http://api.coderwall.com/purcell/endorsecount.png)](http://coderwall.com/purcell)
