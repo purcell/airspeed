@@ -521,7 +521,7 @@ class ArrayIndex(_Element):
     def parse(self):
         self.identity_match(self.START)
         self.index = self.require_next_element((FormalReference, IntegerLiteral, InterpolatedStringLiteral,
-                                                ParenthesizedExpression), 'array or object index')
+                                                ParenthesizedExpression), 'integer index or object key')
         self.require_match(self.END, ']')
 
     def calculate(self, namespace, loader):
