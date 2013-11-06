@@ -182,14 +182,46 @@ class TemplateTestCase(TestCase):
         namespace = {"greetings": ["Hello", "Goodbye"]}
         self.assertEquals("1,2,", template.merge(namespace))
 
+    def test_loop_counter_variable_available_in_loops_new(self):
+        template = airspeed.Template("#foreach ($word in $greetings)$foreach.count,#end")
+        namespace = {"greetings": ["Hello", "Goodbye"]}
+        self.assertEquals("1,2,", template.merge(namespace))
+
+    def test_loop_index_variable_available_in_loops_new(self):
+        template = airspeed.Template("#foreach ($word in $greetings)$foreach.index,#end")
+        namespace = {"greetings": ["Hello", "Goodbye"]}
+        self.assertEquals("0,1,", template.merge(namespace))
+
     def test_loop_counter_variables_do_not_clash_in_nested_loops(self):
         template = airspeed.Template("#foreach ($word in $greetings)Outer $velocityCount#foreach ($word in $names), inner $velocityCount#end. #end")
         namespace = {"greetings": ["Hello", "Goodbye"], "names": ["Chris", "Steve"]}
         self.assertEquals("Outer 1, inner 1, inner 2. Outer 2, inner 1, inner 2. ", template.merge(namespace))
 
+    def test_loop_counter_variables_do_not_clash_in_nested_loops_new(self):
+        template = airspeed.Template("#foreach ($word in $greetings)Outer $foreach.count#foreach ($word in $names), inner $foreach.count#end. #end")
+        namespace = {"greetings": ["Hello", "Goodbye"], "names": ["Chris", "Steve"]}
+        self.assertEquals("Outer 1, inner 1, inner 2. Outer 2, inner 1, inner 2. ", template.merge(namespace))
+
+    def test_loop_index_variables_do_not_clash_in_nested_loops_new(self):
+        template = airspeed.Template("#foreach ($word in $greetings)Outer $foreach.index#foreach ($word in $names), inner $foreach.index#end. #end")
+        namespace = {"greetings": ["Hello", "Goodbye"], "names": ["Chris", "Steve"]}
+        self.assertEquals("Outer 0, inner 0, inner 1. Outer 1, inner 0, inner 1. ", template.merge(namespace))
+
     def test_has_next(self):
         template = airspeed.Template("#foreach ($i in [1, 2, 3])$i. #if ($velocityHasNext)yes#end, #end")
         self.assertEquals("1. yes, 2. yes, 3. , ", template.merge({}))
+
+    def test_has_next_new(self):
+        template = airspeed.Template("#foreach ($i in [1, 2, 3])$i. #if ($foreach.hasNext)yes#end, #end")
+        self.assertEquals("1. yes, 2. yes, 3. , ", template.merge({}))
+
+    def test_first(self):
+        template = airspeed.Template("#foreach ($i in [1, 2, 3])$i. #if ($foreach.first)yes#end, #end")
+        self.assertEquals("1. yes, 2. , 3. , ", template.merge({}))
+
+    def test_last(self):
+        template = airspeed.Template("#foreach ($i in [1, 2, 3])$i. #if ($foreach.last)yes#end, #end")
+        self.assertEquals("1. , 2. , 3. yes, ", template.merge({}))
 
     def test_can_use_an_integer_variable_defined_in_template(self):
         template = airspeed.Template("#set ($value = 10)$value")
@@ -548,6 +580,14 @@ $email
         template = airspeed.Template('Message is: #parse ($foo)!')
         self.assertEquals('Message is: hola!', template.merge({'foo': 'foo.tmpl', 'message': 'hola'}, loader=WorkingLoader()))
 
+    def test_valid_parse_directive_merge_namespace(self):
+        class WorkingLoader:
+            def load_template(self, name):
+                if name == 'foo.tmpl':
+                    return airspeed.Template("#set($message = 'hola')")
+        template = airspeed.Template('#parse("foo.tmpl")Message is: $message!')
+        self.assertEquals('Message is: hola!', template.merge({}, loader=WorkingLoader()))
+
     def test_assign_range_literal(self):
         template = airspeed.Template('#set($values = [1..5])#foreach($value in $values)$value,#end')
         self.assertEquals('1,2,3,4,5,', template.merge({}))
@@ -769,19 +809,18 @@ line")''')
         self.assertEquals("$Something$0", template.merge({}))
 
     def test_array_notation_int_index(self):
-      template = airspeed.Template('$a[1]')
-      self.assertEquals("bar", template.merge({"a":["foo", "bar"]}))
+        template = airspeed.Template('$a[1]')
+        self.assertEquals("bar", template.merge({"a":["foo", "bar"]}))
+
+    def test_array_notation_dict_index(self):
+        template = airspeed.Template('$a["foo"]')
+        self.assertEquals("bar", template.merge({"a":{"foo": "bar"}}))
 
     def test_array_notation_variable_index(self):
         template = airspeed.Template('#set($i = 1)$a[ $i ]')
         self.assertEquals("bar", template.merge({"a":["foo", "bar"]}))
 
     def test_array_notation_invalid_index(self):
-        try: airspeed.Template('$a["plain wrong"]').merge({"a":["foo", "bar"]})
-        except airspeed.TemplateSyntaxError, e:
-            self.assertEquals((1, 4), (e.line, e.column))
-        else: self.fail('expected error')
-
         template = airspeed.Template('#set($i = "baz")$a[$i]')
         self.assertRaises(Exception, template.merge, {"a":["foo", "bar"]})
 

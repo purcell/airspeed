@@ -166,6 +166,10 @@ class LocalNamespace(dict):
             return self.parent.top()
         return self.parent
 
+    def attach(self, namespace):
+        namespace.parent = self.parent
+        self.parent = namespace
+
     def __repr__(self):
         return dict.__repr__(self) + '->' + repr(self.parent)
 
@@ -462,7 +466,8 @@ class NameOrCall(_Element):
             result = result(*self.parameters.calculate(top_namespace, loader))
         elif self.index is not None:
             array_index = self.index.calculate(top_namespace, loader)
-            if not isinstance(array_index, (int, long)):
+            # If list make sure index is an integer
+            if isinstance(result, list) and not isinstance(array_index, (int, long)):
                 raise ValueError("expected integer for array index, got '%s'" % (array_index))
             result = result[array_index]
         return result
@@ -519,8 +524,8 @@ class ArrayIndex(_Element):
 
     def parse(self):
         self.identity_match(self.START)
-        self.index = self.require_next_element((FormalReference, IntegerLiteral, ParenthesizedExpression),
-                                               'array integer index')
+        self.index = self.require_next_element((FormalReference, IntegerLiteral, InterpolatedStringLiteral,
+                                                ParenthesizedExpression), 'integer index or object key')
         self.require_match(self.END, ']')
 
     def calculate(self, namespace, loader):
@@ -944,6 +949,8 @@ class ForeachDirective(_Element):
                 namespace = LocalNamespace(namespace)
                 namespace['velocityCount'] = counter
                 namespace['velocityHasNext'] = counter < len(iterable)
+                namespace['foreach'] = {"count": counter, "index": counter - 1, "hasNext": counter < len(iterable),
+                                        "first": counter == 1, "last": counter == len(iterable)}
                 namespace[self.loop_var_name] = item
                 self.block.evaluate(stream, namespace, loader)
                 counter += 1
@@ -958,8 +965,11 @@ class TemplateBody(_Element):
             raise self.syntax_error('block element')
 
     def evaluate(self, stream, namespace, loader):
-        namespace = LocalNamespace(namespace)
-        self.block.evaluate(stream, namespace, loader)
+        local_namespace = LocalNamespace(namespace)
+        self.block.evaluate(stream, local_namespace, loader)
+        # Make local namespace part of the parent namespace
+        if isinstance(namespace, LocalNamespace):
+            namespace.attach(local_namespace)
 
 
 class Block(_Element):
