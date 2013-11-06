@@ -182,14 +182,46 @@ class TemplateTestCase(TestCase):
         namespace = {"greetings": ["Hello", "Goodbye"]}
         self.assertEquals("1,2,", template.merge(namespace))
 
+    def test_loop_counter_variable_available_in_loops_new(self):
+        template = airspeed.Template("#foreach ($word in $greetings)$foreach.count,#end")
+        namespace = {"greetings": ["Hello", "Goodbye"]}
+        self.assertEquals("1,2,", template.merge(namespace))
+
+    def test_loop_index_variable_available_in_loops_new(self):
+        template = airspeed.Template("#foreach ($word in $greetings)$foreach.index,#end")
+        namespace = {"greetings": ["Hello", "Goodbye"]}
+        self.assertEquals("0,1,", template.merge(namespace))
+
     def test_loop_counter_variables_do_not_clash_in_nested_loops(self):
         template = airspeed.Template("#foreach ($word in $greetings)Outer $velocityCount#foreach ($word in $names), inner $velocityCount#end. #end")
         namespace = {"greetings": ["Hello", "Goodbye"], "names": ["Chris", "Steve"]}
         self.assertEquals("Outer 1, inner 1, inner 2. Outer 2, inner 1, inner 2. ", template.merge(namespace))
 
+    def test_loop_counter_variables_do_not_clash_in_nested_loops_new(self):
+        template = airspeed.Template("#foreach ($word in $greetings)Outer $foreach.count#foreach ($word in $names), inner $foreach.count#end. #end")
+        namespace = {"greetings": ["Hello", "Goodbye"], "names": ["Chris", "Steve"]}
+        self.assertEquals("Outer 1, inner 1, inner 2. Outer 2, inner 1, inner 2. ", template.merge(namespace))
+
+    def test_loop_index_variables_do_not_clash_in_nested_loops_new(self):
+        template = airspeed.Template("#foreach ($word in $greetings)Outer $foreach.index#foreach ($word in $names), inner $foreach.index#end. #end")
+        namespace = {"greetings": ["Hello", "Goodbye"], "names": ["Chris", "Steve"]}
+        self.assertEquals("Outer 0, inner 0, inner 1. Outer 1, inner 0, inner 1. ", template.merge(namespace))
+
     def test_has_next(self):
         template = airspeed.Template("#foreach ($i in [1, 2, 3])$i. #if ($velocityHasNext)yes#end, #end")
         self.assertEquals("1. yes, 2. yes, 3. , ", template.merge({}))
+
+    def test_has_next_new(self):
+        template = airspeed.Template("#foreach ($i in [1, 2, 3])$i. #if ($foreach.hasNext)yes#end, #end")
+        self.assertEquals("1. yes, 2. yes, 3. , ", template.merge({}))
+
+    def test_first(self):
+        template = airspeed.Template("#foreach ($i in [1, 2, 3])$i. #if ($foreach.first)yes#end, #end")
+        self.assertEquals("1. yes, 2. , 3. , ", template.merge({}))
+
+    def test_last(self):
+        template = airspeed.Template("#foreach ($i in [1, 2, 3])$i. #if ($foreach.last)yes#end, #end")
+        self.assertEquals("1. , 2. , 3. yes, ", template.merge({}))
 
     def test_can_use_an_integer_variable_defined_in_template(self):
         template = airspeed.Template("#set ($value = 10)$value")

@@ -945,6 +945,8 @@ class ForeachDirective(_Element):
                 namespace = LocalNamespace(namespace)
                 namespace['velocityCount'] = counter
                 namespace['velocityHasNext'] = counter < len(iterable)
+                namespace['foreach'] = {"count": counter, "index": counter - 1, "hasNext": counter < len(iterable),
+                                        "first": counter == 1, "last": counter == len(iterable)}
                 namespace[self.loop_var_name] = item
                 self.block.evaluate(stream, namespace, loader)
                 counter += 1
