@@ -580,6 +580,14 @@ $email
         template = airspeed.Template('Message is: #parse ($foo)!')
         self.assertEquals('Message is: hola!', template.merge({'foo': 'foo.tmpl', 'message': 'hola'}, loader=WorkingLoader()))
 
+    def test_valid_parse_directive_merge_namespace(self):
+        class WorkingLoader:
+            def load_template(self, name):
+                if name == 'foo.tmpl':
+                    return airspeed.Template("#set($message = 'hola')")
+        template = airspeed.Template('#parse("foo.tmpl")Message is: $message!')
+        self.assertEquals('Message is: hola!', template.merge({}, loader=WorkingLoader()))
+
     def test_assign_range_literal(self):
         template = airspeed.Template('#set($values = [1..5])#foreach($value in $values)$value,#end')
         self.assertEquals('1,2,3,4,5,', template.merge({}))

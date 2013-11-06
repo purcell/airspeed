@@ -166,6 +166,10 @@ class LocalNamespace(dict):
             return self.parent.top()
         return self.parent
 
+    def attach(self, namespace):
+        namespace.parent = self.parent
+        self.parent = namespace
+
     def __repr__(self):
         return dict.__repr__(self) + '->' + repr(self.parent)
 
@@ -961,8 +965,11 @@ class TemplateBody(_Element):
             raise self.syntax_error('block element')
 
     def evaluate(self, stream, namespace, loader):
-        namespace = LocalNamespace(namespace)
-        self.block.evaluate(stream, namespace, loader)
+        local_namespace = LocalNamespace(namespace)
+        self.block.evaluate(stream, local_namespace, loader)
+        # Make local namespace part of the parent namespace
+        if isinstance(namespace, LocalNamespace):
+            namespace.attach(local_namespace)
 
 
 class Block(_Element):
