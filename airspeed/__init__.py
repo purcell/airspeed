@@ -449,6 +449,7 @@ class NameOrCall(_Element):
 
     def calculate(self, current_object, loader, top_namespace):
         look_in_dict = True
+        result = None
         if not isinstance(current_object, LocalNamespace):
             try:
                 result = getattr(current_object, self.name)
@@ -469,7 +470,10 @@ class NameOrCall(_Element):
             # If list make sure index is an integer
             if isinstance(result, list) and not isinstance(array_index, (int, long)):
                 raise ValueError("expected integer for array index, got '%s'" % (array_index))
-            result = result[array_index]
+            try:
+                result = result[array_index]
+            except:
+                result = None
         return result
 
 
@@ -965,11 +969,10 @@ class TemplateBody(_Element):
             raise self.syntax_error('block element')
 
     def evaluate(self, stream, namespace, loader):
-        local_namespace = LocalNamespace(namespace)
-        self.block.evaluate(stream, local_namespace, loader)
-        # Make local namespace part of the parent namespace
-        if isinstance(namespace, LocalNamespace):
-            namespace.attach(local_namespace)
+        # Use the same namespace as the parent template, if sub-template
+        if not isinstance(namespace, LocalNamespace):
+            namespace = LocalNamespace(namespace)
+        self.block.evaluate(stream, namespace, loader)
 
 
 class Block(_Element):

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # encoding: utf-8
 
-import sys, os
+import sys
 
 from setuptools import setup, find_packages
 
@@ -13,7 +13,7 @@ if sys.version_info <= (2, 1):
 
 setup(
         name = "airspeed",
-        version = "0.4",
+        version = "0.4.1",
         
         description = "Airspeed is a powerful and easy-to-use templating engine for Python that aims for a high level of compatibility with the popular Velocity library for Java.",
         author = "Steve Purcell and Chris Tarttelin",
