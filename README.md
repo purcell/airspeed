@@ -90,7 +90,7 @@ https://github.com/purcell/sanityinc
 ### Getting started
 
 The
-[Velocity User Guide](http://velocity.apache.org/engine/devel/vtl-reference-guide.html)
+[Velocity User Guide](http://velocity.apache.org/engine/releases/velocity-1.7/user-guide.html)
 shows how to write templates.  Our unit tests show how to use the
 templates from your code.
 
