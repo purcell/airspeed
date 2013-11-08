@@ -470,10 +470,8 @@ class NameOrCall(_Element):
             # If list make sure index is an integer
             if isinstance(result, list) and not isinstance(array_index, (int, long)):
                 raise ValueError("expected integer for array index, got '%s'" % (array_index))
-            try:
-                result = result[array_index]
-            except:
-                result = None
+            try: result = result[array_index]
+            except: result = None
         return result
 
 
