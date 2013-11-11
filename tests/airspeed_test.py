@@ -685,6 +685,16 @@ $email
         value = unicode('Grüße', 'latin1')
         self.assertEquals(value, template.merge(locals()))
 
+    def test_preserves_unicode_strings_objects(self):
+        template = airspeed.Template('$value')
+        class Clazz:
+            def __init__(self, value):
+                self.value = value
+            def __str__(self):
+                return self.value
+        value = Clazz(u'£12,000')
+        self.assertEquals(unicode(value), template.merge(locals()))
+
     def test_can_define_macros_in_parsed_files(self):
         class Loader:
             def load_template(self, name):

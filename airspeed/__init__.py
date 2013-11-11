@@ -553,7 +553,7 @@ class FormalReference(_Element):
         if is_string(value):
             stream.write(value)
         else:
-            stream.write(str(value))
+            stream.write(unicode(value))
 
 
 class Null:
