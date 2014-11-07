@@ -14,8 +14,8 @@ except ImportError:
 __all__ = ['Airspeed']
 
 
-
 class Airspeed(object):
+
     """The airspeed templating engine.
 
     Sample usage:
@@ -40,6 +40,7 @@ class Airspeed(object):
         else:
             loader = self.loaders[basepath]
 
-        template = self.loaders[basepath].load_template(os.path.basename(template))
+        template = self.loaders[basepath].load_template(
+            os.path.basename(template))
 
         return mime_type, template.merge(data, loader=loader)

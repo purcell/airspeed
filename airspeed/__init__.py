@@ -1,24 +1,36 @@
 #!/usr/bin/env python
 
-import re, operator, os
+import re
+import operator
+import os
 
 import StringIO   # cStringIO has issues with unicode
 
-__all__ = ['Template', 'TemplateError', 'TemplateSyntaxError', 'CachingFileLoader']
+__all__ = [
+    'Template',
+    'TemplateError',
+    'TemplateSyntaxError',
+    'CachingFileLoader']
 
 
 ###############################################################################
 # Compatibility for old Pythons & Jython
 ###############################################################################
-try: True
+try:
+    True
 except NameError:
     False, True = 0, 1
-try: dict
+try:
+    dict
 except NameError:
     from UserDict import UserDict
+
     class dict(UserDict):
-        def __init__(self): self.data = {}
-try: operator.__gt__
+
+        def __init__(self):
+            self.data = {}
+try:
+    operator.__gt__
 except AttributeError:
     operator.__gt__ = lambda a, b: a > b
     operator.__lt__ = lambda a, b: a < b
@@ -29,20 +41,26 @@ except AttributeError:
     operator.mod = lambda a, b: a % b
 try:
     basestring
-    def is_string(s): return isinstance(s, basestring)
+
+    def is_string(s):
+        return isinstance(s, basestring)
 except NameError:
-    def is_string(s): return type(s) == type('')
+    def is_string(s):
+        return isinstance(s, type(''))
 
 ###############################################################################
 # Public interface
 ###############################################################################
 
+
 def boolean_value(variable_value):
-    if variable_value == False: return False
+    if not variable_value:
+        return False
     return not (variable_value is None)
 
 
 class Template:
+
     def __init__(self, content):
         self.content = content
         self.root_element = None
@@ -57,7 +75,8 @@ class Template:
             self.root_element = TemplateBody(self.content)
 
     def merge_to(self, namespace, fileobj, loader=None):
-        if loader is None: loader = NullLoader()
+        if loader is None:
+            loader = NullLoader()
         self.ensure_compiled()
         self.root_element.evaluate(fileobj, namespace, loader)
 
@@ -67,20 +86,25 @@ class TemplateError(Exception):
 
 
 class TemplateSyntaxError(TemplateError):
+
     def __init__(self, element, expected):
         self.element = element
         self.text_understood = element.full_text()[:element.end]
         self.line = 1 + self.text_understood.count('\n')
-        self.column = len(self.text_understood) - self.text_understood.rfind('\n')
+        self.column = len(
+            self.text_understood) - self.text_understood.rfind('\n')
         got = element.next_text()
         if len(got) > 40:
             got = got[:36] + ' ...'
-        Exception.__init__(self, "line %d, column %d: expected %s in %s, got: %s ..." % (self.line, self.column, expected, self.element_name(), got))
+        Exception.__init__(
+            self, "line %d, column %d: expected %s in %s, got: %s ..." %
+            (self.line, self.column, expected, self.element_name(), got))
 
     def get_position_strings(self):
         error_line_start = 1 + self.text_understood.rfind('\n')
         if '\n' in self.element.next_text():
-            error_line_end = self.element.next_text().find('\n') + self.element.end
+            error_line_end = self.element.next_text().find(
+                '\n') + self.element.end
         else:
             error_line_end = len(self.element.full_text())
         error_line = self.element.full_text()[error_line_start:error_line_end]
@@ -88,10 +112,15 @@ class TemplateSyntaxError(TemplateError):
         return [error_line, ' ' * (caret_pos - 1) + '^']
 
     def element_name(self):
-        return re.sub('([A-Z])', lambda m: ' ' + m.group(1).lower(), self.element.__class__.__name__).strip()
+        return re.sub(
+            '([A-Z])',
+            lambda m: ' ' +
+            m.group(1).lower(),
+            self.element.__class__.__name__).strip()
 
 
 class NullLoader:
+
     def load_text(self, name):
         raise TemplateError("no loader available for '%s'" % name)
 
@@ -100,30 +129,38 @@ class NullLoader:
 
 
 class CachingFileLoader:
+
     def __init__(self, basedir, debugging=False):
         self.basedir = basedir
-        self.known_templates = {} # name -> (template, file_mod_time)
+        self.known_templates = {}  # name -> (template, file_mod_time)
         self.debugging = debugging
-        if debugging: print "creating caching file loader with basedir:", basedir
+        if debugging:
+            print "creating caching file loader with basedir:", basedir
 
     def filename_of(self, name):
         return os.path.join(self.basedir, name)
 
     def load_text(self, name):
-        if self.debugging: print "Loading text from", self.basedir, name
+        if self.debugging:
+            print "Loading text from", self.basedir, name
         f = open(self.filename_of(name))
-        try: return f.read()
-        finally: f.close()
+        try:
+            return f.read()
+        finally:
+            f.close()
 
     def load_template(self, name):
-        if self.debugging: print "Loading template...", name,
+        if self.debugging:
+            print "Loading template...", name,
         mtime = os.path.getmtime(self.filename_of(name))
-        if self.known_templates.has_key(name):
+        if name in self.known_templates:
             template, prev_mtime = self.known_templates[name]
             if mtime <= prev_mtime:
-                if self.debugging: print "loading parsed template from cache"
+                if self.debugging:
+                    print "loading parsed template from cache"
                 return template
-        if self.debugging: print "loading text from disk"
+        if self.debugging:
+            print "loading text from disk"
         template = Template(self.load_text(name))
         template.ensure_compiled()
         self.known_templates[name] = (template, mtime)
@@ -131,6 +168,7 @@ class CachingFileLoader:
 
 
 class StoppableStream(StringIO.StringIO):
+
     def __init__(self, buf=''):
         self.stop = False
         StringIO.StringIO.__init__(self, buf)
@@ -146,16 +184,20 @@ class StoppableStream(StringIO.StringIO):
 
 WHITESPACE_TO_END_OF_LINE = re.compile(r'[ \t\r]*\n(.*)', re.S)
 
-class NoMatch(Exception): pass
+
+class NoMatch(Exception):
+    pass
 
 
 class LocalNamespace(dict):
+
     def __init__(self, parent):
         dict.__init__(self)
         self.parent = parent
 
     def __getitem__(self, key):
-        try: return dict.__getitem__(self, key)
+        try:
+            return dict.__getitem__(self, key)
         except KeyError:
             parent_value = self.parent[key]
             self[key] = parent_value
@@ -175,6 +217,7 @@ class LocalNamespace(dict):
 
 
 class _Element:
+
     def __init__(self, text, start=0):
         self._full_text = text
         self.start = self.end = start
@@ -194,25 +237,29 @@ class _Element:
 
     def identity_match(self, pattern):
         m = pattern.match(self._full_text, self.end)
-        if not m: raise NoMatch()
+        if not m:
+            raise NoMatch()
         self.end = m.start(pattern.groups)
         return m.groups()[:-1]
 
     def next_match(self, pattern):
         m = pattern.match(self._full_text, self.end)
-        if not m: return False
+        if not m:
+            return False
         self.end = m.start(pattern.groups)
         return m.groups()[:-1]
 
     def optional_match(self, pattern):
         m = pattern.match(self._full_text, self.end)
-        if not m: return False
+        if not m:
+            return False
         self.end = m.start(pattern.groups)
         return True
 
     def require_match(self, pattern, expected):
         m = pattern.match(self._full_text, self.end)
-        if not m: raise self.syntax_error(expected)
+        if not m:
+            raise self.syntax_error(expected)
         self.end = m.start(pattern.groups)
         return m.groups()[:-1]
 
@@ -223,8 +270,10 @@ class _Element:
             return element
         else:
             for element_class in element_spec:
-                try: element = element_class(self._full_text, self.end)
-                except NoMatch: pass
+                try:
+                    element = element_class(self._full_text, self.end)
+                except NoMatch:
+                    pass
                 else:
                     self.end = element.end
                     return element
@@ -232,15 +281,19 @@ class _Element:
 
     def require_next_element(self, element_spec, expected):
         if callable(element_spec):
-            try: element = element_spec(self._full_text, self.end)
-            except NoMatch: raise self.syntax_error(expected)
+            try:
+                element = element_spec(self._full_text, self.end)
+            except NoMatch:
+                raise self.syntax_error(expected)
             else:
                 self.end = element.end
                 return element
         else:
             for element_class in element_spec:
-                try: element = element_class(self._full_text, self.end)
-                except NoMatch: pass
+                try:
+                    element = element_class(self._full_text, self.end)
+                except NoMatch:
+                    pass
                 else:
                     self.end = element.end
                     return element
@@ -249,11 +302,15 @@ class _Element:
 
 
 class Text(_Element):
-    PLAIN = re.compile(r'((?:[^\\\$#]+|\\[\$#])+|\$[^!\{a-z0-9_]|\$$|#$|#[^\{\}a-zA-Z0-9#\*]+|\\.)(.*)$', re.S + re.I)
+    PLAIN = re.compile(
+        r'((?:[^\\\$#]+|\\[\$#])+|\$[^!\{a-z0-9_]|\$$|#$|#[^\{\}a-zA-Z0-9#\*]+|\\.)(.*)$',
+        re.S +
+        re.I)
     ESCAPED_CHAR = re.compile(r'\\([\\\$#])')
 
     def parse(self):
         text, = self.identity_match(self.PLAIN)
+
         def unescape(match):
             return match.group(1)
         self.text = self.ESCAPED_CHAR.sub(unescape, text)
@@ -263,6 +320,7 @@ class Text(_Element):
 
 
 class FallthroughHashText(_Element):
+
     """ Plain tex, starting a hash, but which wouldn't be matched
         by a directive or a macro earlier.
         The canonical example is an HTML color spec.
@@ -275,7 +333,8 @@ class FallthroughHashText(_Element):
 
     def parse(self):
         self.text, = self.identity_match(self.PLAIN)
-        if self.text.startswith('#end') or self.text.startswith('#{end}') or self.text.startswith('#else') or self.text.startswith('#{else}') or self.text.startswith('#elseif') or self.text.startswith('#{elseif}'):
+        if self.text.startswith('#end') or self.text.startswith('#{end}') or self.text.startswith(
+                '#else') or self.text.startswith('#{else}') or self.text.startswith('#elseif') or self.text.startswith('#{elseif}'):
             raise NoMatch
 
     def evaluate(self, stream, namespace, loader):
@@ -321,12 +380,24 @@ class StringLiteral(_Element):
 
     def parse(self):
         value, = self.identity_match(self.STRING)
+
         def unescape(match):
-            return {'n': '\n', 'r': '\r', 'b': '\b', 't': '\t', '"': '"', '\\': '\\', "'": "'"}.get(match.group(1), '\\' + match.group(1))
+            return {
+                'n': '\n',
+                'r': '\r',
+                'b': '\b',
+                't': '\t',
+                '"': '"',
+                '\\': '\\',
+                "'": "'"}.get(
+                match.group(1),
+                '\\' +
+                match.group(1))
         self.value = self.ESCAPED_CHAR.sub(unescape, value)
 
     def calculate(self, namespace, loader):
         return self.value
+
 
 class InterpolatedStringLiteral(StringLiteral):
     STRING = re.compile(r'"((?:\\["nrbt\\\\\\$]|[^"\\])*)"(.*)', re.S)
@@ -363,7 +434,8 @@ class ValueList(_Element):
 
     def parse(self):
         self.values = []
-        try: value = self.next_element(Value)
+        try:
+            value = self.next_element(Value)
         except NoMatch:
             pass
         else:
@@ -377,13 +449,14 @@ class ValueList(_Element):
 
 
 class _EmptyValues:
+
     def calculate(self, namespace, loader):
         return []
 
 
 class ArrayLiteral(_Element):
     START = re.compile(r'\[[ \t]*(.*)$', re.S)
-    END =   re.compile(r'[ \t]*\](.*)$', re.S)
+    END = re.compile(r'[ \t]*\](.*)$', re.S)
     values = _EmptyValues()
 
     def parse(self):
@@ -395,9 +468,10 @@ class ArrayLiteral(_Element):
         self.require_match(self.END, ']')
         self.calculate = self.values.calculate
 
+
 class DictionaryLiteral(_Element):
     START = re.compile(r'{[ \t]*(.*)$', re.S)
-    END =   re.compile(r'[ \t]*}(.*)$', re.S)
+    END = re.compile(r'[ \t]*}(.*)$', re.S)
     KEYVALSEP = re.compile(r'[ \t]*:[[ \t]*(.*)$', re.S)
     PAIRSEP = re.compile(r'[ \t]*,[ \t]*(.*)$', re.S)
 
@@ -412,24 +486,34 @@ class DictionaryLiteral(_Element):
             self.require_match(self.KEYVALSEP, ':')
             value = self.next_element(Value)
             self.local_data[key] = value
-            if not self.optional_match(self.PAIRSEP): break
+            if not self.optional_match(self.PAIRSEP):
+                break
         self.require_match(self.END, '}')
 
     # Note that this delays calculation of values until it's used.
     # TODO confirm that that's correct.
     def calculate(self, namespace, loader):
         tmp = {}
-        for (key,val) in self.local_data.items():
-            tmp[key.calculate(namespace, loader)] = val.calculate(namespace, loader)
+        for (key, val) in self.local_data.items():
+            tmp[key.calculate(namespace, loader)] = val.calculate(
+                namespace, loader)
         return tmp
 
 
 class Value(_Element):
+
     def parse(self):
-        self.expression = self.next_element((FormalReference, FloatingPointLiteral, IntegerLiteral,
-                                             StringLiteral, InterpolatedStringLiteral, ArrayLiteral,
-                                             DictionaryLiteral, ParenthesizedExpression, UnaryOperatorValue,
-                                             BooleanLiteral))
+        self.expression = self.next_element(
+            (FormalReference,
+             FloatingPointLiteral,
+             IntegerLiteral,
+             StringLiteral,
+             InterpolatedStringLiteral,
+             ArrayLiteral,
+             DictionaryLiteral,
+             ParenthesizedExpression,
+             UnaryOperatorValue,
+             BooleanLiteral))
 
     def calculate(self, namespace, loader):
         return self.expression.calculate(namespace, loader)
@@ -442,10 +526,13 @@ class NameOrCall(_Element):
 
     def parse(self):
         self.name, = self.identity_match(self.NAME)
-        try: self.parameters = self.next_element(ParameterList)
+        try:
+            self.parameters = self.next_element(ParameterList)
         except NoMatch:
-          try: self.index = self.next_element(ArrayIndex)
-          except NoMatch: pass
+            try:
+                self.index = self.next_element(ArrayIndex)
+            except NoMatch:
+                pass
 
     def calculate(self, current_object, loader, top_namespace):
         look_in_dict = True
@@ -457,21 +544,31 @@ class NameOrCall(_Element):
             except AttributeError:
                 pass
         if look_in_dict:
-            try: result = current_object[self.name]
-            except KeyError: result = None
-            except TypeError: result = None
-            except AttributeError: result = None
+            try:
+                result = current_object[self.name]
+            except KeyError:
+                result = None
+            except TypeError:
+                result = None
+            except AttributeError:
+                result = None
         if result is None:
-            return None ## TODO: an explicit 'not found' exception?
+            return None  # TODO: an explicit 'not found' exception?
         if self.parameters is not None:
             result = result(*self.parameters.calculate(top_namespace, loader))
         elif self.index is not None:
             array_index = self.index.calculate(top_namespace, loader)
             # If list make sure index is an integer
-            if isinstance(result, list) and not isinstance(array_index, (int, long)):
-                raise ValueError("expected integer for array index, got '%s'" % (array_index))
-            try: result = result[array_index]
-            except: result = None
+            if isinstance(
+                    result, list) and not isinstance(
+                    array_index, (int, long)):
+                raise ValueError(
+                    "expected integer for array index, got '%s'" %
+                    (array_index))
+            try:
+                result = result[array_index]
+            except:
+                result = None
         return result
 
 
@@ -483,7 +580,10 @@ class SubExpression(_Element):
         self.expression = self.next_element(VariableExpression)
 
     def calculate(self, current_object, loader, global_namespace):
-        return self.expression.calculate(current_object, loader, global_namespace)
+        return self.expression.calculate(
+            current_object,
+            loader,
+            global_namespace)
 
 
 class VariableExpression(_Element):
@@ -491,15 +591,20 @@ class VariableExpression(_Element):
 
     def parse(self):
         self.part = self.next_element(NameOrCall)
-        try: self.subexpression = self.next_element(SubExpression)
-        except NoMatch: pass
+        try:
+            self.subexpression = self.next_element(SubExpression)
+        except NoMatch:
+            pass
 
     def calculate(self, namespace, loader, global_namespace=None):
         if global_namespace is None:
             global_namespace = namespace
         value = self.part.calculate(namespace, loader, global_namespace)
         if self.subexpression:
-            value = self.subexpression.calculate(value, loader, global_namespace)
+            value = self.subexpression.calculate(
+                value,
+                loader,
+                global_namespace)
         return value
 
 
@@ -511,8 +616,10 @@ class ParameterList(_Element):
 
     def parse(self):
         self.identity_match(self.START)
-        try: self.values = self.next_element(ValueList)
-        except NoMatch: pass
+        try:
+            self.values = self.next_element(ValueList)
+        except NoMatch:
+            pass
         self.require_match(self.END, ')')
 
     def calculate(self, namespace, loader):
@@ -526,8 +633,12 @@ class ArrayIndex(_Element):
 
     def parse(self):
         self.identity_match(self.START)
-        self.index = self.require_next_element((FormalReference, IntegerLiteral, InterpolatedStringLiteral,
-                                                ParenthesizedExpression), 'integer index or object key')
+        self.index = self.require_next_element(
+            (FormalReference,
+             IntegerLiteral,
+             InterpolatedStringLiteral,
+             ParenthesizedExpression),
+            'integer index or object key')
         self.require_match(self.END, ']')
 
     def calculate(self, namespace, loader):
@@ -541,15 +652,20 @@ class FormalReference(_Element):
 
     def parse(self):
         self.silent, braces = self.identity_match(self.START)
-        self.expression = self.require_next_element(VariableExpression, 'expression')
-        if braces: self.require_match(self.CLOSING_BRACE, '}')
+        self.expression = self.require_next_element(
+            VariableExpression,
+            'expression')
+        if braces:
+            self.require_match(self.CLOSING_BRACE, '}')
         self.calculate = self.expression.calculate
 
     def evaluate(self, stream, namespace, loader):
         value = self.expression.calculate(namespace, loader)
         if value is None:
-            if self.silent: value = ''
-            else: value = self.my_text()
+            if self.silent:
+                value = ''
+            else:
+                value = self.my_text()
         if is_string(value):
             stream.write(value)
         else:
@@ -557,33 +673,40 @@ class FormalReference(_Element):
 
 
 class Null:
-    def evaluate(self, stream, namespace, loader): pass
+
+    def evaluate(self, stream, namespace, loader):
+        pass
 
 
 class Comment(_Element, Null):
-    COMMENT = re.compile('#(?:#.*?(?:\n|$)|\*.*?\*#(?:[ \t]*\n)?)(.*)$', re.M + re.S)
+    COMMENT = re.compile(
+        '#(?:#.*?(?:\n|$)|\*.*?\*#(?:[ \t]*\n)?)(.*)$',
+        re.M +
+        re.S)
 
     def parse(self):
         self.identity_match(self.COMMENT)
 
 
 class BinaryOperator(_Element):
-    BINARY_OP = re.compile(r'\s*(>=|<=|<|==|!=|>|%|\|\||&&|or|and|\+|\-|\*|\/|\%)\s*(.*)$', re.S)
-    OPERATORS = {'>' : operator.gt, '>=': operator.ge,
-                 '<' : operator.lt, '<=': operator.le,
+    BINARY_OP = re.compile(
+        r'\s*(>=|<=|<|==|!=|>|%|\|\||&&|or|and|\+|\-|\*|\/|\%)\s*(.*)$',
+        re.S)
+    OPERATORS = {'>': operator.gt, '>=': operator.ge,
+                 '<': operator.lt, '<=': operator.le,
                  '==': operator.eq, '!=': operator.ne,
-                 '%' : operator.mod,
-                 '||': lambda a,b : boolean_value(a) or boolean_value(b),
-                 '&&': lambda a,b : boolean_value(a) and boolean_value(b),
-                 'or': lambda a,b : boolean_value(a) or boolean_value(b),
-                 'and': lambda a,b : boolean_value(a) and boolean_value(b),
-                 '+' : operator.add,
-                 '-' : operator.sub,
-                 '*' : operator.mul,
-                 '/' : operator.div}
-    PRECEDENCE = { '>'  : 2, '<'  : 2, '==': 2, '>=' : 2, '<=' : 2, '!=': 2,
-                   '||' : 1, '&&' : 1, 'or': 1, 'and': 1,
-                   '+'  : 3, '-'  : 3, '*' : 3, '/'  : 3, '%': 3}
+                 '%': operator.mod,
+                 '||': lambda a, b: boolean_value(a) or boolean_value(b),
+                 '&&': lambda a, b: boolean_value(a) and boolean_value(b),
+                 'or': lambda a, b: boolean_value(a) or boolean_value(b),
+                 'and': lambda a, b: boolean_value(a) and boolean_value(b),
+                 '+': operator.add,
+                 '-': operator.sub,
+                 '*': operator.mul,
+                 '/': operator.div}
+    PRECEDENCE = {'>': 2, '<': 2, '==': 2, '>=': 2, '<=': 2, '!=': 2,
+                  '||': 1, '&&': 1, 'or': 1, 'and': 1,
+                  '+': 3, '-': 3, '*': 3, '/': 3, '%': 3}
 
     # In velocity, if + is applied to one string and one numeric
     # argument, will convert the number into a string.
@@ -606,10 +729,10 @@ class BinaryOperator(_Element):
         return self.precedence > other.precedence
 
 
-
 class UnaryOperatorValue(_Element):
     UNARY_OP = re.compile(r'\s*(!)\s*(.*)$', re.S)
     OPERATORS = {'!': operator.__not__}
+
     def parse(self):
         op_string, = self.identity_match(self.UNARY_OP)
         self.value = self.next_element(Value)
@@ -637,7 +760,7 @@ class Expression(_Element):
     def calculate(self, namespace, loader):
         if not self.expression or len(self.expression) == 0:
             return False
-        #TODO: how does velocity deal with an empty condition expression?
+        # TODO: how does velocity deal with an empty condition expression?
 
         opstack = []
         valuestack = [self.expression[0]]
@@ -671,7 +794,7 @@ class Expression(_Element):
 
         if len(valuestack) != 1:
             print "evaluation of expression in Condition.calculate is messed up: final length of stack is not one"
-            #TODO handle this officially
+            # TODO handle this officially
 
         result = valuestack[0]
         if isinstance(result, Value):
@@ -691,6 +814,7 @@ class ParenthesizedExpression(_Element):
 
 
 class Condition(_Element):
+
     def parse(self):
         expression = self.next_element(ParenthesizedExpression)
         self.optional_match(WHITESPACE_TO_END_OF_LINE)
@@ -736,10 +860,14 @@ class IfDirective(_Element):
         self.block = self.require_next_element(Block, "block")
         self.elseifs = []
         while True:
-            try: self.elseifs.append(self.next_element(ElseifBlock))
-            except NoMatch: break
-        try: self.else_block = self.next_element(ElseBlock)
-        except NoMatch: pass
+            try:
+                self.elseifs.append(self.next_element(ElseifBlock))
+            except NoMatch:
+                break
+        try:
+            self.else_block = self.next_element(ElseBlock)
+        except NoMatch:
+            pass
         self.require_next_element(End, '#else, #elseif or #end')
 
     def evaluate(self, stream, namespace, loader):
@@ -754,10 +882,13 @@ class IfDirective(_Element):
 
 
 # This can't deal with assignments like
-# #set($one.two().three = something)
+# set($one.two().three = something)
 # yet
 class Assignment(_Element):
-    START = re.compile(r'\s*\(\s*\$([a-z_][a-z0-9_]*(?:\.[a-z_][a-z0-9_]*)*)\s*=\s*(.*)$', re.S + re.I)
+    START = re.compile(
+        r'\s*\(\s*\$([a-z_][a-z0-9_]*(?:\.[a-z_][a-z0-9_]*)*)\s*=\s*(.*)$',
+        re.S +
+        re.I)
     END = re.compile(r'\s*\)(?:[ \t]*\r?\n)?(.*)$', re.S + re.M)
 
     def parse(self):
@@ -769,7 +900,8 @@ class Assignment(_Element):
     def evaluate(self, stream, namespace, loader):
         thingy = namespace
         for term in self.terms[0:-1]:
-            if thingy == None: return
+            if thingy is None:
+                return
             look_in_dict = True
             if not isinstance(thingy, LocalNamespace):
                 try:
@@ -778,13 +910,17 @@ class Assignment(_Element):
                 except AttributeError:
                     pass
             if look_in_dict:
-                try: 
+                try:
                     thingy = thingy[term]
-                except KeyError: thingy = None
-                except TypeError: thingy = None
-                except AttributeError: thingy = None
+                except KeyError:
+                    thingy = None
+                except TypeError:
+                    thingy = None
+                except AttributeError:
+                    thingy = None
         if thingy is not None:
             thingy[self.terms[-1]] = self.value.calculate(namespace, loader)
+
 
 class MacroDefinition(_Element):
     START = re.compile(r'#macro\b(.*)', re.S + re.I)
@@ -792,7 +928,18 @@ class MacroDefinition(_Element):
     NAME = re.compile(r'\s*([a-z][a-z_0-9]*)\b(.*)', re.S + re.I)
     CLOSE_PAREN = re.compile(r'[ \t]*\)(.*)$', re.S)
     ARG_NAME = re.compile(r'[, \t]+\$([a-z][a-z_0-9]*)(.*)$', re.S + re.I)
-    RESERVED_NAMES = ('if', 'else', 'elseif', 'set', 'macro', 'foreach', 'parse', 'include', 'stop', 'end')
+    RESERVED_NAMES = (
+        'if',
+        'else',
+        'elseif',
+        'set',
+        'macro',
+        'foreach',
+        'parse',
+        'include',
+        'stop',
+        'end')
+
     def parse(self):
         self.identity_match(self.START)
         self.require_match(self.OPEN_PAREN, '(')
@@ -802,7 +949,8 @@ class MacroDefinition(_Element):
         self.arg_names = []
         while True:
             m = self.next_match(self.ARG_NAME)
-            if not m: break
+            if not m:
+                break
             self.arg_names.append(m[0])
         self.require_match(self.CLOSE_PAREN, ') or arg name')
         self.optional_match(WHITESPACE_TO_END_OF_LINE)
@@ -812,13 +960,17 @@ class MacroDefinition(_Element):
     def evaluate(self, stream, namespace, loader):
         global_ns = namespace.top()
         macro_key = '#' + self.macro_name.lower()
-        if global_ns.has_key(macro_key):
+        if macro_key in global_ns:
             raise Exception("cannot redefine macro")
         global_ns[macro_key] = self
 
     def execute_macro(self, stream, namespace, arg_value_elements, loader):
         if len(arg_value_elements) != len(self.arg_names):
-            raise Exception("expected %d arguments, got %d" % (len(self.arg_names), len(arg_value_elements)))
+            raise Exception(
+                "expected %d arguments, got %d" %
+                (len(
+                    self.arg_names),
+                    len(arg_value_elements)))
         macro_namespace = LocalNamespace(namespace)
         for arg_name, arg_value in zip(self.arg_names, arg_value_elements):
             macro_namespace[arg_name] = arg_value.calculate(namespace, loader)
@@ -835,7 +987,8 @@ class MacroCall(_Element):
         macro_name, = self.identity_match(self.START)
         self.macro_name = macro_name.lower()
         self.args = []
-        if self.macro_name in MacroDefinition.RESERVED_NAMES or self.macro_name.startswith('end'):
+        if self.macro_name in MacroDefinition.RESERVED_NAMES or self.macro_name.startswith(
+                'end'):
             raise NoMatch()
         if not self.optional_match(self.OPEN_PAREN):
             # It's not really a macro call,
@@ -844,14 +997,19 @@ class MacroCall(_Element):
             # call it not-a-match and then let another thing catch it
             raise NoMatch()
         while True:
-            try: self.args.append(self.next_element(Value))
-            except NoMatch: break
-            if not self.optional_match(self.SPACE_OR_COMMA): break
+            try:
+                self.args.append(self.next_element(Value))
+            except NoMatch:
+                break
+            if not self.optional_match(self.SPACE_OR_COMMA):
+                break
         self.require_match(self.CLOSE_PAREN, 'argument value or )')
 
     def evaluate(self, stream, namespace, loader):
-        try: macro = namespace['#' + self.macro_name]
-        except KeyError: raise Exception('no such macro: ' + self.macro_name)
+        try:
+            macro = namespace['#' + self.macro_name]
+        except KeyError:
+            raise Exception('no such macro: ' + self.macro_name)
         macro.execute_macro(stream, namespace, self.args, loader)
 
 
@@ -863,7 +1021,11 @@ class IncludeDirective(_Element):
     def parse(self):
         self.identity_match(self.START)
         self.require_match(self.OPEN_PAREN, '(')
-        self.name = self.require_next_element((StringLiteral, InterpolatedStringLiteral, FormalReference), 'template name')
+        self.name = self.require_next_element(
+            (StringLiteral,
+             InterpolatedStringLiteral,
+             FormalReference),
+            'template name')
         self.require_match(self.CLOSE_PAREN, ')')
 
     def evaluate(self, stream, namespace, loader):
@@ -878,12 +1040,16 @@ class ParseDirective(_Element):
     def parse(self):
         self.identity_match(self.START)
         self.require_match(self.OPEN_PAREN, '(')
-        self.name = self.require_next_element((StringLiteral, InterpolatedStringLiteral, FormalReference), 'template name')
+        self.name = self.require_next_element(
+            (StringLiteral,
+             InterpolatedStringLiteral,
+             FormalReference),
+            'template name')
         self.require_match(self.CLOSE_PAREN, ')')
 
     def evaluate(self, stream, namespace, loader):
         template = loader.load_template(self.name.calculate(namespace, loader))
-        ## TODO: local namespace?
+        # TODO: local namespace?
         template.merge_to(namespace, stream, loader=loader)
 
 
@@ -928,10 +1094,11 @@ class ForeachDirective(_Element):
     CLOSE_PAREN = re.compile(r'[ \t]*\)(.*)$', re.S)
 
     def parse(self):
-        ## Could be cleaner b/c syntax error if no '('
+        # Could be cleaner b/c syntax error if no '('
         self.identity_match(self.START)
         self.require_match(self.OPEN_PAREN, '(')
-        self.loop_var_name, = self.require_match(self.LOOP_VAR_NAME, 'loop var name')
+        self.loop_var_name, = self.require_match(
+            self.LOOP_VAR_NAME, 'loop var name')
         self.require_match(self.IN, 'in')
         self.value = self.next_element(Value)
         self.require_match(self.CLOSE_PAREN, ')')
@@ -944,15 +1111,22 @@ class ForeachDirective(_Element):
         try:
             if iterable is None:
                 return
-            if hasattr(iterable, 'keys'): iterable = iterable.keys()
+            if hasattr(iterable, 'keys'):
+                iterable = iterable.keys()
             if not hasattr(iterable, '__getitem__'):
-                raise ValueError("value for $%s is not iterable in #foreach: %s" % (self.loop_var_name, iterable))
+                raise ValueError(
+                    "value for $%s is not iterable in #foreach: %s" %
+                    (self.loop_var_name, iterable))
             for item in iterable:
                 namespace = LocalNamespace(namespace)
                 namespace['velocityCount'] = counter
                 namespace['velocityHasNext'] = counter < len(iterable)
-                namespace['foreach'] = {"count": counter, "index": counter - 1, "hasNext": counter < len(iterable),
-                                        "first": counter == 1, "last": counter == len(iterable)}
+                namespace['foreach'] = {
+                    "count": counter,
+                    "index": counter - 1,
+                    "hasNext": counter < len(iterable),
+                    "first": counter == 1,
+                    "last": counter == len(iterable)}
                 namespace[self.loop_var_name] = item
                 self.block.evaluate(stream, namespace, loader)
                 counter += 1
@@ -961,6 +1135,7 @@ class ForeachDirective(_Element):
 
 
 class TemplateBody(_Element):
+
     def parse(self):
         self.block = self.next_element(Block)
         if self.next_text():
@@ -974,16 +1149,29 @@ class TemplateBody(_Element):
 
 
 class Block(_Element):
+
     def parse(self):
         self.children = []
         while True:
-            try: self.children.append(self.next_element((Text, FormalReference, Comment, IfDirective, SetDirective,
-                                                         ForeachDirective, IncludeDirective, ParseDirective,
-                                                         MacroDefinition, StopDirective, UserDefinedDirective,
-                                                         MacroCall, FallthroughHashText)))
-            except NoMatch: break
+            try:
+                self.children.append(
+                    self.next_element(
+                        (Text,
+                         FormalReference,
+                         Comment,
+                         IfDirective,
+                         SetDirective,
+                         ForeachDirective,
+                         IncludeDirective,
+                         ParseDirective,
+                         MacroDefinition,
+                         StopDirective,
+                         UserDefinedDirective,
+                         MacroCall,
+                         FallthroughHashText)))
+            except NoMatch:
+                break
 
     def evaluate(self, stream, namespace, loader):
         for child in self.children:
             child.evaluate(stream, namespace, loader)
-
