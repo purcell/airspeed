@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/purcell/airspeed.png?branch=master)](https://travis-ci.org/purcell/airspeed)
+
 # Airspeed - a Python template engine
 
 ## What is Airspeed?
