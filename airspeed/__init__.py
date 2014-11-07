@@ -4,7 +4,7 @@ import re
 import operator
 import os
 
-import StringIO   # cStringIO has issues with unicode
+import StringIO  # cStringIO has issues with unicode
 
 __all__ = [
     'Template',
@@ -60,7 +60,6 @@ def boolean_value(variable_value):
 
 
 class Template:
-
     def __init__(self, content):
         self.content = content
         self.root_element = None
@@ -86,7 +85,6 @@ class TemplateError(Exception):
 
 
 class TemplateSyntaxError(TemplateError):
-
     def __init__(self, element, expected):
         self.element = element
         self.text_understood = element.full_text()[:element.end]
@@ -115,12 +113,11 @@ class TemplateSyntaxError(TemplateError):
         return re.sub(
             '([A-Z])',
             lambda m: ' ' +
-            m.group(1).lower(),
+                      m.group(1).lower(),
             self.element.__class__.__name__).strip()
 
 
 class NullLoader:
-
     def load_text(self, name):
         raise TemplateError("no loader available for '%s'" % name)
 
@@ -129,7 +126,6 @@ class NullLoader:
 
 
 class CachingFileLoader:
-
     def __init__(self, basedir, debugging=False):
         self.basedir = basedir
         self.known_templates = {}  # name -> (template, file_mod_time)
@@ -168,7 +164,6 @@ class CachingFileLoader:
 
 
 class StoppableStream(StringIO.StringIO):
-
     def __init__(self, buf=''):
         self.stop = False
         StringIO.StringIO.__init__(self, buf)
@@ -190,7 +185,6 @@ class NoMatch(Exception):
 
 
 class LocalNamespace(dict):
-
     def __init__(self, parent):
         dict.__init__(self)
         self.parent = parent
@@ -217,7 +211,6 @@ class LocalNamespace(dict):
 
 
 class _Element:
-
     def __init__(self, text, start=0):
         self._full_text = text
         self.start = self.end = start
@@ -303,7 +296,8 @@ class _Element:
 
 class Text(_Element):
     PLAIN = re.compile(
-        r'((?:[^\\\$#]+|\\[\$#])+|\$[^!\{a-z0-9_]|\$$|#$|#[^\{\}a-zA-Z0-9#\*]+|\\.)(.*)$',
+        r'((?:[^\\\$#]+|\\[\$#])+|\$[^!\{a-z0-9_]|\$$|#$'
+        r'|#[^\{\}a-zA-Z0-9#\*]+|\\.)(.*)$',
         re.S +
         re.I)
     ESCAPED_CHAR = re.compile(r'\\([\\\$#])')
@@ -313,6 +307,7 @@ class Text(_Element):
 
         def unescape(match):
             return match.group(1)
+
         self.text = self.ESCAPED_CHAR.sub(unescape, text)
 
     def evaluate(self, stream, namespace, loader):
@@ -320,7 +315,6 @@ class Text(_Element):
 
 
 class FallthroughHashText(_Element):
-
     """ Plain tex, starting a hash, but which wouldn't be matched
         by a directive or a macro earlier.
         The canonical example is an HTML color spec.
@@ -333,8 +327,11 @@ class FallthroughHashText(_Element):
 
     def parse(self):
         self.text, = self.identity_match(self.PLAIN)
-        if self.text.startswith('#end') or self.text.startswith('#{end}') or self.text.startswith(
-                '#else') or self.text.startswith('#{else}') or self.text.startswith('#elseif') or self.text.startswith('#{elseif}'):
+        if self.text.startswith('#end') or self.text.startswith('#{end}') or \
+                self.text.startswith('#else') or \
+                self.text.startswith('#{else}') or \
+                self.text.startswith('#elseif') or \
+                self.text.startswith('#{elseif}'):
             raise NoMatch
 
     def evaluate(self, stream, namespace, loader):
@@ -393,6 +390,7 @@ class StringLiteral(_Element):
                 match.group(1),
                 '\\' +
                 match.group(1))
+
         self.value = self.ESCAPED_CHAR.sub(unescape, value)
 
     def calculate(self, namespace, loader):
@@ -449,7 +447,6 @@ class ValueList(_Element):
 
 
 class _EmptyValues:
-
     def calculate(self, namespace, loader):
         return []
 
@@ -481,7 +478,7 @@ class DictionaryLiteral(_Element):
         if self.optional_match(self.END):
             # it's an empty dictionary
             return
-        while(True):
+        while (True):
             key = self.next_element(Value)
             self.require_match(self.KEYVALSEP, ':')
             value = self.next_element(Value)
@@ -501,7 +498,6 @@ class DictionaryLiteral(_Element):
 
 
 class Value(_Element):
-
     def parse(self):
         self.expression = self.next_element(
             (FormalReference,
@@ -673,7 +669,6 @@ class FormalReference(_Element):
 
 
 class Null:
-
     def evaluate(self, stream, namespace, loader):
         pass
 
@@ -745,10 +740,9 @@ class UnaryOperatorValue(_Element):
 # Note: there appears to be no way to differentiate a variable or
 # value from an expression, other than context.
 class Expression(_Element):
-
     def parse(self):
         self.expression = [self.next_element(Value)]
-        while(True):
+        while (True):
             try:
                 binary_operator = self.next_element(BinaryOperator)
                 value = self.require_next_element(Value, 'value')
@@ -793,7 +787,8 @@ class Expression(_Element):
             stack_calculate(opstack, valuestack, namespace, loader)
 
         if len(valuestack) != 1:
-            print "evaluation of expression in Condition.calculate is messed up: final length of stack is not one"
+            print ("evaluation of expression in Condition.calculate "
+                   "is messed up: final length of stack is not one")
             # TODO handle this officially
 
         result = valuestack[0]
@@ -814,7 +809,6 @@ class ParenthesizedExpression(_Element):
 
 
 class Condition(_Element):
-
     def parse(self):
         expression = self.next_element(ParenthesizedExpression)
         self.optional_match(WHITESPACE_TO_END_OF_LINE)
@@ -970,7 +964,7 @@ class MacroDefinition(_Element):
                 "expected %d arguments, got %d" %
                 (len(
                     self.arg_names),
-                    len(arg_value_elements)))
+                 len(arg_value_elements)))
         macro_namespace = LocalNamespace(namespace)
         for arg_name, arg_value in zip(self.arg_names, arg_value_elements):
             macro_namespace[arg_name] = arg_value.calculate(namespace, loader)
@@ -987,8 +981,8 @@ class MacroCall(_Element):
         macro_name, = self.identity_match(self.START)
         self.macro_name = macro_name.lower()
         self.args = []
-        if self.macro_name in MacroDefinition.RESERVED_NAMES or self.macro_name.startswith(
-                'end'):
+        if self.macro_name in MacroDefinition.RESERVED_NAMES or \
+                self.macro_name.startswith('end'):
             raise NoMatch()
         if not self.optional_match(self.OPEN_PAREN):
             # It's not really a macro call,
@@ -1135,7 +1129,6 @@ class ForeachDirective(_Element):
 
 
 class TemplateBody(_Element):
-
     def parse(self):
         self.block = self.next_element(Block)
         if self.next_text():
@@ -1149,7 +1142,6 @@ class TemplateBody(_Element):
 
 
 class Block(_Element):
-
     def parse(self):
         self.children = []
         while True:
