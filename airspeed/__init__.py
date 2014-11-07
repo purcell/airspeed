@@ -685,11 +685,15 @@ class Comment(_Element, Null):
 
 class BinaryOperator(_Element):
     BINARY_OP = re.compile(
-        r'\s*(>=|<=|<|==|!=|>|%|\|\||&&|or|and|\+|\-|\*|\/|\%)\s*(.*)$',
+        r'\s*(>=|<=|<|==|!=|>|%|\|\||&&|or|and|\+|\-|\*|\/|\%|gt|lt|ne|eq|ge'
+        r'|le|not)\s*(.*)$',
         re.S)
-    OPERATORS = {'>': operator.gt, '>=': operator.ge,
-                 '<': operator.lt, '<=': operator.le,
-                 '==': operator.eq, '!=': operator.ne,
+    OPERATORS = {'>': operator.gt, 'gt': operator.gt,
+                 '>=': operator.ge, 'ge': operator.ge,
+                 '<': operator.lt, 'lt': operator.lt,
+                 '<=': operator.le, 'le': operator.le,
+                 '==': operator.eq, 'eq': operator.eq,
+                 '!=': operator.ne, 'ne': operator.ne,
                  '%': operator.mod,
                  '||': lambda a, b: boolean_value(a) or boolean_value(b),
                  '&&': lambda a, b: boolean_value(a) and boolean_value(b),
@@ -701,7 +705,9 @@ class BinaryOperator(_Element):
                  '/': operator.div}
     PRECEDENCE = {'>': 2, '<': 2, '==': 2, '>=': 2, '<=': 2, '!=': 2,
                   '||': 1, '&&': 1, 'or': 1, 'and': 1,
-                  '+': 3, '-': 3, '*': 3, '/': 3, '%': 3}
+                  '+': 3, '-': 3, '*': 3, '/': 3, '%': 3,
+                  'gt': 2, 'lt': 2, 'ne': 2, 'eq': 2, 'ge': 2, 'le': 2,
+                  }
 
     # In velocity, if + is applied to one string and one numeric
     # argument, will convert the number into a string.

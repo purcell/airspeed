@@ -22,7 +22,6 @@ except NameError:
 
 
 class TemplateTestCase(TestCase):
-
     def test_parser_returns_input_when_there_is_nothing_to_substitute(self):
         template = airspeed.Template("<html></html>")
         self.assertEquals("<html></html>", template.merge({}))
@@ -120,7 +119,6 @@ class TemplateTestCase(TestCase):
         template = airspeed.Template("Hello $name.first_name()")
 
         class MyObj:
-
             def first_name(self):
                 return "Chris"
         self.assertEquals("Hello Chris", template.merge({"name": MyObj()}))
@@ -159,7 +157,6 @@ class TemplateTestCase(TestCase):
 
     def test_if_statement_honours_custom_truth_value_of_objects(self):
         class BooleanValue:
-
             def __init__(self, value):
                 self.value = value
 
@@ -480,34 +477,44 @@ $email
             self.fail('expected error')
 
     def test_compare_greater_than_operator(self):
-        template = airspeed.Template('#if ( $value > 1 )yes#end')
-        self.assertEquals('', template.merge({'value': 0}))
-        self.assertEquals('', template.merge({'value': 1}))
-        self.assertEquals('yes', template.merge({'value': 2}))
+        for operator in ['>', 'gt']:
+            template = airspeed.Template('#if ( $value %s 1 )yes#end' %
+                                         operator)
+            self.assertEquals('', template.merge({'value': 0}))
+            self.assertEquals('', template.merge({'value': 1}))
+            self.assertEquals('yes', template.merge({'value': 2}))
 
     def test_compare_greater_than_or_equal_operator(self):
-        template = airspeed.Template('#if ( $value >= 1 )yes#end')
-        self.assertEquals('', template.merge({'value': 0}))
-        self.assertEquals('yes', template.merge({'value': 1}))
-        self.assertEquals('yes', template.merge({'value': 2}))
+        for operator in ['>=', 'ge']:
+            template = airspeed.Template('#if ( $value %s 1 )yes#end' %
+                                         operator)
+            self.assertEquals('', template.merge({'value': 0}))
+            self.assertEquals('yes', template.merge({'value': 1}))
+            self.assertEquals('yes', template.merge({'value': 2}))
 
     def test_compare_less_than_operator(self):
-        template = airspeed.Template('#if ( $value < 1 )yes#end')
-        self.assertEquals('yes', template.merge({'value': 0}))
-        self.assertEquals('', template.merge({'value': 1}))
-        self.assertEquals('', template.merge({'value': 2}))
+        for operator in ['<', 'lt']:
+            template = airspeed.Template('#if ( $value %s 1 )yes#end' %
+                                         operator)
+            self.assertEquals('yes', template.merge({'value': 0}))
+            self.assertEquals('', template.merge({'value': 1}))
+            self.assertEquals('', template.merge({'value': 2}))
 
     def test_compare_less_than_or_equal_operator(self):
-        template = airspeed.Template('#if ( $value <= 1 )yes#end')
-        self.assertEquals('yes', template.merge({'value': 0}))
-        self.assertEquals('yes', template.merge({'value': 1}))
-        self.assertEquals('', template.merge({'value': 2}))
+        for operator in ['<=', 'le']:
+            template = airspeed.Template('#if ( $value %s 1 )yes#end' %
+                                         operator)
+            self.assertEquals('yes', template.merge({'value': 0}))
+            self.assertEquals('yes', template.merge({'value': 1}))
+            self.assertEquals('', template.merge({'value': 2}))
 
     def test_compare_equality_operator(self):
-        template = airspeed.Template('#if ( $value == 1 )yes#end')
-        self.assertEquals('', template.merge({'value': 0}))
-        self.assertEquals('yes', template.merge({'value': 1}))
-        self.assertEquals('', template.merge({'value': 2}))
+        for operator in ['==', 'eq']:
+            template = airspeed.Template('#if ( $value %s 1 )yes#end' %
+                                         operator)
+            self.assertEquals('', template.merge({'value': 0}))
+            self.assertEquals('yes', template.merge({'value': 1}))
+            self.assertEquals('', template.merge({'value': 2}))
 
     def test_or_operator(self):
         template = airspeed.Template('#if ( $value1 || $value2 )yes#end')
@@ -601,7 +608,6 @@ $email
 
     def test_logical_negation_operator_honours_custom_truth_values(self):
         class BooleanValue:
-
             def __init__(self, value):
                 self.value = value
 
@@ -700,7 +706,6 @@ $email
     def test_include_directive_yields_loader_error_if_included_content_not_found(
             self):
         class BrokenLoader:
-
             def load_text(self, name):
                 raise IOError(name)
         template = airspeed.Template('#include ("foo.tmpl")')
@@ -708,7 +713,6 @@ $email
 
     def test_valid_include_directive_include_content(self):
         class WorkingLoader:
-
             def load_text(self, name):
                 if name == 'foo.tmpl':
                     return "howdy"
@@ -726,7 +730,6 @@ $email
     def test_parse_directive_yields_loader_error_if_parsed_content_not_found(
             self):
         class BrokenLoader:
-
             def load_template(self, name):
                 raise IOError(name)
         template = airspeed.Template('#parse ("foo.tmpl")')
@@ -734,7 +737,6 @@ $email
 
     def test_valid_parse_directive_outputs_parsed_content(self):
         class WorkingLoader:
-
             def load_template(self, name):
                 if name == 'foo.tmpl':
                     return airspeed.Template("$message")
@@ -748,7 +750,6 @@ $email
 
     def test_valid_parse_directive_merge_namespace(self):
         class WorkingLoader:
-
             def load_template(self, name):
                 if name == 'foo.tmpl':
                     return airspeed.Template("#set($message = 'hola')")
@@ -861,7 +862,6 @@ $email
         template = airspeed.Template('$obj.get_self().method($param)')
 
         class C:
-
             def get_self(self):
                 return self
 
@@ -880,7 +880,6 @@ $email
         template = airspeed.Template('$value')
 
         class Clazz:
-
             def __init__(self, value):
                 self.value = value
 
@@ -891,7 +890,6 @@ $email
 
     def test_can_define_macros_in_parsed_files(self):
         class Loader:
-
             def load_template(self, name):
                 if name == 'foo.tmpl':
                     return airspeed.Template('#macro(themacro)works#end')
@@ -1005,7 +1003,6 @@ hello##
 
     def test_multiline_arguments_to_function_calls(self):
         class Thing:
-
             def func(self, arg):
                 return 'y'
         template = airspeed.Template('''$x.func("multi
