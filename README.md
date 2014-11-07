@@ -106,7 +106,8 @@ contacted by e-mail by using our first names (at) pythonconsulting dot
 com.
 
 Extensions for compatibility with Velocity 1.7 were kindly provided by
-[Giannis Dzegoutanis](https://github.com/erasmospunk).
+[Giannis Dzegoutanis](https://github.com/erasmospunk), and further modernization
+has been done by [David Black](https://github.com/dbaxa/).
 
 <hr>
 
