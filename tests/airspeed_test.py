@@ -1013,6 +1013,15 @@ line")''')
         template = airspeed.Template('$Something$0')
         self.assertEquals("$Something$0", template.merge({}))
 
+    def test_valid_vtl_identifiers(self):
+        template = airspeed.Template('$_x $a $A')
+        self.assertEquals('bar z Z',
+                          template.merge({'_x': 'bar', 'a': 'z', 'A': 'Z'}))
+
+    def test_invalid_vtl_identifier(self):
+        template = airspeed.Template('$0')
+        self.assertEquals("$0", template.merge({'0': 'bar'}))
+
     def test_array_notation_int_index(self):
         template = airspeed.Template('$a[1]')
         self.assertEquals("bar", template.merge({"a": ["foo", "bar"]}))
