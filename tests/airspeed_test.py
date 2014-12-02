@@ -1009,9 +1009,9 @@ hello##
 line")''')
         self.assertEquals('y', template.merge({'x': Thing()}))
 
-    def test_accepts_dollar_digit_identifiers(self):
+    def test_does_not_accept_dollar_digit_identifiers(self):
         template = airspeed.Template('$Something$0')
-        self.assertEquals("$Something$0", template.merge({}))
+        self.assertEquals("$Something$0", template.merge({'0': 'bar'}))
 
     def test_valid_vtl_identifiers(self):
         template = airspeed.Template('$_x $a $A')
