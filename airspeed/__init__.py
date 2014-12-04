@@ -3,7 +3,7 @@
 import re
 import operator
 import os
-
+import string
 import StringIO  # cStringIO has issues with unicode
 
 __all__ = [
@@ -57,6 +57,18 @@ def boolean_value(variable_value):
     if not variable_value:
         return False
     return not (variable_value is None)
+
+
+def is_valid_vtl_identifier(text):
+    """ returns True if the given text is a valid VTL identifier,
+        otherwise returns False.
+        For a VTL identifier to be valid it must must with either an
+        alphabetic character(as per the vtl reference guide)
+        or a _ character(as permitted in the velocity template parser source).
+    """
+    if not text:
+        return False
+    return text[0] in set(string.ascii_letters + '_')
 
 
 class Template:
@@ -522,6 +534,8 @@ class NameOrCall(_Element):
 
     def parse(self):
         self.name, = self.identity_match(self.NAME)
+        if not is_valid_vtl_identifier(self.name):
+            raise NoMatch('Invalid VTL identifier %s.' % self.name)
         try:
             self.parameters = self.next_element(ParameterList)
         except NoMatch:
@@ -648,17 +662,21 @@ class FormalReference(_Element):
 
     def parse(self):
         self.silent, braces = self.identity_match(self.START)
-        self.expression = self.require_next_element(
-            VariableExpression,
-            'expression')
+        try:
+            self.expression = self.next_element(VariableExpression)
+            self.calculate = self.expression.calculate
+        except NoMatch:
+            self.expression = None
+            self.calculate = None
         if braces:
             self.require_match(self.CLOSING_BRACE, '}')
-        self.calculate = self.expression.calculate
 
     def evaluate(self, stream, namespace, loader):
-        value = self.expression.calculate(namespace, loader)
+        value = None
+        if self.expression is not None:
+            value = self.expression.calculate(namespace, loader)
         if value is None:
-            if self.silent:
+            if self.silent and self.expression is not None:
                 value = ''
             else:
                 value = self.my_text()
