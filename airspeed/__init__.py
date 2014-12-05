@@ -744,8 +744,8 @@ class BinaryOperator(_Element):
 
 
 class UnaryOperatorValue(_Element):
-    UNARY_OP = re.compile(r'\s*(!)\s*(.*)$', re.S)
-    OPERATORS = {'!': operator.__not__}
+    UNARY_OP = re.compile(r'\s*(!|(?:not))\s*(.*)$', re.S)
+    OPERATORS = {'!': operator.__not__, 'not': operator.__not__}
 
     def parse(self):
         op_string, = self.identity_match(self.UNARY_OP)

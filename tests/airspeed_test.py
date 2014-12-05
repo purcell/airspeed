@@ -600,6 +600,11 @@ $email
         self.assertEquals('yes', template.merge({'value': False}))
         self.assertEquals('', template.merge({'value': True}))
 
+    def test_logical_alt_negation_operator(self):
+        template = airspeed.Template('#if ( not $value )yes#end')
+        self.assertEquals('yes', template.merge({'value': False}))
+        self.assertEquals('', template.merge({'value': True}))
+
     def test_logical_negation_operator_yields_true_for_None(self):
         template = airspeed.Template('#if ( !$value )yes#end')
         self.assertEquals('yes', template.merge({'value': None}))
