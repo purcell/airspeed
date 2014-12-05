@@ -12,13 +12,7 @@ except ImportError:
     import airspeed
 import re
 
-###############################################################################
-# Compatibility for old Pythons & Jython
-###############################################################################
-try:
-    True
-except NameError:
-    False, True = 0, 1
+import six
 
 
 class TemplateTestCase(TestCase):
@@ -156,12 +150,16 @@ class TemplateTestCase(TestCase):
         self.assertEquals('', template.merge({'some_value': None}))
 
     def test_if_statement_honours_custom_truth_value_of_objects(self):
-        class BooleanValue:
+        class BooleanValue(object):
             def __init__(self, value):
                 self.value = value
 
-            def __nonzero__(self):
+            def __bool__(self):
                 return self.value
+
+            def __nonzero__(self):
+                return self.__bool__()
+
         template = airspeed.Template("#if ($v)yes#end")
         self.assertEquals('', template.merge({'v': BooleanValue(False)}))
         self.assertEquals('yes', template.merge({'v': BooleanValue(True)}))
@@ -327,8 +325,7 @@ class TemplateTestCase(TestCase):
 
     def test_merge_to_stream(self):
         template = airspeed.Template('Hello $name!')
-        from cStringIO import StringIO
-        output = StringIO()
+        output = six.StringIO()
         template.merge_to({"name": "Chris"}, output)
         self.assertEquals('Hello Chris!', output.getvalue())
 
@@ -607,12 +604,16 @@ $email
         self.assertEquals('yes', template.merge({'value': None}))
 
     def test_logical_negation_operator_honours_custom_truth_values(self):
-        class BooleanValue:
+        class BooleanValue(object):
             def __init__(self, value):
                 self.value = value
 
-            def __nonzero__(self):
+            def __bool__(self):
                 return self.value
+
+            def __nonzero__(self):
+                return self.__bool__()
+
         template = airspeed.Template('#if ( !$v)yes#end')
         self.assertEquals('yes', template.merge({'v': BooleanValue(False)}))
         self.assertEquals('', template.merge({'v': BooleanValue(True)}))
@@ -873,7 +874,7 @@ $email
 
     def test_preserves_unicode_strings(self):
         template = airspeed.Template('$value')
-        value = unicode('Grüße', 'latin1')
+        value = u'Grüße'
         self.assertEquals(value, template.merge(locals()))
 
     def test_preserves_unicode_strings_objects(self):
@@ -886,7 +887,7 @@ $email
             def __str__(self):
                 return self.value
         value = Clazz(u'£12,000')
-        self.assertEquals(unicode(value), template.merge(locals()))
+        self.assertEquals(six.text_type(value), template.merge(locals()))
 
     def test_can_define_macros_in_parsed_files(self):
         class Loader:

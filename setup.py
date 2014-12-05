@@ -6,8 +6,8 @@ import sys
 from setuptools import setup, find_packages
 
 
-if sys.version_info <= (2, 1):
-    raise SystemExit("Python 2.1 or later is required.")
+if sys.version_info <= (2, 6):
+    raise SystemExit("Python 2.6 or later is required.")
 
 
 setup(
@@ -22,6 +22,9 @@ setup(
     download_url="http://pypi.python.org/pypi/airspeed/",
     license="BSD",
     keywords='web.templating',
+    install_requires=[
+        'six',
+    ],
     test_suite='nose.collector',
     tests_require=[
         'nose',

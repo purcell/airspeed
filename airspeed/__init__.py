@@ -1,10 +1,13 @@
 #!/usr/bin/env python
+from __future__ import print_function
 
 import re
 import operator
 import os
 import string
-import StringIO  # cStringIO has issues with unicode
+
+import six
+
 
 __all__ = [
     'Template',
@@ -12,14 +15,6 @@ __all__ = [
     'TemplateSyntaxError',
     'CachingFileLoader']
 
-
-###############################################################################
-# Compatibility for old Pythons & Jython
-###############################################################################
-try:
-    True
-except NameError:
-    False, True = 0, 1
 try:
     dict
 except NameError:
@@ -143,14 +138,14 @@ class CachingFileLoader:
         self.known_templates = {}  # name -> (template, file_mod_time)
         self.debugging = debugging
         if debugging:
-            print "creating caching file loader with basedir:", basedir
+            print("creating caching file loader with basedir:", basedir)
 
     def filename_of(self, name):
         return os.path.join(self.basedir, name)
 
     def load_text(self, name):
         if self.debugging:
-            print "Loading text from", self.basedir, name
+            print("Loading text from", self.basedir, name)
         f = open(self.filename_of(name))
         try:
             return f.read()
@@ -159,30 +154,30 @@ class CachingFileLoader:
 
     def load_template(self, name):
         if self.debugging:
-            print "Loading template...", name,
+            print("Loading template...", name,)
         mtime = os.path.getmtime(self.filename_of(name))
         if name in self.known_templates:
             template, prev_mtime = self.known_templates[name]
             if mtime <= prev_mtime:
                 if self.debugging:
-                    print "loading parsed template from cache"
+                    print("loading parsed template from cache")
                 return template
         if self.debugging:
-            print "loading text from disk"
+            print("loading text from disk")
         template = Template(self.load_text(name))
         template.ensure_compiled()
         self.known_templates[name] = (template, mtime)
         return template
 
 
-class StoppableStream(StringIO.StringIO):
+class StoppableStream(six.StringIO):
     def __init__(self, buf=''):
         self.stop = False
-        StringIO.StringIO.__init__(self, buf)
+        six.StringIO.__init__(self, buf)
 
     def write(self, s):
         if not self.stop:
-            StringIO.StringIO.write(self, s)
+            six.StringIO.write(self, s)
 
 
 ###############################################################################
@@ -435,8 +430,8 @@ class Range(_Element):
         value1 = self.value1.calculate(namespace, loader)
         value2 = self.value2.calculate(namespace, loader)
         if value2 < value1:
-            return xrange(value1, value2 - 1, -1)
-        return xrange(value1, value2 + 1)
+            return range(value1, value2 - 1, -1)
+        return range(value1, value2 + 1)
 
 
 class ValueList(_Element):
@@ -571,7 +566,7 @@ class NameOrCall(_Element):
             # If list make sure index is an integer
             if isinstance(
                     result, list) and not isinstance(
-                    array_index, (int, long)):
+                    array_index, six.integer_types):
                 raise ValueError(
                     "expected integer for array index, got '%s'" %
                     (array_index))
@@ -683,7 +678,7 @@ class FormalReference(_Element):
         if is_string(value):
             stream.write(value)
         else:
-            stream.write(unicode(value))
+            stream.write(six.text_type(value))
 
 
 class Null:
@@ -720,7 +715,7 @@ class BinaryOperator(_Element):
                  '+': operator.add,
                  '-': operator.sub,
                  '*': operator.mul,
-                 '/': operator.div}
+                 '/': operator.floordiv}
     PRECEDENCE = {'>': 2, '<': 2, '==': 2, '>=': 2, '<=': 2, '!=': 2,
                   '||': 1, '&&': 1, 'or': 1, 'and': 1,
                   '+': 3, '-': 3, '*': 3, '/': 3, '%': 3,
