@@ -12,11 +12,11 @@ library for Java.
 ## Selling points
 
 * Compatible with Velocity templates
-* Compatible with Python 2.1 and greater, including Jython
+* Compatible with Python 2.6 and greater, including Jython
 * Features include macros definitions, conditionals, sub-templates and much more
 * Airspeed is already being put to serious use
 * Comprehensive set of unit tests; the entire library was written test-first
-* Reasonably fast, especially when used with [mod_python](http://www.modpython.org/)
+* Reasonably fast
 * A single Python module of a few kilobytes, and not the 500kb of Velocity
 * Liberal licence (BSD-style)
 
@@ -76,14 +76,9 @@ Airspeed currently implements a very significant subset of the
 Velocity functionality, including `$variables`, the `#if`, `#foreach`,
 `#macro`, `#include` and `#parse` directives, and `"$interpolated #strings()"`. Templates are unicode-safe.
 
-Compound expressions in `#set` directives should be parenthesised, since
-no implicit operator precedence rules are implemented.
-
 The output of templates in Airspeed is not yet 'whitespace compatible'
 with Velocity's rendering of the same templates, which generally does
-not matter for web applications. We also have still to implement
-support for in-line math expressions and some rarely-used details such
-as map literals.
+not matter for web applications.
 
 ### Where do I get it?
 
