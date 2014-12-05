@@ -101,15 +101,6 @@ class TemplateTestCase(TestCase):
         o.first_name = 'Chris'
         self.assertEquals("Hello Chris", template.merge({"name": o}))
 
-    def test_can_return_value_from_an_attribute_of_a_context_object(self):
-        template = airspeed.Template("Hello $name.first_name")
-
-        class MyObj:
-            pass
-        o = MyObj()
-        o.first_name = 'Chris'
-        self.assertEquals("Hello Chris", template.merge({"name": o}))
-
     def test_can_return_value_from_a_method_of_a_context_object(self):
         template = airspeed.Template("Hello $name.first_name()")
 
