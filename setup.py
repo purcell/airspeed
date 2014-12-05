@@ -24,6 +24,7 @@ setup(
     keywords='web.templating',
     install_requires=[
         'six',
+        'cachetools==0.8.0',
     ],
     test_suite='nose.collector',
     tests_require=[

@@ -1,15 +1,12 @@
 # encoding: utf-8
 
 import os
-
-from cti.util import Cache
-
 try:
     from airspeed import CachingFileLoader
-
 except ImportError:
     raise ImportError('You must install the airspeed package.')
 
+from cachetools import LRUCache
 
 __all__ = ['Airspeed']
 
@@ -28,7 +25,7 @@ class Airspeed(object):
     """
 
     def __init__(self, cache=10, **kw):
-        self.loaders = Cache(cache)
+        self.loaders = LRUCache(max_size=cache)
 
     def __call__(self, data, template, mime_type="text/plain", **options):
         basepath = os.path.dirname(template)

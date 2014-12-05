@@ -1,5 +1,6 @@
 # -*- coding: latin-1 -*-
 
+import re
 from unittest import TestCase
 
 # Make these tests runnable without needing 'nose' installed
@@ -10,7 +11,7 @@ except ImportError:
     import os
     sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
     import airspeed
-import re
+from airspeed.api import Airspeed
 
 import six
 
