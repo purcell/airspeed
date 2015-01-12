@@ -697,6 +697,11 @@ $email
             template.merge,
             {})  # Should this be TemplateSyntaxError?
 
+    def test_can_call_macro_with_newline_between_args(self):
+        template = airspeed.Template(
+            '#macro (hello $value1 $value2 )hello $value1 and $value2#end\n#hello (1,\n 2)')
+        self.assertEquals('hello 1 and 2', template.merge({}))
+
     def test_include_directive_gives_error_if_no_loader_provided(self):
         template = airspeed.Template('#include ("foo.tmpl")')
         self.assertRaises(airspeed.TemplateError, template.merge, {})

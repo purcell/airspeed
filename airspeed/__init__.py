@@ -994,7 +994,7 @@ class MacroCall(_Element):
     START = re.compile(r'#([a-z][a-z_0-9]*)\b(.*)', re.S + re.I)
     OPEN_PAREN = re.compile(r'[ \t]*\(\s*(.*)$', re.S)
     CLOSE_PAREN = re.compile(r'[ \t]*\)(.*)$', re.S)
-    SPACE_OR_COMMA = re.compile(r'[ \t]*(?:,|[ \t])[ \t]*(.*)$', re.S)
+    SPACE_OR_COMMA = re.compile(r'\s*(?:,|\s)\s*(.*)$', re.S)
 
     def parse(self):
         macro_name, = self.identity_match(self.START)
