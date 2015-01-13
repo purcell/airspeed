@@ -974,7 +974,8 @@ class MacroDefinition(_Element):
         global_ns = namespace.top()
         macro_key = '#' + self.macro_name.lower()
         if macro_key in global_ns:
-            raise Exception("cannot redefine macro")
+            raise Exception("cannot redefine macro {0}".format(macro_key))
+
         global_ns[macro_key] = self
 
     def execute_macro(self, stream, namespace, arg_value_elements, loader):
