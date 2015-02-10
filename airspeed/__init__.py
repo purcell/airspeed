@@ -792,29 +792,35 @@ class Expression(_Element):
             # also note they're eval'd out of order
             values.append(result)
 
-        while terms:
-            # next is a binary operator
-            if not opstack or terms[0].greater_precedence_than(opstack[-1]):
-                opstack.append(terms[0])
-                valuestack.append(terms[1])
-                terms = terms[2:]
-            else:
+        try:
+
+            while terms:
+                # next is a binary operator
+                if not opstack or terms[0].greater_precedence_than(opstack[-1]):
+                    opstack.append(terms[0])
+                    valuestack.append(terms[1])
+                    terms = terms[2:]
+                else:
+                    stack_calculate(opstack, valuestack, namespace, loader)
+
+            # now clean out the stacks
+            while opstack:
                 stack_calculate(opstack, valuestack, namespace, loader)
 
-        # now clean out the stacks
-        while opstack:
-            stack_calculate(opstack, valuestack, namespace, loader)
+            if len(valuestack) != 1:
+                print ("evaluation of expression in Condition.calculate "
+                       "is messed up: final length of stack is not one")
+                # TODO handle this officially
 
-        if len(valuestack) != 1:
-            print ("evaluation of expression in Condition.calculate "
-                   "is messed up: final length of stack is not one")
-            # TODO handle this officially
+            result = valuestack[0]
+            if isinstance(result, Value):
+                result = result.calculate(namespace, loader)
+            return result
 
-        result = valuestack[0]
-        if isinstance(result, Value):
-            result = result.calculate(namespace, loader)
-        return result
-
+        except:
+            # print out a small helpful indication on _which expression_ in the expression that's caused the crash
+            print ("Exception occurred at position %d-%d, expression: %s" % (self.start, self.end, self._full_text[self.start:self.end]))
+            raise
 
 class ParenthesizedExpression(_Element):
     START = re.compile(r'\(\s*(.*)$', re.S)
