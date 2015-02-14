@@ -21,7 +21,7 @@ class TemplateTestCase(TestCase):
         try:
             func(*args, **kwargs)
             self.fail("Expected TemplateExecutionError wrapping %s" % (exctype,))
-        except airspeed.TemplateExecutionError, e:
+        except airspeed.TemplateExecutionError as e:
             self.assertEqual(exctype, type(e.__cause__))
 
 
