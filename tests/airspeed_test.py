@@ -1081,7 +1081,7 @@ line")''')
 
 # TODO:
 #
-#  Report locations for template errors in strings
+#  Report locations for template errors in files included via loaders
 #  Gobbling up whitespace (see WHITESPACE_TO_END_OF_LINE above, but need to apply in more places)
 # Bind #macro calls at compile time?
 # Scope of #set across if/elseif/else?
