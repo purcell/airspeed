@@ -5,6 +5,7 @@ import re
 import operator
 import os
 import string
+import sys
 
 import six
 
@@ -12,6 +13,7 @@ import six
 __all__ = [
     'Template',
     'TemplateError',
+    'TemplateExecutionError',
     'TemplateSyntaxError',
     'CachingFileLoader']
 
@@ -59,8 +61,9 @@ def is_valid_vtl_identifier(text):
 
 
 class Template:
-    def __init__(self, content):
+    def __init__(self, content, filename="<string>"):
         self.content = content
+        self.filename = filename
         self.root_element = None
 
     def merge(self, namespace, loader=None):
@@ -70,7 +73,7 @@ class Template:
 
     def ensure_compiled(self):
         if not self.root_element:
-            self.root_element = TemplateBody(self.content)
+            self.root_element = TemplateBody(self.filename, self.content)
 
     def merge_to(self, namespace, fileobj, loader=None):
         if loader is None:
@@ -81,6 +84,19 @@ class Template:
 
 class TemplateError(Exception):
     pass
+
+
+class TemplateExecutionError(TemplateError):
+    def __init__(self, element, exc_info):
+        cause, value, traceback = exc_info
+        self.__cause__ = value
+        self.element = element
+        self.start, self.end, self.filename = element.start, element.end, element.filename
+        self.msg = "Error in template '%s' at position %d-%d in expression: %s\n%s: %s" % \
+                   (self.filename, self.start, self.end, element.my_text(), cause.__name__, value)
+
+    def __str__(self):
+        return self.msg
 
 
 class TemplateSyntaxError(TemplateError):
@@ -156,7 +172,7 @@ class CachingFileLoader:
                 return template
         if self.debugging:
             print("loading text from disk")
-        template = Template(self.load_text(name))
+        template = Template(self.load_text(name), name)
         template.ensure_compiled()
         self.known_templates[name] = (template, mtime)
         return template
@@ -210,7 +226,8 @@ class LocalNamespace(dict):
 
 
 class _Element:
-    def __init__(self, text, start=0):
+    def __init__(self, filename, text, start=0):
+        self.filename = filename
         self._full_text = text
         self.start = self.end = start
         self.parse()
@@ -257,13 +274,13 @@ class _Element:
 
     def next_element(self, element_spec):
         if callable(element_spec):
-            element = element_spec(self._full_text, self.end)
+            element = element_spec(self.filename, self._full_text, self.end)
             self.end = element.end
             return element
         else:
             for element_class in element_spec:
                 try:
-                    element = element_class(self._full_text, self.end)
+                    element = element_class(self.filename, self._full_text, self.end)
                 except NoMatch:
                     pass
                 else:
@@ -274,7 +291,7 @@ class _Element:
     def require_next_element(self, element_spec, expected):
         if callable(element_spec):
             try:
-                element = element_spec(self._full_text, self.end)
+                element = element_spec(self.filename, self._full_text, self.end)
             except NoMatch:
                 raise self.syntax_error(expected)
             else:
@@ -283,7 +300,7 @@ class _Element:
         else:
             for element_class in element_spec:
                 try:
-                    element = element_class(self._full_text, self.end)
+                    element = element_class(self.filename, self._full_text, self.end)
                 except NoMatch:
                     pass
                 else:
@@ -291,6 +308,15 @@ class _Element:
                     return element
             expected = ', '.join([cls.__name__ for cls in element_spec])
             raise self.syntax_error('one of: ' + expected)
+
+    def evaluate(self, *args):
+        try:
+            return self.evaluate_raw(*args)
+        except TemplateExecutionError:
+            raise
+        except:
+            exc_info = sys.exc_info()
+            raise TemplateExecutionError(self, exc_info), None, exc_info[2]
 
 
 class Text(_Element):
@@ -309,7 +335,7 @@ class Text(_Element):
 
         self.text = self.ESCAPED_CHAR.sub(unescape, text)
 
-    def evaluate(self, stream, namespace, loader):
+    def evaluate_raw(self, stream, namespace, loader):
         stream.write(self.text)
 
 
@@ -324,7 +350,7 @@ class FallthroughHashText(_Element):
     def parse(self):
         self.text, = self.identity_match(self.PLAIN)
 
-    def evaluate(self, stream, namespace, loader):
+    def evaluate_raw(self, stream, namespace, loader):
         stream.write(self.text)
 
 
@@ -393,7 +419,7 @@ class InterpolatedStringLiteral(StringLiteral):
 
     def parse(self):
         StringLiteral.parse(self)
-        self.block = Block(self.value, 0)
+        self.block = Block(self.filename, self.value, 0)
 
     def calculate(self, namespace, loader):
         output = StoppableStream()
@@ -649,7 +675,7 @@ class FormalReference(_Element):
         if braces:
             self.require_match(self.CLOSING_BRACE, '}')
 
-    def evaluate(self, stream, namespace, loader):
+    def evaluate_raw(self, stream, namespace, loader):
         value = None
         if self.expression is not None:
             value = self.expression.calculate(namespace, loader)
@@ -677,6 +703,9 @@ class Comment(_Element, Null):
 
     def parse(self):
         self.identity_match(self.COMMENT)
+
+    def evaluate(self, *args):
+        pass
 
 
 class BinaryOperator(_Element):
@@ -866,7 +895,7 @@ class IfDirective(_Element):
             pass
         self.require_next_element(End, '#else, #elseif or #end')
 
-    def evaluate(self, stream, namespace, loader):
+    def evaluate_raw(self, stream, namespace, loader):
         if self.condition.calculate(namespace, loader):
             self.block.evaluate(stream, namespace, loader)
         else:
@@ -893,7 +922,7 @@ class Assignment(_Element):
         self.value = self.require_next_element(Expression, "expression")
         self.require_match(self.END, ')')
 
-    def evaluate(self, stream, namespace, loader):
+    def evaluate_raw(self, stream, namespace, loader):
         thingy = namespace
         for term in self.terms[0:-1]:
             if thingy is None:
@@ -953,7 +982,7 @@ class MacroDefinition(_Element):
         self.block = self.require_next_element(Block, 'block')
         self.require_next_element(End, 'block')
 
-    def evaluate(self, stream, namespace, loader):
+    def evaluate_raw(self, stream, namespace, loader):
         global_ns = namespace.top()
         macro_key = '#' + self.macro_name.lower()
         if macro_key in global_ns:
@@ -1002,7 +1031,7 @@ class MacroCall(_Element):
                 break
         self.require_match(self.CLOSE_PAREN, 'argument value or )')
 
-    def evaluate(self, stream, namespace, loader):
+    def evaluate_raw(self, stream, namespace, loader):
         try:
             macro = namespace['#' + self.macro_name]
         except KeyError:
@@ -1025,7 +1054,7 @@ class IncludeDirective(_Element):
             'template name')
         self.require_match(self.CLOSE_PAREN, ')')
 
-    def evaluate(self, stream, namespace, loader):
+    def evaluate_raw(self, stream, namespace, loader):
         stream.write(loader.load_text(self.name.calculate(namespace, loader)))
 
 
@@ -1044,7 +1073,7 @@ class ParseDirective(_Element):
             'template name')
         self.require_match(self.CLOSE_PAREN, ')')
 
-    def evaluate(self, stream, namespace, loader):
+    def evaluate_raw(self, stream, namespace, loader):
         template = loader.load_template(self.name.calculate(namespace, loader))
         # TODO: local namespace?
         template.merge_to(namespace, stream, loader=loader)
@@ -1056,7 +1085,7 @@ class StopDirective(_Element):
     def parse(self):
         self.identity_match(self.STOP)
 
-    def evaluate(self, stream, namespace, loader):
+    def evaluate_raw(self, stream, namespace, loader):
         if hasattr(stream, 'stop'):
             stream.stop = True
 
@@ -1068,7 +1097,7 @@ class UserDefinedDirective(_Element):
     def parse(self):
         self.directive = self.next_element(self.DIRECTIVES)
 
-    def evaluate(self, stream, namespace, loader):
+    def evaluate_raw(self, stream, namespace, loader):
         self.directive.evaluate(stream, namespace, loader)
 
 
@@ -1079,7 +1108,7 @@ class SetDirective(_Element):
         self.identity_match(self.START)
         self.assignment = self.require_next_element(Assignment, 'assignment')
 
-    def evaluate(self, stream, namespace, loader):
+    def evaluate_raw(self, stream, namespace, loader):
         self.assignment.evaluate(stream, namespace, loader)
 
 
@@ -1102,7 +1131,7 @@ class ForeachDirective(_Element):
         self.block = self.next_element(Block)
         self.require_next_element(End, '#end')
 
-    def evaluate(self, stream, namespace, loader):
+    def evaluate_raw(self, stream, namespace, loader):
         iterable = self.value.calculate(namespace, loader)
         counter = 1
         try:
@@ -1137,7 +1166,7 @@ class TemplateBody(_Element):
         if self.next_text():
             raise self.syntax_error('block element')
 
-    def evaluate(self, stream, namespace, loader):
+    def evaluate_raw(self, stream, namespace, loader):
         # Use the same namespace as the parent template, if sub-template
         if not isinstance(namespace, LocalNamespace):
             namespace = LocalNamespace(namespace)
@@ -1167,6 +1196,6 @@ class Block(_Element):
             except NoMatch:
                 break
 
-    def evaluate(self, stream, namespace, loader):
+    def evaluate_raw(self, stream, namespace, loader):
         for child in self.children:
             child.evaluate(stream, namespace, loader)

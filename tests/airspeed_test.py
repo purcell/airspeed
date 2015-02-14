@@ -693,7 +693,7 @@ $email
         template = airspeed.Template(
             '#macro ( hello)hi#end#macro(hello)again#end')
         self.assertRaises(
-            Exception,
+            airspeed.TemplateExecutionError,
             template.merge,
             {})  # Should this be TemplateSyntaxError?
 
@@ -712,7 +712,8 @@ $email
             def load_text(self, name):
                 raise IOError(name)
         template = airspeed.Template('#include ("foo.tmpl")')
-        self.assertRaises(IOError, template.merge, {}, loader=BrokenLoader())
+        self.assertRaises(airspeed.TemplateExecutionError, template.merge,
+                          {}, loader=BrokenLoader())
 
     def test_valid_include_directive_include_content(self):
         class WorkingLoader:
@@ -736,7 +737,8 @@ $email
             def load_template(self, name):
                 raise IOError(name)
         template = airspeed.Template('#parse ("foo.tmpl")')
-        self.assertRaises(IOError, template.merge, {}, loader=BrokenLoader())
+        self.assertRaises(airspeed.TemplateExecutionError, template.merge,
+                          {}, loader=BrokenLoader())
 
     def test_valid_parse_directive_outputs_parsed_content(self):
         class WorkingLoader:
@@ -859,7 +861,7 @@ $email
 
     def test_foreach_with_non_iterable_variable_raises_error(self):
         template = airspeed.Template('#foreach($value in $values)foo#end')
-        self.assertRaises(ValueError, template.merge, {'values': 1})
+        self.assertRaises(airspeed.TemplateExecutionError, template.merge, {'values': 1})
 
     def test_correct_scope_for_parameters_of_method_calls(self):
         template = airspeed.Template('$obj.get_self().method($param)')
@@ -1044,6 +1046,29 @@ line")''')
     def test_array_notation_invalid_index(self):
         template = airspeed.Template('#set($i = "baz")$a[$i]')
         self.assertRaises(Exception, template.merge, {"a": ["foo", "bar"]})
+
+    def test_provides_helpful_error_location(self):
+        template = airspeed.Template(u"""
+          #set($flag = $country.lower())
+          #set($url = "$host_url/images/flags/")
+          #set($flagUrl = $url + ${flag} + ".png")
+           <img src="${flagUrl}" />
+        """)
+        data = {
+            "model": {
+                "host_url": u"http://whatever.com",
+                "country": None
+            }
+        }
+        try:
+            template.merge(data)
+            self.fail("expected exception")
+        except airspeed.TemplateExecutionError, e:
+            self.assertEquals("<string>", e.filename)
+            self.assertEquals(105, e.start)
+            self.assertEquals(142, e.end)
+            self.assert_(isinstance(e.__cause__, TypeError))
+
 
 
 # TODO:
