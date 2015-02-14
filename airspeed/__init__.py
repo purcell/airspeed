@@ -55,15 +55,7 @@ def boolean_value(variable_value):
 
 
 def is_valid_vtl_identifier(text):
-    """ returns True if the given text is a valid VTL identifier,
-        otherwise returns False.
-        For a VTL identifier to be valid it must must with either an
-        alphabetic character(as per the vtl reference guide)
-        or a _ character(as permitted in the velocity template parser source).
-    """
-    if not text:
-        return False
-    return text[0] in set(string.ascii_letters + '_')
+    return text and text[0] in set(string.ascii_letters + '_')
 
 
 class Template:
@@ -322,24 +314,15 @@ class Text(_Element):
 
 
 class FallthroughHashText(_Element):
-    """ Plain tex, starting a hash, but which wouldn't be matched
-        by a directive or a macro earlier.
-        The canonical example is an HTML color spec.
-        Another good example, is in-document hypertext links
-        (or the dummy versions thereof often used a href targets
-        when javascript is used.
-        Note that it MUST NOT match block-ending directives. """
+    """ Plain text starting with a # but which didn't match an earlier
+    directive or macro.  The canonical example is an HTML color spec.
+    Note that it MUST NOT match block-ending directives.
+    """
     # because of earlier elements, this will always start with a hash
-    PLAIN = re.compile(r'(\#+\{?[\d\w]*\}?)(.*)$', re.S)
+    PLAIN = re.compile(r'(\#(?!end|else|elseif|\{(?:end|else|elseif)\}))(.*)$', re.S)
 
     def parse(self):
         self.text, = self.identity_match(self.PLAIN)
-        if self.text.startswith('#end') or self.text.startswith('#{end}') or \
-                self.text.startswith('#else') or \
-                self.text.startswith('#{else}') or \
-                self.text.startswith('#elseif') or \
-                self.text.startswith('#{elseif}'):
-            raise NoMatch
 
     def evaluate(self, stream, namespace, loader):
         stream.write(self.text)
