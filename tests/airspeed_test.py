@@ -1071,7 +1071,7 @@ line")''')
         try:
             template.merge(data)
             self.fail("expected exception")
-        except airspeed.TemplateExecutionError, e:
+        except airspeed.TemplateExecutionError as e:
             self.assertEquals("<string>", e.filename)
             self.assertEquals(105, e.start)
             self.assertEquals(142, e.end)
