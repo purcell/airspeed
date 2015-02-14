@@ -9,7 +9,6 @@ import sys
 
 import six
 
-
 __all__ = [
     'Template',
     'TemplateError',
@@ -316,7 +315,7 @@ class _Element:
             raise
         except:
             exc_info = sys.exc_info()
-            raise TemplateExecutionError(self, exc_info), None, exc_info[2]
+            six.reraise(TemplateExecutionError(self, exc_info), None, exc_info[2])
 
 
 class Text(_Element):
