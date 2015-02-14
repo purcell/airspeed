@@ -17,6 +17,14 @@ import six
 
 
 class TemplateTestCase(TestCase):
+    def assertRaisesExecutionError(self, exctype, func, *args, **kwargs):
+        try:
+            func(*args, **kwargs)
+            self.fail("Expected TemplateExecutionError wrapping %s" % (exctype,))
+        except airspeed.TemplateExecutionError, e:
+            self.assertEqual(exctype, type(e.__cause__))
+
+
     def test_parser_returns_input_when_there_is_nothing_to_substitute(self):
         template = airspeed.Template("<html></html>")
         self.assertEquals("<html></html>", template.merge({}))
@@ -644,7 +652,7 @@ $email
 
     def test_cannot_call_undefined_macro(self):
         template = airspeed.Template('#undefined()')
-        self.assertRaises(Exception, template.merge, {})
+        self.assertRaises(airspeed.TemplateExecutionError, template.merge, {})
 
     def test_define_and_use_macro_with_no_parameters(self):
         template = airspeed.Template('#macro ( hello)hi#end#hello ()#hello()')
@@ -712,8 +720,8 @@ $email
             def load_text(self, name):
                 raise IOError(name)
         template = airspeed.Template('#include ("foo.tmpl")')
-        self.assertRaises(airspeed.TemplateExecutionError, template.merge,
-                          {}, loader=BrokenLoader())
+        self.assertRaisesExecutionError(IOError, template.merge,
+                                        {}, loader=BrokenLoader())
 
     def test_valid_include_directive_include_content(self):
         class WorkingLoader:
@@ -729,7 +737,7 @@ $email
 
     def test_parse_directive_gives_error_if_no_loader_provided(self):
         template = airspeed.Template('#parse ("foo.tmpl")')
-        self.assertRaises(airspeed.TemplateError, template.merge, {})
+        self.assertRaises(airspeed.TemplateExecutionError, template.merge, {})
 
     def test_parse_directive_yields_loader_error_if_parsed_content_not_found(
             self):
@@ -737,14 +745,14 @@ $email
             def load_template(self, name):
                 raise IOError(name)
         template = airspeed.Template('#parse ("foo.tmpl")')
-        self.assertRaises(airspeed.TemplateExecutionError, template.merge,
+        self.assertRaisesExecutionError(IOError, template.merge,
                           {}, loader=BrokenLoader())
 
     def test_valid_parse_directive_outputs_parsed_content(self):
         class WorkingLoader:
             def load_template(self, name):
                 if name == 'foo.tmpl':
-                    return airspeed.Template("$message")
+                    return airspeed.Template("$message", name)
         template = airspeed.Template('Message is: #parse ("foo.tmpl")!')
         self.assertEquals('Message is: hola!',
                           template.merge({'message': 'hola'},
@@ -1045,7 +1053,7 @@ line")''')
 
     def test_array_notation_invalid_index(self):
         template = airspeed.Template('#set($i = "baz")$a[$i]')
-        self.assertRaises(Exception, template.merge, {"a": ["foo", "bar"]})
+        self.assertRaises(airspeed.TemplateExecutionError, template.merge, {"a": ["foo", "bar"]})
 
     def test_provides_helpful_error_location(self):
         template = airspeed.Template(u"""
