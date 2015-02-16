@@ -90,9 +90,12 @@ class TemplateExecutionError(TemplateError):
         cause, value, traceback = exc_info
         self.__cause__ = value
         self.element = element
-        self.start, self.end, self.filename = element.start, element.end, element.filename
-        self.msg = "Error in template '%s' at position %d-%d in expression: %s\n%s: %s" % \
-                   (self.filename, self.start, self.end, element.my_text(), cause.__name__, value)
+        self.start, self.end, self.filename = (element.start, element.end,
+                                               element.filename)
+        self.msg = "Error in template '%s' at position " \
+                   "%d-%d in expression: %s\n%s: %s" % \
+                   (self.filename, self.start, self.end,
+                    element.my_text(), cause.__name__, value)
 
     def __str__(self):
         return self.msg
@@ -275,7 +278,8 @@ class _Element:
         else:
             for element_class in element_spec:
                 try:
-                    element = element_class(self.filename, self._full_text, self.end)
+                    element = element_class(self.filename, self._full_text,
+                                            self.end)
                 except NoMatch:
                     pass
                 else:
@@ -286,7 +290,8 @@ class _Element:
     def require_next_element(self, element_spec, expected):
         if callable(element_spec):
             try:
-                element = element_spec(self.filename, self._full_text, self.end)
+                element = element_spec(self.filename, self._full_text,
+                                       self.end)
             except NoMatch:
                 raise self.syntax_error(expected)
             else:
@@ -295,7 +300,8 @@ class _Element:
         else:
             for element_class in element_spec:
                 try:
-                    element = element_class(self.filename, self._full_text, self.end)
+                    element = element_class(self.filename, self._full_text,
+                                            self.end)
                 except NoMatch:
                     pass
                 else:
@@ -311,7 +317,8 @@ class _Element:
             raise
         except:
             exc_info = sys.exc_info()
-            six.reraise(TemplateExecutionError, TemplateExecutionError(self, exc_info), exc_info[2])
+            six.reraise(TemplateExecutionError,
+                        TemplateExecutionError(self, exc_info), exc_info[2])
 
 
 class Text(_Element):
@@ -340,7 +347,8 @@ class FallthroughHashText(_Element):
     Note that it MUST NOT match block-ending directives.
     """
     # because of earlier elements, this will always start with a hash
-    PLAIN = re.compile(r'(\#(?!end|else|elseif|\{(?:end|else|elseif)\}))(.*)$', re.S)
+    PLAIN = re.compile(r'(\#(?!end|else|elseif|\{(?:end|else|elseif)\}))(.*)$',
+                       re.S)
 
     def parse(self):
         self.text, = self.identity_match(self.PLAIN)

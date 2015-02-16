@@ -11,7 +11,6 @@ except ImportError:
     import os
     sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
     import airspeed
-from airspeed.api import Airspeed
 
 import six
 
@@ -20,10 +19,10 @@ class TemplateTestCase(TestCase):
     def assertRaisesExecutionError(self, exctype, func, *args, **kwargs):
         try:
             func(*args, **kwargs)
-            self.fail("Expected TemplateExecutionError wrapping %s" % (exctype,))
+            self.fail("Expected TemplateExecutionError wrapping %s" %
+                      (exctype,))
         except airspeed.TemplateExecutionError as e:
             self.assertEqual(exctype, type(e.__cause__))
-
 
     def test_parser_returns_input_when_there_is_nothing_to_substitute(self):
         template = airspeed.Template("<html></html>")
@@ -746,7 +745,7 @@ $email
                 raise IOError(name)
         template = airspeed.Template('#parse ("foo.tmpl")')
         self.assertRaisesExecutionError(IOError, template.merge,
-                          {}, loader=BrokenLoader())
+                                        {}, loader=BrokenLoader())
 
     def test_valid_parse_directive_outputs_parsed_content(self):
         class WorkingLoader:
