@@ -216,10 +216,6 @@ class LocalNamespace(dict):
             return self.parent.top()
         return self.parent
 
-    def attach(self, namespace):
-        namespace.parent = self.parent
-        self.parent = namespace
-
     def __repr__(self):
         return dict.__repr__(self) + '->' + repr(self.parent)
 
