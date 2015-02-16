@@ -210,9 +210,23 @@ class LocalNamespace(dict):
         try:
             return dict.__getitem__(self, key)
         except KeyError:
-            parent_value = self.parent[key]
-            self[key] = parent_value
-            return parent_value
+            return self.parent[key]
+
+    def find_outermost(self, key):
+        try:
+            dict.__getitem__(self, key)
+            return self
+        except KeyError:
+            if isinstance(self.parent, LocalNamespace):
+                return self.parent.find_outermost(key)
+            else:
+                return None
+
+    def set_inherited(self, key, value):
+        ns = self.find_outermost(key)
+        if ns is None:
+            ns = self
+        ns[key] = value
 
     def top(self):
         if hasattr(self.parent, "top"):
@@ -926,29 +940,14 @@ class Assignment(_Element):
         self.require_match(self.END, ')')
 
     def evaluate_raw(self, stream, namespace, loader):
-        thingy = namespace
-        for term in self.terms[0:-1]:
-            if thingy is None:
-                return
-            look_in_dict = True
-            if not isinstance(thingy, LocalNamespace):
-                try:
-                    thingy = getattr(thingy, term)
-                    look_in_dict = False
-                except AttributeError:
-                    pass
-            if look_in_dict:
-                try:
-                    thingy = thingy[term]
-                except KeyError:
-                    thingy = None
-                except TypeError:
-                    thingy = None
-                except AttributeError:
-                    thingy = None
-        if thingy is not None:
-            thingy[self.terms[-1]] = self.value.calculate(namespace, loader)
-
+        val = self.value.calculate(namespace, loader)
+        if len(self.terms) == 1:
+            namespace.set_inherited(self.terms[0], val)
+        else:
+            cur = namespace
+            for term in self.terms[:-1]:
+                cur = cur[term]
+            cur[self.terms[-1]] = val
 
 class MacroDefinition(_Element):
     START = re.compile(r'#macro\b(.*)', re.S + re.I)

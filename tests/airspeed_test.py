@@ -1076,7 +1076,32 @@ line")''')
             self.assertEquals(142, e.end)
             self.assert_(isinstance(e.__cause__, TypeError))
 
+    def test_outer_variable_assignable_from_foreach_block(self):
+        template = airspeed.Template(
+            "#set($var = 1)#foreach ($i in $items)"
+            "$var,#set($var = $i)"
+            "#end$var")
+        self.assertEquals("1,2,3,4", template.merge({"items": [2, 3, 4]}))
 
+    def test_no_assignment_to_outer_var_if_same_varname_in_block(self):
+        template = airspeed.Template(
+            "#set($i = 1)$i,"
+            "#foreach ($i in [2, 3, 4])$i,#set($i = $i)#end"
+            "$i")
+        self.assertEquals("1,2,3,4,1", template.merge({}))
+
+    def test_nested_foreach_vars_are_scoped(self):
+        template = airspeed.Template(
+            "#foreach ($j in [1,2])"
+            "#foreach ($i in [3, 4])$foreach.count,#end"
+            "$foreach.count|#end")
+        self.assertEquals("1,2,1|1,2,2|", template.merge({}))
+
+    def test_template_cannot_modify_its_args(self):
+        template = airspeed.Template("#set($foo = 1)")
+        ns = {"foo": 2}
+        template.merge(ns)
+        self.assertEquals(2, ns["foo"])
 
 # TODO:
 #
