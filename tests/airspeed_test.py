@@ -1,4 +1,4 @@
-# -*- coding: latin-1 -*-
+# -*- coding: utf-8 -*-
 
 import re
 from unittest import TestCase
@@ -885,7 +885,7 @@ $email
 
     def test_preserves_unicode_strings(self):
         template = airspeed.Template('$value')
-        value = u'Grüße'
+        value = u'GrÃ¼ÃŸe'
         self.assertEquals(value, template.merge(locals()))
 
     def test_preserves_unicode_strings_objects(self):
@@ -897,7 +897,7 @@ $email
 
             def __str__(self):
                 return self.value
-        value = Clazz(u'£12,000')
+        value = Clazz(u'Â£12,000')
         self.assertEquals(six.text_type(value), template.merge(locals()))
 
     def test_can_define_macros_in_parsed_files(self):
