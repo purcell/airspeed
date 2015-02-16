@@ -1060,7 +1060,7 @@ line")''')
           #set($url = "$host_url/images/flags/")
           #set($flagUrl = $url + ${flag} + ".png")
            <img src="${flagUrl}" />
-        """)
+        """, filename="mytemplate")
         data = {
             "model": {
                 "host_url": u"http://whatever.com",
@@ -1071,7 +1071,7 @@ line")''')
             template.merge(data)
             self.fail("expected exception")
         except airspeed.TemplateExecutionError as e:
-            self.assertEquals("<string>", e.filename)
+            self.assertEquals("mytemplate", e.filename)
             self.assertEquals(105, e.start)
             self.assertEquals(142, e.end)
             self.assert_(isinstance(e.__cause__, TypeError))
