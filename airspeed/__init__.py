@@ -174,7 +174,7 @@ class CachingFileLoader:
                 return template
         if self.debugging:
             print("loading text from disk")
-        template = Template(self.load_text(name), name)
+        template = Template(self.load_text(name), filename=name)
         template.ensure_compiled()
         self.known_templates[name] = (template, mtime)
         return template
