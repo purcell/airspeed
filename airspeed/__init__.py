@@ -1145,18 +1145,19 @@ class ForeachDirective(_Element):
                 raise ValueError(
                     "value for $%s is not iterable in #foreach: %s" %
                     (self.loop_var_name, iterable))
+            length = len(iterable)
             for item in iterable:
-                namespace = LocalNamespace(namespace)
-                namespace['velocityCount'] = counter
-                namespace['velocityHasNext'] = counter < len(iterable)
-                namespace['foreach'] = {
+                localns = LocalNamespace(namespace)
+                localns['velocityCount'] = counter
+                localns['velocityHasNext'] = counter < length
+                localns['foreach'] = {
                     "count": counter,
                     "index": counter - 1,
-                    "hasNext": counter < len(iterable),
+                    "hasNext": counter < length,
                     "first": counter == 1,
-                    "last": counter == len(iterable)}
-                namespace[self.loop_var_name] = item
-                self.block.evaluate(stream, namespace, loader)
+                    "last": counter == length}
+                localns[self.loop_var_name] = item
+                self.block.evaluate(stream, localns, loader)
                 counter += 1
         except TypeError:
             raise

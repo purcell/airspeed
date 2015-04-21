@@ -1103,6 +1103,15 @@ line")''')
         template.merge(ns)
         self.assertEquals(2, ns["foo"])
 
+    def test_doesnt_blow_stack(self):
+        template = airspeed.Template("""
+#foreach($i in [1..$end])
+    $assembly##
+#end
+""")
+        ns = {"end": 400}
+        template.merge(ns)
+
 # TODO:
 #
 #  Report locations for template errors in files included via loaders
