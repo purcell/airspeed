@@ -25,7 +25,7 @@ class Airspeed(object):
     """
 
     def __init__(self, cache=10, **kw):
-        self.loaders = LRUCache(max_size=cache)
+        self.loaders = LRUCache(maxsize=cache)
 
     def __call__(self, data, template, mime_type="text/plain", **options):
         basepath = os.path.dirname(template)
