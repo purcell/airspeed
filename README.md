@@ -82,7 +82,7 @@ not matter for web applications.
 
 ### Where do I get it?
 
-https://github.com/purcell/sanityinc
+https://github.com/purcell/airspeed
 
 ### Getting started
 
