@@ -16,6 +16,24 @@ __all__ = [
     'TemplateSyntaxError',
     'CachingFileLoader']
 
+# A dict that maps classes to dicts of additional methods.
+# This allows support for methods that are available in Java-based Velocity
+# implementations, e.g., .size() of a list or .length() of a string.
+# Given a method 'm' invoked with parameters '*p' on an object of type 't',
+# and if __additional_methods__[t][m] exists, we will invoke and return m(t, *p)
+#
+# For example, given a template variable "$foo = [1,2,3]", "$foo.size()" will
+# result in calling method __additional_methods__[list]['size']($foo)
+__additional_methods__ = {
+    str: {
+        'length': lambda *params: len(params[0])
+    },
+    list: {
+        'size': lambda *params: len(params[0]),
+        'get': lambda *params: params[0][params[1]]
+    }
+}
+
 try:
     dict
 except NameError:
@@ -502,7 +520,7 @@ class ArrayLiteral(_Element):
 class DictionaryLiteral(_Element):
     START = re.compile(r'{[ \t]*(.*)$', re.S)
     END = re.compile(r'[ \t]*}(.*)$', re.S)
-    KEYVALSEP = re.compile(r'[ \t]*:[[ \t]*(.*)$', re.S)
+    KEYVALSEP = re.compile(r'[ \t]*:[ \t]*(.*)$', re.S)
     PAIRSEP = re.compile(r'[ \t]*,[ \t]*(.*)$', re.S)
 
     def parse(self):
@@ -583,6 +601,12 @@ class NameOrCall(_Element):
                 result = None
             except AttributeError:
                 result = None
+        if result is None:
+            methods_for_type = __additional_methods__.get(current_object.__class__)
+            if methods_for_type and self.name in methods_for_type:
+                def func(*args):
+                    return methods_for_type[self.name](current_object, *args)
+                result = func
         if result is None:
             return None  # TODO: an explicit 'not found' exception?
         if self.parameters is not None:
