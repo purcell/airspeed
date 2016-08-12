@@ -1112,6 +1112,21 @@ line")''')
         ns = {"end": 400}
         template.merge(ns)
 
+    def test_array_size(self):
+        template = airspeed.Template("#set($foo = [1,2,3]) $foo.size()")
+        output = template.merge({})
+        self.assertEquals(output, " 3")
+
+    def test_array_get_item(self):
+        template = airspeed.Template("#set($foo = [1,2,3]) $foo.get(1)")
+        output = template.merge({})
+        self.assertEquals(output, " 2")
+
+    def test_string_length(self):
+        template = airspeed.Template("#set($foo = 'foobar123') $foo.length()")
+        output = template.merge({})
+        self.assertEquals(output, " 9")
+
 # TODO:
 #
 #  Report locations for template errors in files included via loaders
