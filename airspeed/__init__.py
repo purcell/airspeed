@@ -769,10 +769,11 @@ class BinaryOperator(_Element):
                  '-': operator.sub,
                  '*': operator.mul,
                  '/': operator.floordiv}
-    PRECEDENCE = {'>': 2, '<': 2, '==': 2, '>=': 2, '<=': 2, '!=': 2,
-                  '||': 1, '&&': 1, 'or': 1, 'and': 1,
-                  '+': 3, '-': 3, '*': 3, '/': 3, '%': 3,
-                  'gt': 2, 'lt': 2, 'ne': 2, 'eq': 2, 'ge': 2, 'le': 2,
+    # Based on http://introcs.cs.princeton.edu/java/11precedence/
+    PRECEDENCE = {'>': 7, '<': 7, '==': 8, '>=': 7, '<=': 7, '!=': 9,
+                  '||': 13, '&&': 12, 'or': 13, 'and': 12,
+                  '+': 5, '-': 5, '*': 4, '/': 4, '%': 4,
+                  'gt': 7, 'lt': 7, 'ne': 9, 'eq': 8, 'ge': 7, 'le': 7,
                   }
 
     # In velocity, if + is applied to one string and one numeric
@@ -793,7 +794,7 @@ class BinaryOperator(_Element):
     # that is, it's strictly greater than, not greater than or equal to
     # to get proper left-to-right evaluation, it should skew towards false.
     def greater_precedence_than(self, other):
-        return self.precedence > other.precedence
+        return self.precedence < other.precedence
 
 
 class UnaryOperatorValue(_Element):

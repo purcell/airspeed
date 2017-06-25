@@ -981,9 +981,13 @@ $email
     # and False to 0.
     # This is weird, but I can't say it's wrong.
 
-    def test_multiplication_has_higher_precedence_than_addition(self):
+    def test_multiplication_has_higher_precedence_than_subtraction(self):
         template = airspeed.Template("#set($a = 5 * 4 - 2)$a")
         self.assertEquals('18', template.merge({}))
+
+    def test_multiplication_has_higher_precedence_than_addition_reverse(self):
+        template = airspeed.Template("#set($a = 2 + 5 * 4)$a")
+        self.assertEquals('22', template.merge({}))
 
     def test_parse_empty_dictionary(self):
         template = airspeed.Template('#set($a = {})$a')
