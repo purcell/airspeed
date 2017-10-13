@@ -1166,7 +1166,9 @@ class ForeachDirective(_Element):
                 return
             if hasattr(iterable, 'keys'):
                 iterable = iterable.keys()
-            if not hasattr(iterable, '__getitem__'):
+            try:
+                iter(iterable)
+            except TypeError, te:
                 raise ValueError(
                     "value for $%s is not iterable in #foreach: %s" %
                     (self.loop_var_name, iterable))
