@@ -1168,7 +1168,7 @@ class ForeachDirective(_Element):
                 iterable = iterable.keys()
             try:
                 iter(iterable)
-            except TypeError, te:
+            except TypeError:
                 raise ValueError(
                     "value for $%s is not iterable in #foreach: %s" %
                     (self.loop_var_name, iterable))
