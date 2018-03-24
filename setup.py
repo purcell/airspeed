@@ -18,7 +18,7 @@ setup(
                  "with the popular Velocity library for Java."),
     author="Steve Purcell and Chris Tarttelin",
     author_email="steve@pythonconsulting.com, chris@pythonconsulting.com",
-    url="http://dev.sanityinc.com/airspeed/wiki",
+    url="https://github.com/purcell/airspeed/",
     download_url="http://pypi.python.org/pypi/airspeed/",
     license="BSD",
     keywords='web.templating',
