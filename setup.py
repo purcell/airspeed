@@ -12,7 +12,7 @@ if sys.version_info <= (2, 6):
 
 setup(
     name="airspeed",
-    version="0.5.8",
+    version="0.5.9",
     description=("Airspeed is a powerful and easy-to-use templating engine"
                  " for Python that aims for a high level of compatibility "
                  "with the popular Velocity library for Java."),
@@ -24,7 +24,7 @@ setup(
     keywords='web.templating',
     install_requires=[
         'six',
-        'cachetools==0.8.0',
+        'cachetools',
     ],
     test_suite='nose.collector',
     tests_require=[
