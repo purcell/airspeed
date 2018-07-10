@@ -1131,6 +1131,15 @@ line")''')
         output = template.merge({})
         self.assertEquals(output, " 9")
 
+    def test_evaluate(self):
+        template = airspeed.Template('''#set($source1 = "abc")
+#set($select = "1")
+#set($dynamicsource = "$source$select")
+## $dynamicsource is now the string '$source1'
+#evaluate($dynamicsource)''')
+        output = template.merge({})
+        self.assertEquals(output, "abc")
+
 # TODO:
 #
 #  Report locations for template errors in files included via loaders

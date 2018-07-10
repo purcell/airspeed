@@ -974,6 +974,21 @@ class Assignment(_Element):
                 cur = cur[term]
             cur[self.terms[-1]] = val
 
+class EvaluateDirective(_Element):
+    START = re.compile(r'#evaluate\b(.*)')
+    OPEN_PAREN = re.compile(r'[ \t]*\(\s*(.*)$', re.S)
+    CLOSE_PAREN = re.compile(r'[ \t]*\)(.*)$', re.S)
+
+    def parse(self):
+        self.identity_match(self.START)
+        self.require_match(self.OPEN_PAREN, '(')
+        self.value = self.require_next_element(Value, 'value')
+        self.require_match(self.CLOSE_PAREN, ')')
+
+    def evaluate_raw(self, stream, namespace, loader):
+        val = self.value.calculate(namespace, loader)
+        Template(val, "#evaluate").merge_to(namespace, stream, loader)
+
 class MacroDefinition(_Element):
     START = re.compile(r'#macro\b(.*)', re.S + re.I)
     OPEN_PAREN = re.compile(r'[ \t]*\(\s*(.*)$', re.S)
@@ -1221,6 +1236,7 @@ class Block(_Element):
                          MacroDefinition,
                          StopDirective,
                          UserDefinedDirective,
+                         EvaluateDirective,
                          MacroCall,
                          FallthroughHashText)))
             except NoMatch:
