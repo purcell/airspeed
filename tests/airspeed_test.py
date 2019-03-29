@@ -814,6 +814,10 @@ $email
         template = airspeed.Template(" $user.name ")
         self.assertEquals(" $user.name ", template.merge({'user': self}))
 
+    def test_when_dictionary_has_same_key_as_built_in_method(self):
+        template = airspeed.Template(" $user.items ")
+        self.assertEquals(" 1;2;3 ", template.merge({'user': {'items': '1;2;3'}}))
+
     def test_when_non_dictionary_object_does_not_contain_referenced_attribute_no_substitution_occurs(
             self):
         class MyObject:

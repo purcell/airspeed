@@ -584,23 +584,22 @@ class NameOrCall(_Element):
                 pass
 
     def calculate(self, current_object, loader, top_namespace):
-        look_in_dict = True
         result = None
-        if not isinstance(current_object, LocalNamespace):
+        try:
+            result = current_object[self.name]
+        except (KeyError, TypeError, AttributeError):
+            pass
+        if result is None and not isinstance(current_object, LocalNamespace):
             try:
                 result = getattr(current_object, self.name)
-                look_in_dict = False
             except AttributeError:
                 pass
-        if look_in_dict:
-            try:
-                result = current_object[self.name]
-            except KeyError:
-                result = None
-            except TypeError:
-                result = None
-            except AttributeError:
-                result = None
+        if result is None:
+            methods_for_type = __additional_methods__.get(current_object.__class__)
+            if methods_for_type and self.name in methods_for_type:
+                def func(*args):
+                    return methods_for_type[self.name](current_object, *args)
+                result = func
         if result is None:
             methods_for_type = __additional_methods__.get(current_object.__class__)
             if methods_for_type and self.name in methods_for_type:
