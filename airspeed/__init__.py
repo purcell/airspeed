@@ -597,15 +597,7 @@ class NameOrCall(_Element):
         if result is None:
             methods_for_type = __additional_methods__.get(current_object.__class__)
             if methods_for_type and self.name in methods_for_type:
-                def func(*args):
-                    return methods_for_type[self.name](current_object, *args)
-                result = func
-        if result is None:
-            methods_for_type = __additional_methods__.get(current_object.__class__)
-            if methods_for_type and self.name in methods_for_type:
-                def func(*args):
-                    return methods_for_type[self.name](current_object, *args)
-                result = func
+                result = lambda *args: methods_for_type[self.name](current_object, *args)
         if result is None:
             return None  # TODO: an explicit 'not found' exception?
         if self.parameters is not None:
