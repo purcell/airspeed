@@ -26,11 +26,14 @@ __all__ = [
 # result in calling method __additional_methods__[list]['size']($foo)
 __additional_methods__ = {
     str: {
-        'length': lambda *params: len(params[0])
+        'length': lambda self: len(self)
     },
     list: {
-        'size': lambda *params: len(params[0]),
-        'get': lambda *params: params[0][params[1]]
+        'size': lambda self: len(self),
+        'get': lambda self, index: self[index]
+    },
+    dict: {
+        'put': lambda self, key, value: self.update({key: value})
     }
 }
 

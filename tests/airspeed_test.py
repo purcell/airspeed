@@ -1135,6 +1135,13 @@ line")''')
         output = template.merge({})
         self.assertEquals(output, " 9")
 
+    def test_dict_put_item(self):
+        template = airspeed.Template("#set( $ignore = $test_dict.put('k', 'new value') )"
+                                     "$test_dict.k")
+        output = template.merge({'test_dict': {'k': 'initial value'}})
+        self.assertEquals(output, "new value")
+
+
     def test_evaluate(self):
         template = airspeed.Template('''#set($source1 = "abc")
 #set($select = "1")
