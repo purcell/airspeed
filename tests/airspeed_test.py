@@ -1130,6 +1130,13 @@ line")''')
         output = template.merge({})
         self.assertEquals(output, " 2")
 
+    def test_array_add_item(self):
+        template = airspeed.Template("#set($foo = [1,2,3])"
+                                     "#set( $ignore = $foo.add('string value') )"
+                                     "#foreach($item in $foo)$item,#end")
+        output = template.merge({})
+        self.assertEquals(output, "1,2,3,string value,")
+
     def test_string_length(self):
         template = airspeed.Template("#set($foo = 'foobar123') $foo.length()")
         output = template.merge({})

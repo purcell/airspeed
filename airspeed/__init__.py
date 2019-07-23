@@ -30,7 +30,8 @@ __additional_methods__ = {
     },
     list: {
         'size': lambda self: len(self),
-        'get': lambda self, index: self[index]
+        'get': lambda self, index: self[index],
+        'add': lambda self, value: self.append(value)
     },
     dict: {
         'put': lambda self, key, value: self.update({key: value})
