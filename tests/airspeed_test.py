@@ -1130,10 +1130,24 @@ line")''')
         output = template.merge({})
         self.assertEquals(output, " 2")
 
+    def test_array_add_item(self):
+        template = airspeed.Template("#set($foo = [1,2,3])"
+                                     "#set( $ignore = $foo.add('string value') )"
+                                     "#foreach($item in $foo)$item,#end")
+        output = template.merge({})
+        self.assertEquals(output, "1,2,3,string value,")
+
     def test_string_length(self):
         template = airspeed.Template("#set($foo = 'foobar123') $foo.length()")
         output = template.merge({})
         self.assertEquals(output, " 9")
+
+    def test_dict_put_item(self):
+        template = airspeed.Template("#set( $ignore = $test_dict.put('k', 'new value') )"
+                                     "$test_dict.k")
+        output = template.merge({'test_dict': {'k': 'initial value'}})
+        self.assertEquals(output, "new value")
+
 
     def test_evaluate(self):
         template = airspeed.Template('''#set($source1 = "abc")
