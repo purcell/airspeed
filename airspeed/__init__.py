@@ -26,7 +26,8 @@ __all__ = [
 # result in calling method __additional_methods__[list]['size']($foo)
 __additional_methods__ = {
     str: {
-        'length': lambda self: len(self)
+        'length': lambda self: len(self),
+        'replaceAll': lambda self, pattern, repl: re.sub(pattern, repl, self)
     },
     list: {
         'size': lambda self: len(self),
