@@ -1142,6 +1142,11 @@ line")''')
         output = template.merge({})
         self.assertEquals(output, " 9")
 
+    def test_string_replace_all(self):
+        template = airspeed.Template("#set($foo = 'foobar123bab') $foo.replaceAll('ba.', 'foo')")
+        output = template.merge({})
+        self.assertEquals(output, " foofoo123foo")
+
     def test_dict_put_item(self):
         template = airspeed.Template("#set( $ignore = $test_dict.put('k', 'new value') )"
                                      "$test_dict.k")
