@@ -88,18 +88,20 @@ class Template:
         self.filename = filename
         self.root_element = None
 
-    def merge(self, namespace, loader=None):
+    def merge(self, namespace, loader=None, options=None):
         output = StoppableStream()
-        self.merge_to(namespace, output, loader)
+        self.merge_to(namespace, output, loader, options)
         return output.getvalue()
 
     def ensure_compiled(self):
         if not self.root_element:
             self.root_element = TemplateBody(self.filename, self.content)
 
-    def merge_to(self, namespace, fileobj, loader=None):
+    def merge_to(self, namespace, fileobj, loader=None, options=None):
         if loader is None:
-            loader = NullLoader()
+            loader = NullLoader(options=options)
+        elif options:
+            loader.options.update(options)
         self.ensure_compiled()
         self.root_element.evaluate(fileobj, namespace, loader)
 
@@ -157,7 +159,15 @@ class TemplateSyntaxError(TemplateError):
             self.element.__class__.__name__).strip()
 
 
+class UndefinedVariable(Exception):
+    def __init__(self, name):
+        super(Exception, self).__init__("Variable '{}' is not defined or is None!".format(name))
+
+
 class NullLoader:
+    def __init__(self, options=None):
+        self.options = options or {}
+
     def load_text(self, name):
         raise TemplateError("no loader available for '%s'" % name)
 
@@ -166,12 +176,13 @@ class NullLoader:
 
 
 class CachingFileLoader:
-    def __init__(self, basedir, debugging=False):
+    def __init__(self, basedir, debugging=False, options=None):
         self.basedir = basedir
         self.known_templates = {}  # name -> (template, file_mod_time)
         self.debugging = debugging
         if debugging:
             print("creating caching file loader with basedir:", basedir)
+        self.options = options or {}
 
     def filename_of(self, name):
         return os.path.join(self.basedir, name)
@@ -604,7 +615,10 @@ class NameOrCall(_Element):
             if methods_for_type and self.name in methods_for_type:
                 result = lambda *args: methods_for_type[self.name](current_object, *args)
         if result is None:
-            return None  # TODO: an explicit 'not found' exception?
+            if loader.options.get('strict', False):
+                raise UndefinedVariable(self.name)
+            else:
+                return None
         if self.parameters is not None:
             result = result(*self.parameters.calculate(top_namespace, loader))
         elif self.index is not None:
@@ -715,7 +729,14 @@ class FormalReference(_Element):
     def evaluate_raw(self, stream, namespace, loader):
         value = None
         if self.expression is not None:
-            value = self.expression.calculate(namespace, loader)
+            try:
+                value = self.expression.calculate(namespace, loader)
+            except UndefinedVariable:
+                # Allow silent variables to not raise
+                if self.silent:
+                    pass
+                else:
+                    raise
         if value is None:
             if self.silent and self.expression is not None:
                 value = ''
