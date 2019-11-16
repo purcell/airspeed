@@ -13,7 +13,7 @@ library for Java.
 ## Selling points
 
 * Compatible with Velocity templates
-* Compatible with Python 2.6 and greater, including Jython
+* Compatible with Python 2.7 and greater, including Jython
 * Features include macros definitions, conditionals, sub-templates and much more
 * Airspeed is already being put to serious use
 * Comprehensive set of unit tests; the entire library was written test-first
