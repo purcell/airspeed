@@ -32,6 +32,7 @@ __additional_methods__ = {
     list: {
         'size': lambda self: len(self),
         'get': lambda self, index: self[index],
+        'contains': lambda self, value: value in self,
         'add': lambda self, value: self.append(value)
     },
     dict: {

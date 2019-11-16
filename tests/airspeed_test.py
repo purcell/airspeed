@@ -1130,6 +1130,16 @@ line")''')
         output = template.merge({})
         self.assertEqual(output, " 3")
 
+    def test_array_contains_true(self):
+        template = airspeed.Template("#set($foo = [1,2,3]) #if($foo.contains(1))found#end")
+        output = template.merge({})
+        self.assertEquals(output, " found")
+
+    def test_array_contains_false(self):
+        template = airspeed.Template("#set($foo = [1,2,3]) #if($foo.contains(10))found#end")
+        output = template.merge({})
+        self.assertEquals(output, " ")
+
     def test_array_get_item(self):
         template = airspeed.Template("#set($foo = [1,2,3]) $foo.get(1)")
         output = template.merge({})
