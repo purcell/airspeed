@@ -381,17 +381,27 @@ class TemplateTestCase(TestCase):
         self.assertEqual("48", template.merge(locals()))
 
     def test_velocity_style_escaping(self):  # example from Velocity docs
-        template = airspeed.Template('''\
+        template = airspeed.Template(r'''
 #set( $email = "foo" )
 $email
+\$email
 \\$email
-\\\\$email
-\\\\\\$email''')
-        self.assertEqual('''\
+\
+\\ \# \$
+\#end
+\# end
+\#set( $email = "foo" )
+''')
+        self.assertEqual(r'''
 foo
 $email
 \\foo
-\\$email''', template.merge({}))
+\
+\\ \# \$
+#end
+\# end
+#set( foo = "foo" )
+''', template.merge({}))
 
 # def test_velocity_style_escaping_when_var_unset(self): # example from Velocity docs
 #        template = airspeed.Template('''\
@@ -1133,12 +1143,12 @@ line")''')
     def test_array_contains_true(self):
         template = airspeed.Template("#set($foo = [1,2,3]) #if($foo.contains(1))found#end")
         output = template.merge({})
-        self.assertEquals(output, " found")
+        self.assertEqual(output, " found")
 
     def test_array_contains_false(self):
         template = airspeed.Template("#set($foo = [1,2,3]) #if($foo.contains(10))found#end")
         output = template.merge({})
-        self.assertEquals(output, " ")
+        self.assertEqual(output, " ")
 
     def test_array_get_item(self):
         template = airspeed.Template("#set($foo = [1,2,3]) $foo.get(1)")

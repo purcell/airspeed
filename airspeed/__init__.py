@@ -365,7 +365,7 @@ class Text(_Element):
         r'|#[^\{\}a-zA-Z0-9#\*]+|\\.)(.*)$',
         re.S +
         re.I)
-    ESCAPED_CHAR = re.compile(r'\\([\\\$#])')
+    ESCAPED_CHAR = re.compile(r'\\([\$#]\S+)')
 
     def parse(self):
         text, = self.identity_match(self.PLAIN)
