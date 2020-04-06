@@ -1,4 +1,6 @@
 [![Build Status](https://travis-ci.org/purcell/airspeed.svg?branch=master)](https://travis-ci.org/purcell/airspeed)
+[![PyPi version](https://pypip.in/v/airspeed/badge.svg)](https://pypi.org/project/airspeed/)
+[![PyPi downloads](https://pypip.in/d/airspeed/badge.svg)](https://pypi.org/project/airspeed/)
 <a href="https://www.patreon.com/sanityinc"><img alt="Support me" src="https://img.shields.io/badge/Support%20Me-%F0%9F%92%97-ff69b4.svg"></a>
 
 # Airspeed - a Python template engine
