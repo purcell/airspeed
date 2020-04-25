@@ -697,6 +697,14 @@ class ArrayIndex(_Element):
         result = self.index.calculate(namespace, loader)
         return result
 
+class AlternateValue(_Element):
+    START = re.compile(r'\|(.*)$', re.S)
+
+    def parse(self):
+        self.identity_match(self.START)
+        self.expression = self.require_next_element(Value, 'expression')
+        self.calculate = self.expression.calculate
+
 
 class FormalReference(_Element):
     START = re.compile(r'\$(!?)(\{?)(.*)$', re.S)
@@ -710,15 +718,22 @@ class FormalReference(_Element):
         except NoMatch:
             self.expression = None
             self.calculate = None
+        self.alternate = None
         if braces:
-            self.require_match(self.CLOSING_BRACE, '}')
+          try:
+              self.alternate = self.next_element(AlternateValue)
+          except NoMatch:
+              pass
+          self.require_match(self.CLOSING_BRACE, '}')
 
     def evaluate_raw(self, stream, namespace, loader):
         value = None
         if self.expression is not None:
             value = self.expression.calculate(namespace, loader)
         if value is None:
-            if self.silent and self.expression is not None:
+            if self.alternate is not None:
+                value = self.alternate.calculate(namespace, loader)
+            elif self.silent and self.expression is not None:
                 value = ''
             else:
                 value = self.my_text()

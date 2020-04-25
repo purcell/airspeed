@@ -104,6 +104,15 @@ class TemplateTestCase(TestCase):
         template = airspeed.Template("Hello $name}.")
         self.assertEqual("Hello World}.", template.merge({"name": "World"}))
 
+    def test_formal_reference_with_alternate_literal_value(self):
+        template = airspeed.Template("${a|'hello'}")
+        self.assertEqual("foo", template.merge({'a': "foo"}))
+        self.assertEqual("hello", template.merge({}))
+
+    def test_formal_reference_with_alternate_expression_value(self):
+        template = airspeed.Template("${a|$b}")
+        self.assertEqual("hello", template.merge({'b': "hello"}))
+
     def test_can_return_value_from_an_attribute_of_a_context_object(self):
         template = airspeed.Template("Hello $name.first_name")
 
