@@ -12,7 +12,7 @@ if sys.version_info <= (2, 6):
 
 setup(
     name="airspeed",
-    version="0.5.14",
+    version="0.5.15",
     description=("Airspeed is a powerful and easy-to-use templating engine"
                  " for Python that aims for a high level of compatibility "
                  "with the popular Velocity library for Java."),
