@@ -625,7 +625,7 @@ class NameOrCall(_Element):
 
 
 class SubExpression(_Element):
-    DOT = re.compile('\.(.*)', re.S)
+    DOT = re.compile(r'\.(.*)', re.S)
 
     def parse(self):
         self.identity_match(self.DOT)
@@ -750,7 +750,7 @@ class Null:
 
 class Comment(_Element, Null):
     COMMENT = re.compile(
-        '#(?:#.*?(?:\n|$)|\*.*?\*#(?:[ \t]*\n)?)(.*)$',
+        '#(?:#.*?(?:\n|$)|\\*.*?\\*#(?:[ \t]*\n)?)(.*)$',
         re.M +
         re.S)
 
