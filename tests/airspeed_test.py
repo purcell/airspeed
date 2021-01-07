@@ -389,6 +389,14 @@ class TemplateTestCase(TestCase):
         template = airspeed.Template('$multiply($value1,$value2)')
         self.assertEqual("48", template.merge(locals()))
 
+    def test_extract_array_index_from_function_result(self):
+        def get_array():
+            return ['p1', ['p2', 'p3']]
+        template = airspeed.Template('$get_array()[0]')
+        self.assertEqual("p1", template.merge(locals()))
+        template = airspeed.Template('$get_array()[1][1]')
+        self.assertEqual("p3", template.merge(locals()))
+
     def test_velocity_style_escaping(self):  # example from Velocity docs
         template = airspeed.Template(r'''
 #set( $email = "foo" )
@@ -1069,6 +1077,10 @@ line")''')
     def test_array_notation_int_index(self):
         template = airspeed.Template('$a[1]')
         self.assertEqual("bar", template.merge({"a": ["foo", "bar"]}))
+
+    def test_array_notation_nested_indexes(self):
+        template = airspeed.Template('$a[1][1]')
+        self.assertEqual("bar2", template.merge({"a": ["foo", ["bar1", "bar2"]]}))
 
     def test_array_notation_dict_index(self):
         template = airspeed.Template('$a["foo"]')
