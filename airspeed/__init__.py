@@ -628,14 +628,26 @@ class SubExpression(_Element):
     DOT = re.compile(r'\.(.*)', re.S)
 
     def parse(self):
-        self.identity_match(self.DOT)
-        self.expression = self.next_element(VariableExpression)
+        try:
+            self.identity_match(self.DOT)
+            self.expression = self.next_element(VariableExpression)
+        except NoMatch:
+            self.expression = self.next_element(ArrayIndex)
+            self.subexpression = None
+            try:
+                self.subexpression = self.next_element(SubExpression)
+            except NoMatch:
+                pass
 
     def calculate(self, current_object, loader, global_namespace):
-        return self.expression.calculate(
-            current_object,
-            loader,
-            global_namespace)
+        args = [current_object, loader]
+        if not isinstance(self.expression, ArrayIndex):
+            return self.expression.calculate(*(args + [global_namespace]))
+        index = self.expression.calculate(*args)
+        result = current_object[index]
+        if self.subexpression:
+            result = self.subexpression.calculate(result, loader, global_namespace)
+        return result
 
 
 class VariableExpression(_Element):
