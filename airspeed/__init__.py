@@ -27,7 +27,8 @@ __all__ = [
 __additional_methods__ = {
     str: {
         'length': lambda self: len(self),
-        'replaceAll': lambda self, pattern, repl: re.sub(pattern, repl, self)
+        'replaceAll': lambda self, pattern, repl: re.sub(pattern, repl, self),
+        'startsWith': lambda self, prefix: self.startswith(prefix)
     },
     list: {
         'size': lambda self: len(self),

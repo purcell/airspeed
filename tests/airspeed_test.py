@@ -1181,6 +1181,16 @@ line")''')
         output = template.merge({})
         self.assertEqual(output, " foofoo123foo")
 
+    def test_string_starts_with_true(self):
+        template = airspeed.Template("#set($foo = 'foobar123') #if($foo.startsWith('foo'))yes!#end")
+        output = template.merge({})
+        self.assertEqual(output, " yes!")
+
+    def test_string_starts_with_false(self):
+        template = airspeed.Template("#set($foo = 'nofoobar123') #if($foo.startsWith('foo'))yes!#end")
+        output = template.merge({})
+        self.assertEqual(output, " ")
+
     def test_dict_put_item(self):
         template = airspeed.Template("#set( $ignore = $test_dict.put('k', 'new value') )"
                                      "$test_dict.k")
