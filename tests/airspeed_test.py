@@ -1187,7 +1187,20 @@ line")''')
         self.assertEqual(output, " yes!")
 
     def test_string_starts_with_false(self):
-        template = airspeed.Template("#set($foo = 'nofoobar123') #if($foo.startsWith('foo'))yes!#end")
+        template = airspeed.Template(
+            "#set($foo = 'nofoobar123') #if($foo.startsWith('foo'))yes!#end")
+        output = template.merge({})
+        self.assertEqual(output, " ")
+
+    def test_string_matches_true(self):
+        template = airspeed.Template(
+            "#set($foo = 'nofoobar123') #if($foo.matches('.*foo.*'))yes!#end")
+        output = template.merge({})
+        self.assertEqual(output, " yes!")
+
+    def test_string_matches_false(self):
+        template = airspeed.Template(
+            "#set($foo = 'bar') #if($foo.matches('foo'))yes!#end")
         output = template.merge({})
         self.assertEqual(output, " ")
 
