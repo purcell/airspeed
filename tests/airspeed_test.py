@@ -19,6 +19,8 @@ except ImportError:
 
 import six
 
+STRICT = {'strict': True}
+
 
 class TemplateTestCase(TestCase):
     def assertRaisesExecutionError(self, exctype, func, *args, **kwargs):
@@ -42,6 +44,38 @@ class TemplateTestCase(TestCase):
         self.assertEqual("Hello $ ", template.merge({}))
         template = airspeed.Template("Hello $")
         self.assertEqual("Hello $", template.merge({}))
+
+    def test_strict_mode(self):
+        def nok(tpl, content=None):
+            with self.assertRaises(airspeed.TemplateExecutionError):
+                airspeed.Template(tpl).merge(content or {}, options=STRICT)
+
+        def ok(tpl, out, content=None):
+            self.assertEquals(out, airspeed.Template(tpl).merge(content or {}, options=STRICT))
+
+        nok("$undefined")
+        nok("${undefined}")
+        ok("$!undefined $!{undefined}", " ")
+        ok("$!undefined", "")
+        ok("$!defined", "1", {"defined": 1})
+        ok("#set($foo = 1)", "")
+        nok("#set($foo = $bar)")
+        ok("#set($foo = $bar)", "", {"bar": 1})
+        ok("#if(false)$undefined#end", "")
+
+        # These would work with Velocity's *standard* strict mode (to allow checking if defined)
+        nok("#if ($foo)#end")
+        nok("#if ( ! $foo)#end")
+        nok("#if ($foo && $foo.bar)#end")
+        nok("#if ($foo && $foo == 'bar')#end")
+        nok("#if ($foo1 || $foo2)#end")
+
+        # Workaround, to check for undefined, is via helper variable
+        content = {}
+        content['__exists'] = lambda x: x in content
+        ok("#if($__exists('undefined'))yes#end", "", content)
+        content['undefined'] = 1
+        ok("#if($__exists('undefined'))yes#end", "yes", content)
 
     def test_unmatched_name_does_not_get_substituted(self):
         template = airspeed.Template("Hello $name")
