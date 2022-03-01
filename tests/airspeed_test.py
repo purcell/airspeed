@@ -768,9 +768,11 @@ $email
     def test_use_defined_func_create_json_loop(self):
         template = airspeed.Template("""
         #define( $loop ) {
-            #foreach($e in $map.items())
-	           "$e[0]": "$e[1]"
-               #if( $foreach.hasNext ) , #end
+            #foreach($e in $map.keySet())
+                #set( $k = $e )
+                #set( $v = $map.get($k))
+                "$k": "$v"
+                #if( $foreach.hasNext ) , #end
             #end
         }
         #end
