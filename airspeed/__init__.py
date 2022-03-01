@@ -36,7 +36,8 @@ __additional_methods__ = {
         'add': lambda self, value: self.append(value)
     },
     dict: {
-        'put': lambda self, key, value: self.update({key: value})
+        'put': lambda self, key, value: self.update({key: value}),
+        'keySet': lambda self: self.keys()
     }
 }
 
