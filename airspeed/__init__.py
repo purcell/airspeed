@@ -1100,6 +1100,35 @@ class MacroCall(_Element):
             raise Exception('no such macro: ' + self.macro_name)
         macro.execute_macro(stream, namespace, self.args, loader)
 
+class DefineDefinition(MacroDefinition):
+    START = re.compile(r'#define\b(.*)', re.S + re.I)
+    NAME = re.compile(r'\s*(\$[a-z][a-z_0-9]*)\b(.*)', re.S + re.I)
+
+    def evaluate_raw(self, stream, namespace, loader):
+        global_ns = namespace.top()
+        macro_key = self.macro_name.lower()
+        macro_key = macro_key.lstrip("$")
+        if macro_key in global_ns:
+            raise Exception("cannot redefine macro {0}".format(macro_key))
+
+        class ParamWrapper:
+            def __init__(self, value):
+                self.value = value
+
+            def calculate(self, namespace, loader):
+                return self.value
+
+        class ExecuteFunc:
+            def __call__(_self, *args, **kwargs):
+                args = [ParamWrapper(arg) for arg in args]
+                _stream = StoppableStream()
+                result = self.execute_macro(_stream, namespace, args, loader)
+                return _stream.getvalue()
+
+            def __repr__(self):
+                return self.__call__()
+
+        global_ns[macro_key] = ExecuteFunc()
 
 class IncludeDirective(_Element):
     START = re.compile(r'#include\b(.*)', re.S + re.I)
@@ -1254,6 +1283,7 @@ class Block(_Element):
                          IncludeDirective,
                          ParseDirective,
                          MacroDefinition,
+                         DefineDefinition,
                          StopDirective,
                          UserDefinedDirective,
                          EvaluateDirective,
