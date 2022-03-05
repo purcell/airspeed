@@ -1029,7 +1029,8 @@ class MacroDefinition(_Element):
         'parse',
         'include',
         'stop',
-        'end')
+        'end',
+        'define')
 
     def parse(self):
         self.identity_match(self.START)

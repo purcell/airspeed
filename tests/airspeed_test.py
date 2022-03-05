@@ -675,7 +675,8 @@ $email
                 'parse',
                 'include',
                 'stop',
-                'end'):
+                'end',
+                'define'):
             template = airspeed.Template(
                 '#macro ( %s $value) $value #end' %
                 reserved)
