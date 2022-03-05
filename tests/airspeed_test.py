@@ -702,11 +702,11 @@ $email
         self.assertEqual('<strong>hello</strong>cheese',
                           template.merge({'text': 'hello', 'monkey': 'cheese'}))
 
-    # we use commas with our macros and it seems to work
+    # We use commas with our macros and it seems to work
     # so it's correct behavior by definition; the real
-    # question is whether using them w/o a comma is a legal variant
-    # or not.  This should effect the above test; the following test
-    # should be legal by defintion
+    # question is whether using them without a comma is a legal variant
+    # or not.  This should affect the above test; the following test
+    # should be legal by definition
 
     def test_define_and_use_macro_with_two_parameters_with_comma(self):
         template = airspeed.Template(
