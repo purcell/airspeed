@@ -1083,11 +1083,7 @@ class MacroCall(_Element):
         if self.macro_name in MacroDefinition.RESERVED_NAMES:
             raise NoMatch()
         if not self.optional_match(self.OPEN_PAREN):
-            # It's not really a macro call,
-            # it's just a spare pound sign with text after it,
-            # the typical example being a color spec: "#ffffff"
-            # call it not-a-match and then let another thing catch it
-            raise NoMatch()
+            raise NoMatch() # Typically a hex colour literal
         while True:
             try:
                 self.args.append(self.next_element(Value))
