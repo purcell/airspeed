@@ -1080,8 +1080,7 @@ class MacroCall(_Element):
         macro_name, = self.identity_match(self.START)
         self.macro_name = macro_name.lower()
         self.args = []
-        if self.macro_name in MacroDefinition.RESERVED_NAMES or \
-                self.macro_name.startswith('end'):
+        if self.macro_name in MacroDefinition.RESERVED_NAMES:
             raise NoMatch()
         if not self.optional_match(self.OPEN_PAREN):
             # It's not really a macro call,
