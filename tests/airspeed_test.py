@@ -754,6 +754,10 @@ $email
         template = airspeed.Template('#define ( $echo $v1 $v2)$v1$v2#end$echo(1,"a")$echo("b",$echo(3,"c"))')
         self.assertEqual('1ab3c', template.merge({}))
 
+    def test_define_with_local_namespace(self):
+        template = airspeed.Template("#define ( $showindex )$foreach.index#end#foreach($x in [1,2,3])$showindex#end")
+        self.assertEqual('012', template.merge({}))
+
     def test_use_defined_func_multiple_times(self):
         template = airspeed.Template("""
             #define( $myfunc )$ctx#end
