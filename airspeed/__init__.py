@@ -36,7 +36,8 @@ __additional_methods__ = {
         'add': lambda self, value: self.append(value)
     },
     dict: {
-        'put': lambda self, key, value: self.update({key: value})
+        'put': lambda self, key, value: self.update({key: value}),
+        'keySet': lambda self: self.keys()
     }
 }
 
@@ -606,6 +607,11 @@ class NameOrCall(_Element):
                 result = lambda *args: methods_for_type[self.name](current_object, *args)
         if result is None:
             return None  # TODO: an explicit 'not found' exception?
+        if isinstance(result, _FunctionDefinition):
+            params = self.parameters and self.parameters.calculate(top_namespace, loader) or []
+            stream = StoppableStream()
+            result.execute_function(stream, top_namespace, params, loader)
+            return stream.getvalue()
         if self.parameters is not None:
             result = result(*self.parameters.calculate(top_namespace, loader))
         elif self.index is not None:
@@ -1013,12 +1019,44 @@ class EvaluateDirective(_Element):
         val = self.value.calculate(namespace, loader)
         Template(val, "#evaluate").merge_to(namespace, stream, loader)
 
-class MacroDefinition(_Element):
-    START = re.compile(r'#macro\b(.*)', re.S + re.I)
+
+
+class _FunctionDefinition(_Element):
+    # Must be overridden to provide START and NAME patterns
     OPEN_PAREN = re.compile(r'[ \t]*\(\s*(.*)$', re.S)
-    NAME = re.compile(r'\s*([a-z][a-z_0-9]*)\b(.*)', re.S + re.I)
     CLOSE_PAREN = re.compile(r'[ \t]*\)(.*)$', re.S)
     ARG_NAME = re.compile(r'[, \t]+\$([a-z][a-z_0-9]*)(.*)$', re.S + re.I)
+    RESERVED_NAMES = []
+
+    def parse(self):
+        self.identity_match(self.START)
+        self.require_match(self.OPEN_PAREN, '(')
+        self.function_name, = self.require_match(self.NAME, 'function name')
+        if self.function_name.lower() in self.RESERVED_NAMES:
+            raise self.syntax_error('non-reserved name')
+        self.arg_names = []
+        while True:
+            m = self.next_match(self.ARG_NAME)
+            if not m:
+                break
+            self.arg_names.append(m[0])
+        self.require_match(self.CLOSE_PAREN, ') or arg name')
+        self.optional_match(WHITESPACE_TO_END_OF_LINE)
+        self.block = self.require_next_element(Block, 'block')
+        self.require_next_element(End, 'block')
+
+    def execute_function(self, stream, namespace, arg_values, loader):
+        if len(arg_values) != len(self.arg_names):
+            raise Exception(
+                "function %s expected %d arguments, got %d" %
+                (self.function_name, len(self.arg_names), len(arg_values)))
+        local_namespace = LocalNamespace(namespace)
+        local_namespace.update(zip(self.arg_names, arg_values))
+        self.block.evaluate(stream, local_namespace, loader)
+
+class MacroDefinition(_FunctionDefinition):
+    START = re.compile(r'#macro\b(.*)', re.S + re.I)
+    NAME = re.compile(r'\s*([a-z][a-z_0-9]*)\b(.*)', re.S + re.I)
     RESERVED_NAMES = (
         'if',
         'else',
@@ -1032,43 +1070,13 @@ class MacroDefinition(_Element):
         'end',
         'define')
 
-    def parse(self):
-        self.identity_match(self.START)
-        self.require_match(self.OPEN_PAREN, '(')
-        self.macro_name, = self.require_match(self.NAME, 'macro name')
-        if self.macro_name.lower() in self.RESERVED_NAMES:
-            raise self.syntax_error('non-reserved name')
-        self.arg_names = []
-        while True:
-            m = self.next_match(self.ARG_NAME)
-            if not m:
-                break
-            self.arg_names.append(m[0])
-        self.require_match(self.CLOSE_PAREN, ') or arg name')
-        self.optional_match(WHITESPACE_TO_END_OF_LINE)
-        self.block = self.require_next_element(Block, 'block')
-        self.require_next_element(End, 'block')
-
     def evaluate_raw(self, stream, namespace, loader):
         global_ns = namespace.top()
-        macro_key = '#' + self.macro_name.lower()
+        macro_key = '#' + self.function_name.lower()
         if macro_key in global_ns:
             raise Exception("cannot redefine macro {0}".format(macro_key))
 
         global_ns[macro_key] = self
-
-    def execute_macro(self, stream, namespace, arg_value_elements, loader):
-        if len(arg_value_elements) != len(self.arg_names):
-            raise Exception(
-                "expected %d arguments, got %d" %
-                (len(
-                    self.arg_names),
-                 len(arg_value_elements)))
-        macro_namespace = LocalNamespace(namespace)
-        for arg_name, arg_value in zip(self.arg_names, arg_value_elements):
-            macro_namespace[arg_name] = arg_value.calculate(namespace, loader)
-        self.block.evaluate(stream, macro_namespace, loader)
-
 
 class MacroCall(_Element):
     START = re.compile(r'#([a-z][a-z_0-9]*)\b(.*)', re.S + re.I)
@@ -1098,8 +1106,15 @@ class MacroCall(_Element):
             macro = namespace['#' + self.macro_name]
         except KeyError:
             raise Exception('no such macro: ' + self.macro_name)
-        macro.execute_macro(stream, namespace, self.args, loader)
+        arg_values = [arg.calculate(namespace, loader) for arg in self.args]
+        macro.execute_function(stream, namespace, arg_values, loader)
 
+class DefineDefinition(_FunctionDefinition):
+    START = re.compile(r'#define\b(.*)', re.S + re.I)
+    NAME = re.compile(r'\s*\$([a-z][a-z_0-9]*)\b(.*)', re.S + re.I)
+
+    def evaluate_raw(self, stream, namespace, loader):
+        namespace[self.function_name] = self
 
 class IncludeDirective(_Element):
     START = re.compile(r'#include\b(.*)', re.S + re.I)
@@ -1254,6 +1269,7 @@ class Block(_Element):
                          IncludeDirective,
                          ParseDirective,
                          MacroDefinition,
+                         DefineDefinition,
                          StopDirective,
                          UserDefinedDirective,
                          EvaluateDirective,
