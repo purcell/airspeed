@@ -26,10 +26,8 @@ setup(
         'six',
         'cachetools',
     ],
-    test_suite='nose.collector',
-    tests_require=[
-        'nose',
-        'coverage'],
+    test_suite='tests',
+    tests_require=[],
     classifiers=[
         "Environment :: Web Environment",
         "Intended Audience :: Developers",
