@@ -1013,6 +1013,12 @@ $email
             "#set($start = 1)#set($end = 5)#foreach($i in [$start .. $end])$i-#end")
         self.assertEqual('1-2-3-4-5-', template.merge({}))
 
+    def test_references_with_dashes(self):
+        template = airspeed.Template(
+            "#set($monkey-bar = 'Planet of the Apes')$monkey-bar"
+        )
+        self.assertEqual('Planet of the Apes', template.merge({}))
+
     def test_user_defined_directive(self):
         class DummyDirective(airspeed._Element):
             PLAIN = re.compile(r'#(monkey)man(.*)$', re.S + re.I)
@@ -1035,6 +1041,10 @@ $email
     def test_assignment_of_parenthesized_math_expression(self):
         template = airspeed.Template('#set($a = (5 + 4))$a')
         self.assertEqual('9', template.merge({}))
+
+    def test_assignment_math_with_minus_expression(self):
+        template = airspeed.Template('#set($b = 5)#set($a = ($b - 4))$a')
+        self.assertEqual('1', template.merge({}))
 
     def test_assignment_of_parenthesized_math_expression_with_reference(self):
         template = airspeed.Template('#set($b = 5)#set($a = ($b + 4))$a')
