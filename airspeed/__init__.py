@@ -574,7 +574,7 @@ class Value(_Element):
 
 
 class NameOrCall(_Element):
-    NAME = re.compile(r'([a-zA-Z0-9_]+)(.*)$', re.S)
+    NAME = re.compile(r'([a-zA-Z0-9_]+(?:-\w+)?)(.*)$', re.S)
     parameters = None
     index = None
 
@@ -983,7 +983,7 @@ class IfDirective(_Element):
 # yet
 class Assignment(_Element):
     START = re.compile(
-        r'\s*\(\s*\$([a-z_][a-z0-9_]*(?:\.[a-z_][a-z0-9_]*)*)\s*=\s*(.*)$',
+        r'\s*\(\s*\$([a-z_][a-z0-9_-]*(?:\.[a-z_][a-z0-9_-]*)*)\s*=\s*(.*)$',
         re.S +
         re.I)
     END = re.compile(r'\s*\)(?:[ \t]*\r?\n)?(.*)$', re.S + re.M)
