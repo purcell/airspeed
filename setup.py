@@ -1,4 +1,4 @@
-#!/usr/bin/env python2.7
+#!/usr/bin/env python
 # encoding: utf-8
 
 import sys
@@ -10,7 +10,7 @@ if sys.version_info <= (2, 6):
 
 
 setup(
-    name="airspeed",
+    name="airspeed-ext",
     version="0.5.19",
     description=(
         "Airspeed is a powerful and easy-to-use templating engine"
