@@ -1,4 +1,4 @@
-[![Build Status](https://github.com/github/localstack/airspeed/workflows/main.yml/badge.svg)](https://github.com/localstack/airspeed/actions)
+[![Build Status](https://github.com/localstack/airspeed/actions/workflows/main.yml/badge.svg)](https://github.com/localstack/airspeed/actions)
 [![PyPI version](https://img.shields.io/pypi/v/airspeed-ext.svg)](https://pypi.org/project/airspeed-ext/)
 
 # Airspeed - a Python template engine
