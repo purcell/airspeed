@@ -1,9 +1,11 @@
-[![Build Status](https://travis-ci.org/purcell/airspeed.svg?branch=master)](https://travis-ci.org/purcell/airspeed)
-[![PyPI version](https://img.shields.io/pypi/v/airspeed.svg)](https://pypi.org/project/airspeed/)
-[![PyPi downloads](https://img.shields.io/pypi/dm/airspeed)](https://pypi.org/project/airspeed/)
-<a href="https://www.patreon.com/sanityinc"><img alt="Support me" src="https://img.shields.io/badge/Support%20Me-%F0%9F%92%97-ff69b4.svg"></a>
+[![Build Status](https://github.com/github/localstack/airspeed/workflows/main.yml/badge.svg)](https://github.com/localstack/airspeed/actions)
+[![PyPI version](https://img.shields.io/pypi/v/airspeed-ext.svg)](https://pypi.org/project/airspeed-ext/)
 
 # Airspeed - a Python template engine
+
+This is a fork of the original [`airspeed`](https://github.com/purcell/airspeed) library, with some extensions used in [LocalStack](https://github.com/localstack/localstack).
+
+---
 
 ## What is Airspeed?
 
