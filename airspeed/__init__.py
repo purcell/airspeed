@@ -23,6 +23,14 @@ __all__ = [
 #
 # For example, given a template variable "$foo = [1,2,3]", "$foo.size()" will
 # result in calling method __additional_methods__[list]['size']($foo)
+
+
+def dict_put(self, key, value):
+    existing = self.get(key)
+    self.update({key: value})
+    return existing
+
+
 __additional_methods__ = {
     str: {
         'length': lambda self: len(self),
@@ -36,7 +44,8 @@ __additional_methods__ = {
         'add': lambda self, value: self.append(value)
     },
     dict: {
-        'put': lambda self, key, value: self.update({key: value}),
+        'put': dict_put,
+        'putAll': lambda self, values: self.update(values),
         'keySet': lambda self: self.keys()
     }
 }

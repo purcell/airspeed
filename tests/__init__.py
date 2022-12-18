@@ -1256,9 +1256,9 @@ line")''')
 
     def test_dict_put_item(self):
         template = airspeed.Template("#set( $ignore = $test_dict.put('k', 'new value') )"
-                                     "$test_dict.k")
+                                     "$ignore - $test_dict.k")
         output = template.merge({'test_dict': {'k': 'initial value'}})
-        self.assertEqual(output, "new value")
+        self.assertEqual(output, "initial value - new value")
 
 
     def test_evaluate(self):
