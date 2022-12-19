@@ -1,5 +1,6 @@
 from __future__ import print_function
 
+import contextlib
 import operator
 import os
 import re
@@ -1081,6 +1082,23 @@ class EvaluateDirective(_Element):
         Template(val, "#evaluate").merge_to(namespace, stream, loader)
 
 
+class ReturnDirective(EvaluateDirective):
+    """Defines an airspeed VTL directive that supports `#return(...)` expressions"""
+
+    START = re.compile(r"#return\b(.*)")
+
+    def evaluate_raw(self, stream, namespace, loader):
+        import json
+
+        value = self.value.calculate(namespace, loader)
+        str_value = str(value)
+        # string conversion of certain values (e.g., dict->JSON)
+        if isinstance(value, dict):
+            with contextlib.suppress(Exception):
+                str_value = json.dumps(value)
+        stream.write(str_value)
+
+
 class _FunctionDefinition(_Element):
     # Must be overridden to provide START and NAME patterns
     OPEN_PAREN = re.compile(r"[ \t]*\(\s*(.*)$", re.S)
@@ -1120,18 +1138,18 @@ class MacroDefinition(_FunctionDefinition):
     START = re.compile(r"#macro\b(.*)", re.S + re.I)
     NAME = re.compile(r"\s*([a-z][a-z_0-9]*)\b(.*)", re.S + re.I)
     RESERVED_NAMES = (
-        "if",
-        "else",
-        "elseif",
-        "set",
-        "macro",
-        "foreach",
-        "parse",
-        "include",
-        "stop",
-        "end",
-        "define",
-    )
+        'if',
+        'else',
+        'elseif',
+        'set',
+        'macro',
+        'foreach',
+        'parse',
+        'include',
+        'stop',
+        'end',
+        'define',
+        'return')
 
     def evaluate_raw(self, stream, namespace, loader):
         global_ns = namespace.top()
@@ -1336,9 +1354,10 @@ class Block(_Element):
                             DefineDefinition,
                             StopDirective,
                             UserDefinedDirective,
-                            EvaluateDirective,
-                            MacroCall,
-                            FallthroughHashText,
+                            ReturnDirective,
+                         EvaluateDirective,
+                         MacroCall,
+                         FallthroughHashText,
                         )
                     )
                 )

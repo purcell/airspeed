@@ -1327,6 +1327,12 @@ line")"""
         output = template.merge({})
         self.assertEqual(output, "abc")
 
+    def test_return_macro(self):
+        template = "#set($v1 = {})#set($ignore = $v1.put('foo', 'bar'))#return($v1)"
+        template = airspeed.Template(template)
+        output = template.merge({})
+        self.assertEqual(output, '{"foo": "bar"}')
+
 
 # TODO:
 #
