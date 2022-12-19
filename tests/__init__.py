@@ -2,12 +2,6 @@
 
 import re
 import sys
-
-if sys.version_info >= (3, 0) and sys.version_info <= (3, 3):
-    import imp
-elif sys.version_info >= (3, 4):
-    import importlib
-
 from unittest import TestCase
 
 # Make these tests runnable without needing 'nose' installed
@@ -1305,15 +1299,18 @@ line")"""
 
     def test_dict_put_item(self):
         template = airspeed.Template(
-            "#set( $ignore = $test_dict.put('k', 'new value') )" "$ignore - $test_dict.k"
+            "#set( $ignore = $test_dict.put('k', 'new value') )"
+            "$ignore - $test_dict.k"
         )
         output = template.merge({"test_dict": {"k": "initial value"}})
         self.assertEqual(output, "initial value - new value")
 
     def test_dict_putall_items(self):
-        template = airspeed.Template("#set( $ignore = $test_dict.putAll({'k1': 'v3', 'k2': 'v2'}))"
-                                     "$test_dict.k1 - $test_dict.k2")
-        output = template.merge({'test_dict': {'k1': 'v1'}})
+        template = airspeed.Template(
+            "#set( $ignore = $test_dict.putAll({'k1': 'v3', 'k2': 'v2'}))"
+            "$test_dict.k1 - $test_dict.k2"
+        )
+        output = template.merge({"test_dict": {"k1": "v1"}})
         self.assertEqual(output, "v3 - v2")
 
     def test_evaluate(self):

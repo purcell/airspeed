@@ -47,42 +47,10 @@ __additional_methods__ = {
     },
     dict: {
         "put": dict_put,
-        'putAll': lambda self, values: self.update(values),
+        "putAll": lambda self, values: self.update(values),
         "keySet": lambda self: self.keys(),
     },
 }
-
-try:
-    dict
-except NameError:
-    from UserDict import UserDict
-
-    class dict(UserDict):
-        def __init__(self):
-            self.data = {}
-
-
-try:
-    operator.__gt__
-except AttributeError:
-    operator.__gt__ = lambda a, b: a > b
-    operator.__lt__ = lambda a, b: a < b
-    operator.__ge__ = lambda a, b: a >= b
-    operator.__le__ = lambda a, b: a <= b
-    operator.__eq__ = lambda a, b: a == b
-    operator.__ne__ = lambda a, b: a != b
-    operator.mod = lambda a, b: a % b
-try:
-    basestring
-
-    def is_string(s):
-        return isinstance(s, basestring)
-
-except NameError:
-
-    def is_string(s):
-        return isinstance(s, type(""))
-
 
 ###############################################################################
 # Public interface
@@ -96,7 +64,7 @@ def boolean_value(variable_value):
 
 
 def is_valid_vtl_identifier(text):
-    return text and text[0] in set(string.ascii_letters + "_")
+    return text and text[0] in set(f"{string.ascii_letters}_")
 
 
 class Template:
@@ -160,7 +128,7 @@ class TemplateSyntaxError(TemplateError):
         self.column = len(self.text_understood) - self.text_understood.rfind("\n")
         got = element.next_text()
         if len(got) > 40:
-            got = got[:36] + " ..."
+            got = f"{got[:36]} ..."
         Exception.__init__(
             self,
             "line %d, column %d: expected %s in %s, got: %s ..."
@@ -180,14 +148,14 @@ class TemplateSyntaxError(TemplateError):
     def element_name(self):
         return re.sub(
             "([A-Z])",
-            lambda m: " " + m.group(1).lower(),
+            lambda m: f" {m.group(1).lower()}",
             self.element.__class__.__name__,
         ).strip()
 
 
 class NullLoader:
     def load_text(self, name):
-        raise TemplateError("no loader available for '%s'" % name)
+        raise TemplateError(f"no loader available for '{name}'")
 
     def load_template(self, name):
         raise self.load_text(name)
@@ -288,7 +256,7 @@ class LocalNamespace(dict):
         return self.parent
 
     def __repr__(self):
-        return dict.__repr__(self) + "->" + repr(self.parent)
+        return f"{dict.__repr__(self)}->{repr(self.parent)}"
 
 
 class _Element:
@@ -373,7 +341,7 @@ class _Element:
                     self.end = element.end
                     return element
             expected = ", ".join([cls.__name__ for cls in element_spec])
-            raise self.syntax_error("one of: " + expected)
+            raise self.syntax_error(f"one of: {expected}")
 
     def evaluate(self, *args):
         try:
@@ -656,7 +624,7 @@ class NameOrCall(_Element):
                 array_index, six.integer_types
             ):
                 raise ValueError(
-                    "expected integer for array index, got '%s'" % (array_index)
+                    f"expected integer for array index, got '{array_index}'"
                 )
             try:
                 result = result[array_index]
@@ -791,7 +759,7 @@ class FormalReference(_Element):
                 value = ""
             else:
                 value = self.my_text()
-        if is_string(value):
+        if isinstance(value, str):
             stream.write(value)
         else:
             stream.write(six.text_type(value))
@@ -1138,18 +1106,19 @@ class MacroDefinition(_FunctionDefinition):
     START = re.compile(r"#macro\b(.*)", re.S + re.I)
     NAME = re.compile(r"\s*([a-z][a-z_0-9]*)\b(.*)", re.S + re.I)
     RESERVED_NAMES = (
-        'if',
-        'else',
-        'elseif',
-        'set',
-        'macro',
-        'foreach',
-        'parse',
-        'include',
-        'stop',
-        'end',
-        'define',
-        'return')
+        "if",
+        "else",
+        "elseif",
+        "set",
+        "macro",
+        "foreach",
+        "parse",
+        "include",
+        "stop",
+        "end",
+        "define",
+        "return",
+    )
 
     def evaluate_raw(self, stream, namespace, loader):
         global_ns = namespace.top()
@@ -1355,9 +1324,9 @@ class Block(_Element):
                             StopDirective,
                             UserDefinedDirective,
                             ReturnDirective,
-                         EvaluateDirective,
-                         MacroCall,
-                         FallthroughHashText,
+                            EvaluateDirective,
+                            MacroCall,
+                            FallthroughHashText,
                         )
                     )
                 )
