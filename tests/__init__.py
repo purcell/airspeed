@@ -367,6 +367,10 @@ class TemplateTestCase(TestCase):
         template = airspeed.Template('#set ($name = "\\\\batman\\nand robin")$name')
         self.assertEqual("\\batman\nand robin", template.merge({}))
 
+    def def_string_literal_with_double_quotes(self):
+        template = airspeed.Template('#set($d = {""a"": 2}){"b": "$d.a"}')
+        self.assertEqual('{"b": "2"}', template.merge({}))
+
     def test_else_block_evaluated_when_if_expression_false(self):
         template = airspeed.Template("#if ($value) true #else false #end")
         self.assertEqual(" false ", template.merge({}))
@@ -902,6 +906,12 @@ $email
         self.assertEqual("cat", template.merge({}))
         template = airspeed.Template('#set($a = {"dog": "$horse"})$a.dog')
         self.assertEqual("cow", template.merge({"horse": "cow"}))
+
+    def test_dictionary_literal_with_double_quotes(self):
+        template = airspeed.Template('#set($d = {""id"": 1, ""f"": "bar"})$d.id')
+        self.assertEqual("1", template.merge({}))
+        template = airspeed.Template('#set($d = {""id"": 1, ""f"": "bar"})$d.f')
+        self.assertEqual("bar", template.merge({}))
 
     def test_dictionary_literal_as_parameter(self):
         template = airspeed.Template('$a({"color":"blue"})')
