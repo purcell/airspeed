@@ -1,5 +1,3 @@
-from __future__ import print_function
-
 import contextlib
 import operator
 import os
@@ -47,7 +45,7 @@ __additional_methods__ = {
     },
     dict: {
         "put": dict_put,
-        'putAll': lambda self, values: self.update(values),
+        "putAll": lambda self, values: self.update(values),
         "keySet": lambda self: self.keys(),
     },
 }
@@ -72,16 +70,10 @@ except AttributeError:
     operator.__eq__ = lambda a, b: a == b
     operator.__ne__ = lambda a, b: a != b
     operator.mod = lambda a, b: a % b
-try:
-    basestring
 
-    def is_string(s):
-        return isinstance(s, basestring)
 
-except NameError:
-
-    def is_string(s):
-        return isinstance(s, type(""))
+def is_string(s):
+    return isinstance(s, type(""))
 
 
 ###############################################################################
@@ -380,7 +372,7 @@ class _Element:
             return self.evaluate_raw(*args)
         except TemplateExecutionError:
             raise
-        except:
+        except Exception:
             exc_info = sys.exc_info()
             six.reraise(
                 TemplateExecutionError,
@@ -473,7 +465,7 @@ class StringLiteral(_Element):
                 "t": "\t",
                 '"': '"',
                 "\\": "\\",
-                "'": "'"
+                "'": "'",
             }.get(match.group(1), "\\" + match.group(1))
 
         self.value = self.ESCAPED_CHAR.sub(unescape, value)
@@ -580,7 +572,7 @@ class DictionaryLiteral(_Element):
     # TODO confirm that that's correct.
     def calculate(self, namespace, loader):
         tmp = {}
-        for (key, val) in self.local_data.items():
+        for key, val in self.local_data.items():
             tmp[key.calculate(namespace, loader)] = val.calculate(namespace, loader)
         return tmp
 
@@ -637,9 +629,11 @@ class NameOrCall(_Element):
         if result is None:
             methods_for_type = __additional_methods__.get(current_object.__class__)
             if methods_for_type and self.name in methods_for_type:
-                result = lambda *args: methods_for_type[self.name](
-                    current_object, *args
-                )
+
+                def _call_method(*args):
+                    return methods_for_type[self.name](current_object, *args)
+
+                result = _call_method
         if result is None:
             return None  # TODO: an explicit 'not found' exception?
         if isinstance(result, _FunctionDefinition):
@@ -664,7 +658,7 @@ class NameOrCall(_Element):
                 )
             try:
                 result = result[array_index]
-            except:
+            except Exception:
                 result = None
         return result
 
@@ -1142,18 +1136,19 @@ class MacroDefinition(_FunctionDefinition):
     START = re.compile(r"#macro\b(.*)", re.S + re.I)
     NAME = re.compile(r"\s*([a-z][a-z_0-9]*)\b(.*)", re.S + re.I)
     RESERVED_NAMES = (
-        'if',
-        'else',
-        'elseif',
-        'set',
-        'macro',
-        'foreach',
-        'parse',
-        'include',
-        'stop',
-        'end',
-        'define',
-        'return')
+        "if",
+        "else",
+        "elseif",
+        "set",
+        "macro",
+        "foreach",
+        "parse",
+        "include",
+        "stop",
+        "end",
+        "define",
+        "return",
+    )
 
     def evaluate_raw(self, stream, namespace, loader):
         global_ns = namespace.top()
@@ -1359,9 +1354,9 @@ class Block(_Element):
                             StopDirective,
                             UserDefinedDirective,
                             ReturnDirective,
-                         EvaluateDirective,
-                         MacroCall,
-                         FallthroughHashText,
+                            EvaluateDirective,
+                            MacroCall,
+                            FallthroughHashText,
                         )
                     )
                 )

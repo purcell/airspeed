@@ -65,3 +65,7 @@ target/
 /.eggs/
 
 .idea/
+
+vtl-cli/
+vtl.zip
+tests/**.vm

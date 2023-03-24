@@ -369,7 +369,7 @@ class TemplateTestCase(TestCase):
         self.assertEqual("\\batman\nand robin", template.merge({}))
 
     def test_string_literal_with_inner_double_quotes(self):
-        template = airspeed.Template('#set($d = \'{"a": 2}\')$d')
+        template = airspeed.Template("#set($d = '{\"a\": 2}')$d")
         self.assertEqual('{"a": 2}', template.merge({}))
 
     def test_string_interpolation_with_inner_double_double_quotes(self):
@@ -1319,15 +1319,18 @@ line")"""
 
     def test_dict_put_item(self):
         template = airspeed.Template(
-            "#set( $ignore = $test_dict.put('k', 'new value') )" "$ignore - $test_dict.k"
+            "#set( $ignore = $test_dict.put('k', 'new value') )"
+            "$ignore - $test_dict.k"
         )
         output = template.merge({"test_dict": {"k": "initial value"}})
         self.assertEqual(output, "initial value - new value")
 
     def test_dict_putall_items(self):
-        template = airspeed.Template("#set( $ignore = $test_dict.putAll({'k1': 'v3', 'k2': 'v2'}))"
-                                     "$test_dict.k1 - $test_dict.k2")
-        output = template.merge({'test_dict': {'k1': 'v1'}})
+        template = airspeed.Template(
+            "#set( $ignore = $test_dict.putAll({'k1': 'v3', 'k2': 'v2'}))"
+            "$test_dict.k1 - $test_dict.k2"
+        )
+        output = template.merge({"test_dict": {"k1": "v1"}})
         self.assertEqual(output, "v3 - v2")
 
     def test_evaluate(self):
@@ -1363,8 +1366,6 @@ if __name__ == "__main__":
         imp.reload(airspeed)
     elif sys.version_info >= (3, 4):
         importlib.reload(airspeed)
-    else:
-        reload(airspeed)
     import unittest
 
     try:

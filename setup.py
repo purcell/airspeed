@@ -27,7 +27,13 @@ setup(
         "six",
         "cachetools",
     ],
-    extras_require={"dev": ["black", "isort"]},
+    extras_require={"dev": [
+        "black==22.3.0",
+        "isort==5.12.0",
+        "flake8>=6.0.0",
+        "flake8-black>=0.3.6",
+        "flake8-isort>=6.0.0",
+    ]},
     test_suite="tests",
     tests_require=[],
     classifiers=[
