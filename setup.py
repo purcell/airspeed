@@ -17,9 +17,9 @@ setup(
         " for Python that aims for a high level of compatibility "
         "with the popular Velocity library for Java."
     ),
-    author="Steve Purcell and Chris Tarttelin",
-    author_email="steve@pythonconsulting.com, chris@pythonconsulting.com",
-    url="https://github.com/purcell/airspeed/",
+    author="Steve Purcell, Chris Tarttelin, LocalStack Team",
+    author_email="steve@pythonconsulting.com, chris@pythonconsulting.com, info@localstack.cloud",
+    url="https://github.com/localstack/airspeed/",
     download_url="http://pypi.python.org/pypi/airspeed/",
     license="BSD",
     keywords="web.templating",
