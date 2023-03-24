@@ -359,13 +359,27 @@ class TemplateTestCase(TestCase):
         template.merge_to({"name": "Chris"}, output)
         self.assertEqual("Hello Chris!", output.getvalue())
 
-    def test_string_literal_can_contain_embedded_escaped_quotes(self):
-        template = airspeed.Template('#set ($name = "\\"batman\\"")$name')
-        self.assertEqual('"batman"', template.merge({}))
+    # TODO: this VTL string is invalid in AWS API Gateway (results in 500 error)
+    # def test_string_literal_can_contain_embedded_escaped_quotes(self):
+    #     template = airspeed.Template('#set ($name = "\\"batman\\"")$name')
+    #     self.assertEqual('"batman"', template.merge({}))
 
     def test_string_literal_can_contain_embedded_escaped_newlines(self):
         template = airspeed.Template('#set ($name = "\\\\batman\\nand robin")$name')
         self.assertEqual("\\batman\nand robin", template.merge({}))
+
+    def test_string_literal_with_inner_double_quotes(self):
+        template = airspeed.Template('#set($d = \'{"a": 2}\')$d')
+        self.assertEqual('{"a": 2}', template.merge({}))
+
+    def test_string_interpolation_with_inner_double_double_quotes(self):
+        template = airspeed.Template('#set($d = "{""a"": 2}")$d')
+        self.assertEqual('{"a": 2}', template.merge({}))
+
+    def test_string_interpolation_with_multiple_double_quotes(self):
+        template = airspeed.Template(r'#set($d = "1\\""2""3")$d')
+        # Note: in AWS this would yield r'1\\"2"3', as backslashes are not escaped
+        self.assertEqual(r'1\"2"3', template.merge({}))
 
     def test_else_block_evaluated_when_if_expression_false(self):
         template = airspeed.Template("#if ($value) true #else false #end")

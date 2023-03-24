@@ -473,7 +473,7 @@ class StringLiteral(_Element):
                 "t": "\t",
                 '"': '"',
                 "\\": "\\",
-                "'": "'",
+                "'": "'"
             }.get(match.group(1), "\\" + match.group(1))
 
         self.value = self.ESCAPED_CHAR.sub(unescape, value)
@@ -483,11 +483,15 @@ class StringLiteral(_Element):
 
 
 class InterpolatedStringLiteral(StringLiteral):
-    STRING = re.compile(r'"((?:\\["nrbt\\\\\\$]|[^"\\])*)"(.*)', re.S)
+    STRING = re.compile(r'"((?:[^"]|"")*)"(.*)', re.S)
     ESCAPED_CHAR = re.compile(r'\\([nrbt"\\])')
 
     def parse(self):
         StringLiteral.parse(self)
+
+        # replace consecutive double quotes with double quotes
+        self.value = self.value.replace('""', '"')
+
         self.block = Block(self.filename, self.value, 0)
 
     def calculate(self, namespace, loader):
