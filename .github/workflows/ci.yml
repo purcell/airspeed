@@ -1,0 +1,25 @@
+name: ci
+on: [push, pull_request]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.7", "3.8", "3.9", "3.10"]
+    steps:
+    - name: checkout
+      uses: actions/checkout@v2
+
+    - uses: actions/setup-python@v4
+      with:
+        python-version: '${{ matrix.python-version }}'
+
+    - name: Install dependencies
+      run: |
+        pip install six cachetools
+
+    - name: Run tests
+      run: |
+        PYTHONPATH=$(pwd) python tests/__init__.py

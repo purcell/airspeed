@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/purcell/airspeed.svg?branch=master)](https://travis-ci.org/purcell/airspeed)
+[![Build Status](https://github.com/purcell/airspeed/workflows/CI/badge.svg)](https://github.com/purcell/airspeed/actions)
 [![PyPI version](https://img.shields.io/pypi/v/airspeed.svg)](https://pypi.org/project/airspeed/)
 [![PyPi downloads](https://img.shields.io/pypi/dm/airspeed)](https://pypi.org/project/airspeed/)
 <a href="https://www.patreon.com/sanityinc"><img alt="Support me" src="https://img.shields.io/badge/Support%20Me-%F0%9F%92%97-ff69b4.svg"></a>
