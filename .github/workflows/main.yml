@@ -31,4 +31,6 @@ jobs:
           python-version: '${{ matrix.python_version }}'
 
       - name: Build and test
-        run: python setup.py test
+        run: |
+          make install
+          make test

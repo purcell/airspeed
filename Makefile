@@ -17,7 +17,7 @@ publish:           ## Publish the library to the central PyPi repository
 	$(VENV_RUN); ./setup.py sdist && twine upload $(BUILD_DIR)/*.tar.gz
 
 test:              ## Run automated tests
-	python setup.py test
+	$(VENV_RUN); pytest tests
 
 lint:              ## Run code linter to check code style
 	$(VENV_RUN); flake8 airspeed tests
