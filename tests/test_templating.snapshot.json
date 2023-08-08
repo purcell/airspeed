@@ -1,0 +1,294 @@
+{
+  "tests/test_templating.py::TestTemplating::test_parser_substitutes_string_added_to_the_context": {
+    "recorded-date": "07-08-2023, 12:12:00",
+    "recorded-content": {
+      "render-result-1-cli": "Hello Chris",
+      "render-result-1": "Hello Chris"
+    }
+  },
+  "tests/test_templating.py::TestTemplating::test_parser_returns_input_when_there_is_nothing_to_substitute": {
+    "recorded-date": "07-08-2023, 12:11:48",
+    "recorded-content": {
+      "render-result-1-cli": "<html></html>",
+      "render-result-1": "<html></html>"
+    }
+  },
+  "tests/test_templating.py::TestTemplating::test_dollar_left_untouched": {
+    "recorded-date": "07-08-2023, 12:12:14",
+    "recorded-content": {
+      "render-result-1-cli": "Hello $ ",
+      "render-result-1": "Hello $ "
+    }
+  },
+  "tests/test_templating.py::TestTemplating::test_unmatched_name_does_not_get_substituted": {
+    "recorded-date": "07-08-2023, 12:15:04",
+    "recorded-content": {
+      "render-result-1-cli": "Hello $name",
+      "render-result-1": "Hello "
+    }
+  },
+  "tests/test_templating.py::TestTemplating::test_silent_substitution_for_unmatched_values": {
+    "recorded-date": "07-08-2023, 11:41:51",
+    "recorded-content": {
+      "render-result-1-cli": "Hello world",
+      "render-result-1": "Hello world",
+      "render-result-2-cli": "Hello ",
+      "render-result-2": "Hello "
+    }
+  },
+  "tests/test_templating.py::TestTemplating::test_formal_reference_in_an_if_condition": {
+    "recorded-date": "07-08-2023, 11:45:15",
+    "recorded-content": {
+      "render-result-1-cli": "",
+      "render-result-1": "yes!",
+      "render-result-2-cli": "",
+      "render-result-2": "yes!"
+    }
+  },
+  "tests/test_templating.py::TestTemplating::test_silent_formal_reference_in_an_if_condition": {
+    "recorded-date": "07-08-2023, 11:47:20",
+    "recorded-content": {
+      "render-result-1-cli": "",
+      "render-result-1": "yes!",
+      "render-result-2-cli": "",
+      "render-result-2": "yes!",
+      "render-result-3-cli": "",
+      "render-result-3": "yes!",
+      "render-result-4-cli": "",
+      "render-result-4": "yes!"
+    }
+  },
+  "tests/test_templating.py::TestTemplating::test_reference_function_calls_in_if_conditions": {
+    "recorded-date": "07-08-2023, 12:15:56",
+    "recorded-content": {
+      "render-result-1-cli": ""
+    }
+  },
+  "tests/test_templating.py::TestTemplating::test_unmatched_trailing_brace_preserved": {
+    "recorded-date": "07-08-2023, 12:04:58",
+    "recorded-content": {
+      "render-result-1-cli": "Hello World}.",
+      "render-result-1": "Hello World}."
+    }
+  },
+  "tests/test_templating.py::TestTemplating::test_embed_substitution_value_in_braces_gets_handled": {
+    "recorded-date": "07-08-2023, 12:16:38",
+    "recorded-content": {
+      "render-result-1-cli": "Hello World.",
+      "render-result-1": "Hello World."
+    }
+  },
+  "tests/test_templating.py::TestTemplating::test_formal_reference_with_alternate_literal_value": {
+    "recorded-date": "07-08-2023, 12:17:18",
+    "recorded-content": {
+      "render-result-1-cli": "foo"
+    }
+  },
+  "tests/test_templating.py::TestTemplating::test_formal_reference_with_alternate_expression_value": {
+    "recorded-date": "07-08-2023, 12:18:25",
+    "recorded-content": {
+      "render-result-1-cli": "hello"
+    }
+  },
+  "tests/test_templating.py::TestTemplating::test_when_if_statement_resolves_to_true_the_content_is_returned": {
+    "recorded-date": "07-08-2023, 12:19:32",
+    "recorded-content": {
+      "render-result-1-cli": "Hello your name is Steve Good to see you",
+      "render-result-1": "Hello your name is Steve Good to see you"
+    }
+  },
+  "tests/test_templating.py::TestTemplating::test_when_if_statement_resolves_to_false_the_content_is_skipped": {
+    "recorded-date": "07-08-2023, 12:19:43",
+    "recorded-content": {
+      "render-result-1-cli": "Hello your name is Steve Good to see you",
+      "render-result-1": "Hello  Good to see you"
+    }
+  },
+  "tests/test_templating.py::TestTemplating::test_when_if_statement_is_nested_inside_a_successful_enclosing_if_it_gets_evaluated": {
+    "recorded-date": "07-08-2023, 12:20:19",
+    "recorded-content": {
+      "render-result-1-cli": "Hello your name is Steve. Good to see you",
+      "render-result-1": "Hello  Good to see you",
+      "render-result-2-cli": "Hello your name is Steve. Good to see you",
+      "render-result-2": "Hello your name is Steve. Happy Birthday. Good to see you",
+      "render-result-3-cli": "Hello your name is Steve. Happy Birthday. Good to see you",
+      "render-result-3": "Hello your name is Steve. Happy Birthday. Good to see you"
+    }
+  },
+  "tests/test_templating.py::TestTemplating::test_if_statement_considers_None_to_be_false": {
+    "recorded-date": "07-08-2023, 12:20:41",
+    "recorded-content": {
+      "render-result-1-cli": "",
+      "render-result-1": "hide me",
+      "render-result-2-cli": "hide me",
+      "render-result-2": "hide me"
+    }
+  },
+  "tests/test_templating.py::TestTemplating::test_if_statement_honours_custom_truth_value_of_objects": {
+    "recorded-date": "07-08-2023, 12:21:26",
+    "recorded-content": {
+      "render-result-1-cli": "yes"
+    }
+  },
+  "tests/test_templating.py::TestTemplating::test_understands_boolean_literal_true": {
+    "recorded-date": "07-08-2023, 12:26:08",
+    "recorded-content": {
+      "render-result-1-cli": "true",
+      "render-result-1": "true"
+    }
+  },
+  "tests/test_templating.py::TestTemplating::test_understands_boolean_literal_false": {
+    "recorded-date": "07-08-2023, 12:26:18",
+    "recorded-content": {
+      "render-result-1-cli": "false",
+      "render-result-1": "false"
+    }
+  },
+  "tests/test_templating.py::TestTemplating::test_new_lines_in_templates_are_permitted": {
+    "recorded-date": "07-08-2023, 12:31:53",
+    "recorded-content": {
+      "render-result-1-cli": "hello Steve.\nHappy Birthday\n.\n Off out later?",
+      "render-result-1": "hello Steve.\nHappy Birthday\n.\n Off out later?"
+    }
+  },
+  "tests/test_templating.py::TestTemplating::test_has_next": {
+    "recorded-date": "07-08-2023, 12:36:42",
+    "recorded-content": {
+      "render-result-1-cli": "1. , 2. , 3. , ",
+      "render-result-1": "1. yes, 2. yes, 3. , "
+    }
+  },
+  "tests/test_templating.py::TestTemplating::test_has_next_new": {
+    "recorded-date": "07-08-2023, 12:37:14",
+    "recorded-content": {
+      "render-result-1-cli": "1. yes, 2. yes, 3. , ",
+      "render-result-1": "1. yes, 2. yes, 3. , "
+    }
+  },
+  "tests/test_templating.py::TestTemplating::test_first": {
+    "recorded-date": "07-08-2023, 12:37:23",
+    "recorded-content": {
+      "render-result-1-cli": "1. yes, 2. , 3. , ",
+      "render-result-1": "1. yes, 2. , 3. , "
+    }
+  },
+  "tests/test_templating.py::TestTemplating::test_last": {
+    "recorded-date": "07-08-2023, 12:37:40",
+    "recorded-content": {
+      "render-result-1-cli": "1. , 2. , 3. yes, ",
+      "render-result-1": "1. , 2. , 3. yes, "
+    }
+  },
+  "tests/test_templating.py::TestTemplating::test_can_use_an_integer_variable_defined_in_template": {
+    "recorded-date": "07-08-2023, 12:38:47",
+    "recorded-content": {
+      "render-result-1-cli": "10",
+      "render-result-1": "10"
+    }
+  },
+  "tests/test_templating.py::TestTemplating::test_can_use_a_string_variable_defined_in_template": {
+    "recorded-date": "07-08-2023, 12:38:58",
+    "recorded-content": {
+      "render-result-1-cli": "Steve",
+      "render-result-1": "Steve"
+    }
+  },
+  "tests/test_templating.py::TestTemplating::test_can_use_a_single_quoted_string_variable_defined_in_template": {
+    "recorded-date": "07-08-2023, 12:39:14",
+    "recorded-content": {
+      "render-result-1-cli": "Steve",
+      "render-result-1": "Steve"
+    }
+  },
+  "tests/test_templating.py::TestTemplating::test_single_line_comments_skipped": {
+    "recorded-date": "07-08-2023, 12:39:30",
+    "recorded-content": {
+      "render-result-1-cli": "Stuff\nMore stuff",
+      "render-result-1": "Stuff\nMore stuff"
+    }
+  },
+  "tests/test_templating.py::TestTemplating::test_multi_line_comments_skipped": {
+    "recorded-date": "07-08-2023, 12:39:48",
+    "recorded-content": {
+      "render-result-1-cli": "Stuff\n and more stuff",
+      "render-result-1": "Stuff\n and more stuff"
+    }
+  },
+  "tests/test_templating.py::TestTemplating::test_string_literal_can_contain_embedded_escaped_newlines": {
+    "recorded-date": "07-08-2023, 12:40:01",
+    "recorded-content": {
+      "render-result-1-cli": "\\\\batman\\nand robin",
+      "render-result-1": "\\\\batman\\nand robin"
+    }
+  },
+  "tests/test_templating.py::TestTemplating::test_string_literal_with_inner_double_quotes": {
+    "recorded-date": "07-08-2023, 12:40:39",
+    "recorded-content": {
+      "render-result-1-cli": {
+        "a": 2
+      },
+      "render-result-1": {
+        "a": 2
+      }
+    }
+  },
+  "tests/test_templating.py::TestTemplating::test_string_interpolation_with_inner_double_double_quotes": {
+    "recorded-date": "07-08-2023, 12:40:46",
+    "recorded-content": {
+      "render-result-1-cli": {
+        "a": 2
+      },
+      "render-result-1": {
+        "a": 2
+      }
+    }
+  },
+  "tests/test_templating.py::TestTemplating::test_string_interpolation_with_multiple_double_quotes": {
+    "recorded-date": "07-08-2023, 12:41:06",
+    "recorded-content": {
+      "render-result-1-cli": "1\\\\\"2\"3",
+      "render-result-1": "1\\\\\"2\"3"
+    }
+  },
+  "tests/test_templating.py::TestTemplating::test_else_block_evaluated_when_if_expression_false": {
+    "recorded-date": "07-08-2023, 12:41:19",
+    "recorded-content": {
+      "render-result-1-cli": " false ",
+      "render-result-1": " true "
+    }
+  },
+  "tests/test_templating.py::TestTemplating::test_curly_else": {
+    "recorded-date": "07-08-2023, 12:41:33",
+    "recorded-content": {
+      "render-result-1-cli": "false",
+      "render-result-1": "true"
+    }
+  },
+  "tests/test_templating.py::TestTemplating::test_curly_end": {
+    "recorded-date": "07-08-2023, 12:41:54",
+    "recorded-content": {
+      "render-result-1-cli": "monkey",
+      "render-result-1": "truemonkey"
+    }
+  },
+  "tests/test_templating.py::TestTemplating::test_can_call_function_with_one_parameter": {
+    "recorded-date": "07-08-2023, 12:45:23",
+    "recorded-content": {
+      "render-result-1-cli": "<function TestTemplating.test_can_call_function_with_one_parameter.<locals>.squared at 0x105b9fd00>(8)"
+    }
+  },
+  "tests/test_templating.py::TestTemplating::test_velocity_style_escaping": {
+    "recorded-date": "07-08-2023, 12:46:15",
+    "recorded-content": {
+      "render-result-1-cli": "\nfoo\n$email\n\\foo\n\\\n\\\\ \\# \\$\n#end\n\\# end\n#set( foo = \"foo\" )\n",
+      "render-result-1": "\nfoo\n$email\n\\foo\n\\\n\\\\ \\# \\$\n#end\n\\# end\n#set( foo = \"foo\" )\n"
+    }
+  },
+  "tests/test_templating.py::TestTemplating::test_true_elseif_evaluated_when_if_is_false": {
+    "recorded-date": "07-08-2023, 12:53:48",
+    "recorded-content": {
+      "render-result-1-cli": " one ",
+      "render-result-1": " two "
+    }
+  }
+}

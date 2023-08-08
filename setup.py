@@ -29,11 +29,15 @@ setup(
     ],
     extras_require={"dev": [
         "black",
+        "deepdiff",
         "isort",
         "flake8",
         "flake8-black",
         "flake8-isort",
-        "pytest",
+        "localstack",
+        "localstack[runtime]",  # TODO remove once imports are better organized in localstack
+        "pytest==6.2.4",
+        "pytest-httpserver",
     ]},
     test_suite="tests",
     tests_require=[],

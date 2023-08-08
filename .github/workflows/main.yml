@@ -17,9 +17,6 @@ jobs:
       fail-fast: false
       matrix:
         python_version:
-          - "3.7"
-          - "3.8"
-          - "3.9"
           - "3.10"
     steps:
       - name: Checkout
@@ -32,5 +29,9 @@ jobs:
 
       - name: Build and test
         run: |
+          sudo apt-get update
+          sudo apt-get install -y libsasl2-dev
           make install
+
+          make lint
           make test
