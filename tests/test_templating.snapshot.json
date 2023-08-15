@@ -37,12 +37,18 @@
     }
   },
   "tests/test_templating.py::TestTemplating::test_formal_reference_in_an_if_condition": {
-    "recorded-date": "07-08-2023, 11:45:15",
+    "recorded-date": "13-08-2023, 16:12:14",
     "recorded-content": {
       "render-result-1-cli": "",
       "render-result-1": "yes!",
       "render-result-2-cli": "",
-      "render-result-2": "yes!"
+      "render-result-2": "",
+      "render-result-3-cli": "yes!",
+      "render-result-3": "",
+      "render-result-4-cli": "yes!",
+      "render-result-4": "",
+      "render-result-5-cli": "",
+      "render-result-5": "yes!"
     }
   },
   "tests/test_templating.py::TestTemplating::test_silent_formal_reference_in_an_if_condition": {
@@ -289,6 +295,715 @@
     "recorded-content": {
       "render-result-1-cli": " one ",
       "render-result-1": " two "
+    }
+  },
+  "tests/test_templating.py::TestTemplating::test_false_elseif_skipped_when_if_is_true": {
+    "recorded-date": "13-08-2023, 01:36:05",
+    "recorded-content": {
+      "render-result-1-cli": " one ",
+      "render-result-1": " one "
+    }
+  },
+  "tests/test_templating.py::TestTemplating::test_first_true_elseif_evaluated_when_if_is_false": {
+    "recorded-date": "13-08-2023, 01:38:56",
+    "recorded-content": {
+      "render-result-1-cli": " one ",
+      "render-result-1": " one "
+    }
+  },
+  "tests/test_templating.py::TestTemplating::test_else_evaluated_when_if_and_elseif_are_false": {
+    "recorded-date": "13-08-2023, 01:41:54",
+    "recorded-content": {
+      "render-result-1-cli": " one ",
+      "render-result-1": " three "
+    }
+  },
+  "tests/test_templating.py::TestTemplating::test_compare_greater_than_operator": {
+    "recorded-date": "13-08-2023, 01:49:05",
+    "recorded-content": {
+      "render-result-1-cli": "",
+      "render-result-1": "",
+      "render-result-2-cli": "",
+      "render-result-2": "",
+      "render-result-3-cli": "yes",
+      "render-result-3": "yes",
+      "render-result-4-cli": "",
+      "render-result-4": "",
+      "render-result-5-cli": "",
+      "render-result-5": "",
+      "render-result-6-cli": "yes",
+      "render-result-6": "yes"
+    }
+  },
+  "tests/test_templating.py::TestTemplating::test_compare_greater_than_or_equal_operator": {
+    "recorded-date": "13-08-2023, 01:54:27",
+    "recorded-content": {
+      "render-result-1-cli": "",
+      "render-result-1": "",
+      "render-result-2-cli": "yes",
+      "render-result-2": "yes",
+      "render-result-3-cli": "yes",
+      "render-result-3": "yes",
+      "render-result-4-cli": "",
+      "render-result-4": "",
+      "render-result-5-cli": "yes",
+      "render-result-5": "yes",
+      "render-result-6-cli": "yes",
+      "render-result-6": "yes"
+    }
+  },
+  "tests/test_templating.py::TestTemplating::test_compare_less_than_operator": {
+    "recorded-date": "13-08-2023, 01:57:09",
+    "recorded-content": {
+      "render-result-1-cli": "yes",
+      "render-result-1": "yes",
+      "render-result-2-cli": "",
+      "render-result-2": "",
+      "render-result-3-cli": "",
+      "render-result-3": "",
+      "render-result-4-cli": "yes",
+      "render-result-4": "yes",
+      "render-result-5-cli": "",
+      "render-result-5": "",
+      "render-result-6-cli": "",
+      "render-result-6": ""
+    }
+  },
+  "tests/test_templating.py::TestTemplating::test_compare_less_than_or_equal_operator": {
+    "recorded-date": "13-08-2023, 01:58:55",
+    "recorded-content": {
+      "render-result-1-cli": "yes",
+      "render-result-1": "yes",
+      "render-result-2-cli": "yes",
+      "render-result-2": "yes",
+      "render-result-3-cli": "",
+      "render-result-3": "",
+      "render-result-4-cli": "yes",
+      "render-result-4": "yes",
+      "render-result-5-cli": "yes",
+      "render-result-5": "yes",
+      "render-result-6-cli": "",
+      "render-result-6": ""
+    }
+  },
+  "tests/test_templating.py::TestTemplating::test_compare_equality_operator": {
+    "recorded-date": "13-08-2023, 02:00:43",
+    "recorded-content": {
+      "render-result-1-cli": "",
+      "render-result-1": "",
+      "render-result-2-cli": "yes",
+      "render-result-2": "yes",
+      "render-result-3-cli": "",
+      "render-result-3": "",
+      "render-result-4-cli": "",
+      "render-result-4": "",
+      "render-result-5-cli": "yes",
+      "render-result-5": "yes",
+      "render-result-6-cli": "",
+      "render-result-6": ""
+    }
+  },
+  "tests/test_templating.py::TestTemplating::test_or_operator": {
+    "recorded-date": "13-08-2023, 02:05:27",
+    "recorded-content": {
+      "render-result-1-cli": "yes",
+      "render-result-1": "",
+      "render-result-2-cli": "yes",
+      "render-result-2": "yes",
+      "render-result-3-cli": "yes",
+      "render-result-3": "yes",
+      "render-result-4-cli": "yes",
+      "render-result-4": "",
+      "render-result-5-cli": "yes",
+      "render-result-5": "yes",
+      "render-result-6-cli": "yes",
+      "render-result-6": "yes"
+    }
+  },
+  "tests/test_templating.py::TestTemplating::test_and_operator": {
+    "recorded-date": "13-08-2023, 02:14:56",
+    "recorded-content": {
+      "render-result-1-cli": "yes",
+      "render-result-1": "",
+      "render-result-2-cli": "yes",
+      "render-result-2": "",
+      "render-result-3-cli": "yes",
+      "render-result-3": "",
+      "render-result-4-cli": "yes",
+      "render-result-4": "",
+      "render-result-5-cli": "yes",
+      "render-result-5": "",
+      "render-result-6-cli": "yes",
+      "render-result-6": ""
+    }
+  },
+  "tests/test_templating.py::TestTemplating::test_parenthesised_value": {
+    "recorded-date": "13-08-2023, 02:22:50",
+    "recorded-content": {
+      "render-result-1-cli": "",
+      "render-result-1": "",
+      "render-result-2-cli": "",
+      "render-result-2": "",
+      "render-result-3-cli": "",
+      "render-result-3": "",
+      "render-result-4-cli": "yes",
+      "render-result-4": "yes"
+    }
+  },
+  "tests/test_templating.py::TestTemplating::test_multiterm_expression": {
+    "recorded-date": "13-08-2023, 02:23:53",
+    "recorded-content": {
+      "render-result-1-cli": "",
+      "render-result-1": "",
+      "render-result-2-cli": "",
+      "render-result-2": "",
+      "render-result-3-cli": "",
+      "render-result-3": "",
+      "render-result-4-cli": "yes",
+      "render-result-4": "yes"
+    }
+  },
+  "tests/test_templating.py::TestTemplating::test_compound_condition": {
+    "recorded-date": "13-08-2023, 02:29:17",
+    "recorded-content": {
+      "render-result-1-cli": "yes",
+      "render-result-1": "",
+      "render-result-2-cli": "yes",
+      "render-result-2": "yes"
+    }
+  },
+  "tests/test_templating.py::TestTemplating::test_logical_negation_operator": {
+    "recorded-date": "13-08-2023, 11:38:01",
+    "recorded-content": {
+      "render-result-1-cli": "",
+      "render-result-1": "yes",
+      "render-result-2-cli": "",
+      "render-result-2": "",
+      "render-result-3-cli": "",
+      "render-result-3": "",
+      "render-result-4-cli": "",
+      "render-result-4": "yes",
+      "render-result-5-cli": "",
+      "render-result-5": "",
+      "render-result-6-cli": "",
+      "render-result-6": ""
+    }
+  },
+  "tests/test_templating.py::TestTemplating::test_compound_binary_and_unary_operators": {
+    "recorded-date": "13-08-2023, 11:40:38",
+    "recorded-content": {
+      "render-result-1-cli": "",
+      "render-result-1": "",
+      "render-result-2-cli": "",
+      "render-result-2": "",
+      "render-result-3-cli": "",
+      "render-result-3": "",
+      "render-result-4-cli": "",
+      "render-result-4": "yes"
+    }
+  },
+  "tests/test_templating.py::TestTemplating::test_use_define_with_no_parameters": {
+    "recorded-date": "13-08-2023, 12:04:40",
+    "recorded-content": {
+      "render-result-1-cli": "hi()hi()",
+      "render-result-1": "hi()hi()"
+    }
+  },
+  "tests/test_templating.py::TestTemplating::test_use_define_with_parameters": {
+    "recorded-date": "13-08-2023, 12:13:59",
+    "recorded-content": {}
+  },
+  "tests/test_templating.py::TestTemplating::test_define_with_local_namespace": {
+    "recorded-date": "13-08-2023, 12:27:21",
+    "recorded-content": {
+      "render-result-1-cli": "012",
+      "render-result-1": "012"
+    }
+  },
+  "tests/test_templating.py::TestTemplating::test_use_defined_func_multiple_times": {
+    "recorded-date": "13-08-2023, 12:28:55",
+    "recorded-content": {
+      "render-result-1-cli": "\nfoo\nbar\n",
+      "render-result-1": "\nfoo\nbar\n"
+    }
+  },
+  "tests/test_templating.py::TestTemplating::test_use_defined_func_create_json_loop": {
+    "recorded-date": "13-08-2023, 16:07:28",
+    "recorded-content": {
+      "render-result-1": "{ \"test\": \"123\" , \"test2\": \"abc\" } { \"foo\": \"bar\" }"
+    }
+  },
+  "tests/test_templating.py::TestTemplating::test_assign_range_literal": {
+    "recorded-date": "13-08-2023, 12:35:12",
+    "recorded-content": {
+      "render-result-1-cli": "1,2,3,4,5,",
+      "render-result-1": "1,2,3,4,5,",
+      "render-result-2-cli": "2,1,0,-1,-2,",
+      "render-result-2": "2,1,0,-1,-2,"
+    }
+  },
+  "tests/test_templating.py::TestTemplating::test_local_namespace_methods_are_not_available_in_context": {
+    "recorded-date": "13-08-2023, 12:38:44",
+    "recorded-content": {
+      "render-result-1-cli": "$values",
+      "render-result-1": "#tryme()"
+    }
+  },
+  "tests/test_templating.py::TestTemplating::test_array_literal": {
+    "recorded-date": "13-08-2023, 12:39:31",
+    "recorded-content": {
+      "render-result-1-cli": "blah\nHello Chris, your lucky number is 7\nblah",
+      "render-result-1": "blah\nHello Chris, your lucky number is 7\nblah"
+    }
+  },
+  "tests/test_templating.py::TestTemplating::test_dictionary_literal": {
+    "recorded-date": "13-08-2023, 12:41:42",
+    "recorded-content": {
+      "render-result-1-cli": "cat",
+      "render-result-1": "cat",
+      "render-result-2-cli": "cow",
+      "render-result-2": "cow"
+    }
+  },
+  "tests/test_templating.py::TestTemplating::test_nested_array_literals": {
+    "recorded-date": "13-08-2023, 12:42:16",
+    "recorded-content": {
+      "render-result-1-cli": "Hello Steve. Hello Chris. ",
+      "render-result-1": "Hello Steve. Hello Chris. "
+    }
+  },
+  "tests/test_templating.py::TestTemplating::test_when_dictionary_does_not_contain_referenced_attribute_no_substitution_occurs": {
+    "recorded-date": "13-08-2023, 12:43:07",
+    "recorded-content": {
+      "render-result-1-cli": " $user.name "
+    }
+  },
+  "tests/test_templating.py::TestTemplating::test_when_dictionary_has_same_key_as_built_in_method": {
+    "recorded-date": "13-08-2023, 12:44:34",
+    "recorded-content": {
+      "render-result-1-cli": " $user.name ",
+      "render-result-1": "  "
+    }
+  },
+  "tests/test_templating.py::TestTemplating::test_variables_expanded_in_double_quoted_strings": {
+    "recorded-date": "13-08-2023, 12:46:27",
+    "recorded-content": {
+      "render-result-1-cli": "hello, Steve is my name",
+      "render-result-1": "hello, Steve is my name"
+    }
+  },
+  "tests/test_templating.py::TestTemplating::test_escaped_variable_references_not_expanded_in_double_quoted_strings": {
+    "recorded-date": "13-08-2023, 12:46:58",
+    "recorded-content": {
+      "render-result-1-cli": "hello, $name is my name",
+      "render-result-1": "hello, $name is my name"
+    }
+  },
+  "tests/test_templating.py::TestTemplating::test_color_spec": {
+    "recorded-date": "13-08-2023, 12:49:17",
+    "recorded-content": {
+      "render-result-1-cli": "<span style=\"color: #13ff93\">",
+      "render-result-1": "<span style=\"color: #13ff93\">"
+    }
+  },
+  "tests/test_templating.py::TestTemplating::test_standalone_hashes": {
+    "recorded-date": "13-08-2023, 12:52:56",
+    "recorded-content": {
+      "render-result-1-cli": "\"#\"",
+      "render-result-1": "\"#\"",
+      "render-result-2-cli": "<a href=\"#\">bob</a>",
+      "render-result-2": "<a href=\"#\">bob</a>"
+    }
+  },
+  "tests/test_templating.py::TestTemplating::test_foreach_with_unset_variable_expands_to_nothing": {
+    "recorded-date": "13-08-2023, 12:54:41",
+    "recorded-content": {
+      "render-result-1-cli": "",
+      "render-result-1": ""
+    }
+  },
+  "tests/test_templating.py::TestTemplating::test_preserves_unicode_strings": {
+    "recorded-date": "13-08-2023, 12:57:30",
+    "recorded-content": {
+      "render-result-1-cli": "Gr\u00fc\u00dfe",
+      "render-result-1": "Gr\u00fc\u00dfe"
+    }
+  },
+  "tests/test_templating.py::TestTemplating::test_modulus_operator": {
+    "recorded-date": "13-08-2023, 13:00:45",
+    "recorded-content": {
+      "render-result-1": "1"
+    }
+  },
+  "tests/test_templating.py::TestTemplating::test_can_assign_empty_string": {
+    "recorded-date": "13-08-2023, 12:58:57",
+    "recorded-content": {
+      "render-result-1-cli": "...",
+      "render-result-1": "..."
+    }
+  },
+  "tests/test_templating.py::TestTemplating::test_can_loop_over_numeric_ranges": {
+    "recorded-date": "13-08-2023, 13:02:11",
+    "recorded-content": {
+      "render-result-1-cli": "1\n2\n3\n4\n5\n",
+      "render-result-1": "1\n2\n3\n4\n5\n"
+    }
+  },
+  "tests/test_templating.py::TestTemplating::test_can_loop_over_numeric_ranges_backwards": {
+    "recorded-date": "13-08-2023, 13:02:31",
+    "recorded-content": {
+      "render-result-1-cli": "5,4,3,2,1,0,-1,-2,",
+      "render-result-1": "5,4,3,2,1,0,-1,-2,"
+    }
+  },
+  "tests/test_templating.py::TestUnsupportedByAWS::test_ranges_over_references": {
+    "recorded-date": "13-08-2023, 13:03:34",
+    "recorded-content": {
+      "render-result-1-cli": "1-2-3-4-5-"
+    }
+  },
+  "tests/test_templating.py::TestTemplating::test_stop_directive": {
+    "recorded-date": "13-08-2023, 13:03:53",
+    "recorded-content": {
+      "render-result-1-cli": "hello ",
+      "render-result-1": "hello "
+    }
+  },
+  "tests/test_templating.py::TestTemplating::test_assignment_of_parenthesized_math_expression": {
+    "recorded-date": "13-08-2023, 13:04:14",
+    "recorded-content": {
+      "render-result-1-cli": "9",
+      "render-result-1": "9"
+    }
+  },
+  "tests/test_templating.py::TestTemplating::test_assignment_of_parenthesized_math_expression_with_reference": {
+    "recorded-date": "13-08-2023, 13:13:11",
+    "recorded-content": {
+      "render-result-1-cli": "9",
+      "render-result-1": "9"
+    }
+  },
+  "tests/test_templating.py::TestTemplating::test_recursive_macro": {
+    "recorded-date": "13-08-2023, 13:13:27",
+    "recorded-content": {
+      "render-result-1-cli": "XXXXX",
+      "render-result-1": "#recur(5)"
+    }
+  },
+  "tests/test_templating.py::TestTemplating::test_addition_has_higher_precedence_than_comparison": {
+    "recorded-date": "13-08-2023, 13:14:07",
+    "recorded-content": {
+      "render-result-1-cli": "false",
+      "render-result-1": "false"
+    }
+  },
+  "tests/test_templating.py::TestTemplating::test_parentheses_work_in_set_directive": {
+    "recorded-date": "13-08-2023, 13:14:34",
+    "recorded-content": {
+      "render-result-1-cli": "true",
+      "render-result-1": "true"
+    }
+  },
+  "tests/test_templating.py::TestTemplating::test_addition_has_higher_precedence_than_comparison_other_direction": {
+    "recorded-date": "13-08-2023, 13:14:59",
+    "recorded-content": {
+      "render-result-1-cli": "true",
+      "render-result-1": "true"
+    }
+  },
+  "tests/test_templating.py::TestTemplating::test_multiplication_has_higher_precedence_than_subtraction": {
+    "recorded-date": "13-08-2023, 13:15:35",
+    "recorded-content": {
+      "render-result-1-cli": "18",
+      "render-result-1": "18"
+    }
+  },
+  "tests/test_templating.py::TestTemplating::test_multiplication_has_higher_precedence_than_addition_reverse": {
+    "recorded-date": "13-08-2023, 13:16:38",
+    "recorded-content": {
+      "render-result-1-cli": "22",
+      "render-result-1": "22"
+    }
+  },
+  "tests/test_templating.py::TestTemplating::test_parse_empty_dictionary": {
+    "recorded-date": "13-08-2023, 13:16:46",
+    "recorded-content": {
+      "render-result-1-cli": {},
+      "render-result-1": {}
+    }
+  },
+  "tests/test_templating.py::TestTemplating::test_macro_whitespace_and_newlines_ignored": {
+    "recorded-date": "13-08-2023, 13:17:24",
+    "recorded-content": {
+      "render-result-1-cli": "\nhello",
+      "render-result-1": "\n#blah()"
+    }
+  },
+  "tests/test_templating.py::TestTemplating::test_if_whitespace_and_newlines_ignored": {
+    "recorded-date": "13-08-2023, 13:17:40",
+    "recorded-content": {
+      "render-result-1-cli": "\nhello",
+      "render-result-1": "\nhello"
+    }
+  },
+  "tests/test_templating.py::TestTemplating::test_does_not_accept_dollar_digit_identifiers": {
+    "recorded-date": "13-08-2023, 13:21:10",
+    "recorded-content": {
+      "render-result-1-cli": "$Something$0"
+    }
+  },
+  "tests/test_templating.py::TestTemplating::test_expressions_with_numbers_with_fractions": {
+    "recorded-date": "13-08-2023, 13:21:19",
+    "recorded-content": {
+      "render-result-1-cli": "2.0",
+      "render-result-1": "2.0"
+    }
+  },
+  "tests/test_templating.py::TestTemplating::test_valid_vtl_identifiers": {
+    "recorded-date": "13-08-2023, 13:23:22",
+    "recorded-content": {
+      "render-result-1-cli": "bar z Z"
+    }
+  },
+  "tests/test_templating.py::TestTemplating::test_invalid_vtl_identifier": {
+    "recorded-date": "13-08-2023, 13:24:32",
+    "recorded-content": {
+      "render-result-1-cli": "$0"
+    }
+  },
+  "tests/test_templating.py::TestTemplating::test_array_notation_int_index": {
+    "recorded-date": "13-08-2023, 13:25:38",
+    "recorded-content": {
+      "render-result-1": "bar"
+    }
+  },
+  "tests/test_templating.py::TestTemplating::test_array_notation_nested_indexes": {
+    "recorded-date": "13-08-2023, 13:26:10",
+    "recorded-content": {
+      "render-result-1": "bar2"
+    }
+  },
+  "tests/test_templating.py::TestTemplating::test_array_notation_dot": {
+    "recorded-date": "13-08-2023, 13:26:47",
+    "recorded-content": {
+      "render-result-1": "bar2"
+    }
+  },
+  "tests/test_templating.py::TestTemplating::test_array_notation_dict_index": {
+    "recorded-date": "13-08-2023, 13:27:19",
+    "recorded-content": {
+      "render-result-1-cli": "$a[\"foo\"]",
+      "render-result-1": "bar"
+    }
+  },
+  "tests/test_templating.py::TestTemplating::test_array_notation_empty_array_variable": {
+    "recorded-date": "13-08-2023, 13:28:40",
+    "recorded-content": {}
+  },
+  "tests/test_templating.py::TestTemplating::test_array_notation_variable_index": {
+    "recorded-date": "13-08-2023, 13:29:42",
+    "recorded-content": {
+      "render-result-1": "bar"
+    }
+  },
+  "tests/test_templating.py::TestTemplating::test_provides_helpful_error_location": {
+    "recorded-date": "13-08-2023, 13:32:55",
+    "recorded-content": {}
+  },
+  "tests/test_templating.py::TestTemplating::test_outer_variable_assignable_from_foreach_block": {
+    "recorded-date": "13-08-2023, 13:34:14",
+    "recorded-content": {
+      "render-result-1": "1,2,3,4"
+    }
+  },
+  "tests/test_templating.py::TestTemplating::test_no_assignment_to_outer_var_if_same_varname_in_block": {
+    "recorded-date": "13-08-2023, 13:35:20",
+    "recorded-content": {
+      "render-result-1-cli": "1,2,3,4,1",
+      "render-result-1": "1,2,3,4,1"
+    }
+  },
+  "tests/test_templating.py::TestTemplating::test_nested_foreach_vars_are_scoped": {
+    "recorded-date": "13-08-2023, 13:35:29",
+    "recorded-content": {
+      "render-result-1-cli": "1,2,1|1,2,2|",
+      "render-result-1": "1,2,1|1,2,2|"
+    }
+  },
+  "tests/test_templating.py::TestTemplating::test_array_size": {
+    "recorded-date": "13-08-2023, 13:37:15",
+    "recorded-content": {
+      "render-result-1-cli": " 3",
+      "render-result-1": " 3"
+    }
+  },
+  "tests/test_templating.py::TestTemplating::test_array_contains_true": {
+    "recorded-date": "13-08-2023, 13:37:40",
+    "recorded-content": {
+      "render-result-1-cli": " found",
+      "render-result-1": " found"
+    }
+  },
+  "tests/test_templating.py::TestTemplating::test_array_contains_false": {
+    "recorded-date": "13-08-2023, 13:38:08",
+    "recorded-content": {
+      "render-result-1-cli": " ",
+      "render-result-1": " "
+    }
+  },
+  "tests/test_templating.py::TestTemplating::test_array_get_item": {
+    "recorded-date": "13-08-2023, 13:38:33",
+    "recorded-content": {
+      "render-result-1-cli": " 2",
+      "render-result-1": " 2"
+    }
+  },
+  "tests/test_templating.py::TestTemplating::test_array_add_item": {
+    "recorded-date": "13-08-2023, 13:39:00",
+    "recorded-content": {
+      "render-result-1-cli": "1,2,3,string value,",
+      "render-result-1": "1,2,3,string value,"
+    }
+  },
+  "tests/test_templating.py::TestTemplating::test_string_length": {
+    "recorded-date": "13-08-2023, 13:39:26",
+    "recorded-content": {
+      "render-result-1-cli": " 9",
+      "render-result-1": " 9"
+    }
+  },
+  "tests/test_templating.py::TestTemplating::test_string_replace_all": {
+    "recorded-date": "13-08-2023, 13:39:47",
+    "recorded-content": {
+      "render-result-1-cli": " foofoo123foo",
+      "render-result-1": " foofoo123foo"
+    }
+  },
+  "tests/test_templating.py::TestTemplating::test_string_starts_with_true": {
+    "recorded-date": "13-08-2023, 13:40:11",
+    "recorded-content": {
+      "render-result-1-cli": " yes!",
+      "render-result-1": " yes!"
+    }
+  },
+  "tests/test_templating.py::TestTemplating::test_string_starts_with_false": {
+    "recorded-date": "13-08-2023, 13:40:31",
+    "recorded-content": {
+      "render-result-1-cli": " ",
+      "render-result-1": " "
+    }
+  },
+  "tests/test_templating.py::TestTemplating::test_dict_put_item": {
+    "recorded-date": "13-08-2023, 13:41:03",
+    "recorded-content": {
+      "render-result-1-cli": "$ignore - $test_dict.k",
+      "render-result-1": "initial value - new value"
+    }
+  },
+  "tests/test_templating.py::TestTemplating::test_dict_putall_items": {
+    "recorded-date": "13-08-2023, 13:41:49",
+    "recorded-content": {
+      "render-result-1-cli": "$test_dict.k1 - $test_dict.k2",
+      "render-result-1": "v3 - v2"
+    }
+  },
+  "tests/test_templating.py::TestTemplating::test_evaluate_directive": {
+    "recorded-date": "13-08-2023, 15:50:58",
+    "recorded-content": {
+      "render-result-1-cli": "\nabc",
+      "render-result-1": "\n#evaluate($dynamicsource)"
+    }
+  },
+  "tests/test_templating.py::TestTemplating::test_return_macro": {
+    "recorded-date": "13-08-2023, 13:43:21",
+    "recorded-content": {
+      "render-result-1-cli": "#return($v1)",
+      "render-result-1": "#return($v1)"
+    }
+  },
+  "tests/test_templating.py::TestTemplating::test_foreach_with_plain_content_loops_correctly": {
+    "recorded-date": "13-08-2023, 16:30:46",
+    "recorded-content": {
+      "render-result-1": "Hello you. Hello you. "
+    }
+  },
+  "tests/test_templating.py::TestTemplating::test_foreach_skipped_when_nested_in_a_failing_if": {
+    "recorded-date": "13-08-2023, 16:31:09",
+    "recorded-content": {
+      "render-result-1": ""
+    }
+  },
+  "tests/test_templating.py::TestTemplating::test_foreach_with_expression_content_loops_correctly": {
+    "recorded-date": "13-08-2023, 16:31:38",
+    "recorded-content": {
+      "render-result-1": "Hello You. Hello You. "
+    }
+  },
+  "tests/test_templating.py::TestTemplating::test_foreach_makes_loop_variable_accessible": {
+    "recorded-date": "13-08-2023, 16:31:53",
+    "recorded-content": {
+      "render-result-1": "Hello Chris. Hello Steve. "
+    }
+  },
+  "tests/test_templating.py::TestTemplating::test_loop_variable_not_accessible_after_loop": {
+    "recorded-date": "13-08-2023, 16:32:08",
+    "recorded-content": {
+      "render-result-1": "Hello Chris. Hello Steve. "
+    }
+  },
+  "tests/test_templating.py::TestTemplating::test_loop_variables_do_not_clash_in_nested_loops": {
+    "recorded-date": "13-08-2023, 16:32:38",
+    "recorded-content": {
+      "render-result-1": "Hello to Chris Steve. Goodbye to Chris Steve. "
+    }
+  },
+  "tests/test_templating.py::TestTemplating::test_loop_counter_variable_available_in_loops": {
+    "recorded-date": "13-08-2023, 16:32:49",
+    "recorded-content": {
+      "render-result-1": "1,2,"
+    }
+  },
+  "tests/test_templating.py::TestTemplating::test_loop_counter_variable_available_in_loops_new": {
+    "recorded-date": "13-08-2023, 16:33:10",
+    "recorded-content": {
+      "render-result-1": "1,2,"
+    }
+  },
+  "tests/test_templating.py::TestTemplating::test_loop_index_variable_available_in_loops_new": {
+    "recorded-date": "13-08-2023, 16:33:24",
+    "recorded-content": {
+      "render-result-1": "0,1,"
+    }
+  },
+  "tests/test_templating.py::TestTemplating::test_loop_counter_variables_do_not_clash_in_nested_loops": {
+    "recorded-date": "13-08-2023, 16:33:46",
+    "recorded-content": {
+      "render-result-1": "Outer 1, inner 1, inner 2. Outer 2, inner 1, inner 2. "
+    }
+  },
+  "tests/test_templating.py::TestTemplating::test_loop_index_variables_do_not_clash_in_nested_loops_new": {
+    "recorded-date": "13-08-2023, 16:34:14",
+    "recorded-content": {
+      "render-result-1": "Outer 0, inner 0, inner 1. Outer 1, inner 0, inner 1. "
+    }
+  },
+  "tests/test_templating.py::TestTemplating::test_loop_counter_variables_do_not_clash_in_nested_loops_new": {
+    "recorded-date": "13-08-2023, 16:34:27",
+    "recorded-content": {
+      "render-result-1": "Outer 1, inner 1, inner 2. Outer 2, inner 1, inner 2. "
+    }
+  },
+  "tests/test_templating.py::TestTemplating::test_string_literal_can_contain_embedded_escaped_quotes": {
+    "recorded-date": "13-08-2023, 16:39:03",
+    "recorded-content": {}
+  },
+  "tests/test_templating.py::TestTemplating::test_if_statement_considers_None_to_be_truthy": {
+    "recorded-date": "13-08-2023, 16:46:19",
+    "recorded-content": {
+      "render-result-1-cli": "",
+      "render-result-1": "hide me",
+      "render-result-2-cli": "hide me",
+      "render-result-2": "hide me"
     }
   }
 }

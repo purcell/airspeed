@@ -27,11 +27,17 @@ jobs:
         with:
           python-version: '${{ matrix.python_version }}'
 
-      - name: Build and test
+      - name: Install dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y libsasl2-dev
           make install
 
+          # Note: currently required to import snapshot utils from localstack
+          # TODO remove once imports are better organized in localstack
+          . .venv/bin/activate; pip install localstack-core[runtime]
+
+      - name: Run tests
+        run: |
           make lint
           make test
