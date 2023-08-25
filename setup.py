@@ -5,11 +5,11 @@ from setuptools import find_packages, setup
 
 setup(
     name="airspeed-ext",
-    version="0.6.0",
+    version="0.6.1",
     description=(
-        "Airspeed is a powerful and easy-to-use templating engine"
-        " for Python that aims for a high level of compatibility "
-        "with the popular Velocity library for Java."
+        "Airspeed is a powerful and easy-to-use templating engine "
+        "for Python that aims for a high level of compatibility "
+        "with Velocity templates in AWS cloud services."
     ),
     author="Steve Purcell, Chris Tarttelin, LocalStack Team",
     author_email="steve@pythonconsulting.com, chris@pythonconsulting.com, info@localstack.cloud",

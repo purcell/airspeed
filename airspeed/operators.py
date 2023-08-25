@@ -533,10 +533,10 @@ class ArrayLiteral(_Element):
 
 
 class DictionaryLiteral(_Element):
-    START = re.compile(r"{[ \t]*(.*)$", re.S)
-    END = re.compile(r"[ \t]*}(.*)$", re.S)
-    KEYVALSEP = re.compile(r"[ \t]*:[ \t]*(.*)$", re.S)
-    PAIRSEP = re.compile(r"[ \t]*,[ \t]*(.*)$", re.S)
+    START = re.compile(r"{\s*(.*)$", re.S + re.M)
+    END = re.compile(r"\s*}(.*)$", re.S + re.M)
+    KEYVALSEP = re.compile(r"\s*:\s*(.*)$", re.S + re.M)
+    PAIRSEP = re.compile(r"\s*,\s*(.*)$", re.S + re.M)
 
     def parse(self):
         self.identity_match(self.START)

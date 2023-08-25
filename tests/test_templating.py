@@ -797,6 +797,20 @@ class TestTemplating:
         )
         test_render(template, {"test_dict": {"k1": "v1"}})
 
+    def test_multiline_dict_in_set_statement(self, test_render):
+        template = r"""
+        #set( $myObject = {
+          "userId": "user1",
+          "domain": "domain1"
+        } )
+        {
+          "operation": "PutItem",
+          "key": "$myObject.userId",
+          "domain": "$myObject.domain"
+        }
+        """
+        test_render(template, {"test_dict": {"k1": "v1"}})
+
 
 class TestInternals:
     """

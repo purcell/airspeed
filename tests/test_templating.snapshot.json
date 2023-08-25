@@ -1005,5 +1005,12 @@
       "render-result-2-cli": "hide me",
       "render-result-2": "hide me"
     }
+  },
+  "tests/test_templating.py::TestTemplating::test_multiline_dict_in_set_statement": {
+    "recorded-date": "25-08-2023, 19:50:40",
+    "recorded-content": {
+      "render-result-1-cli": "\n        {\n          \"operation\": \"PutItem\",\n          \"key\": \"user1\",\n          \"domain\": \"domain1\"\n        }\n        ",
+      "render-result-1": "\n                {\n          \"operation\": \"PutItem\",\n          \"key\": \"user1\",\n          \"domain\": \"domain1\"\n        }\n        "
+    }
   }
 }
