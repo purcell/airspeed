@@ -27,6 +27,10 @@ def dict_put(self, key, value):
     return existing
 
 
+def dict_to_string(self):
+    return "{" + ', '.join([f"{k}={v}" for k, v in self.items()]) + "}"
+
+
 __additional_methods__ = {
     str: {
         "length": lambda self: len(self),
@@ -44,7 +48,7 @@ __additional_methods__ = {
         "put": dict_put,
         "putAll": lambda self, values: self.update(values),
         "keySet": lambda self: self.keys(),
-        "toString": lambda self: str(self),
+        "toString": lambda self: dict_to_string(self),
     },
 }
 
