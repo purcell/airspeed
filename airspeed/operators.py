@@ -44,7 +44,7 @@ __additional_methods__ = {
         "put": dict_put,
         "putAll": lambda self, values: self.update(values),
         "keySet": lambda self: self.keys(),
-        "toString": lambda self: str(self)
+        "toString": lambda self: str(self),
     },
 }
 

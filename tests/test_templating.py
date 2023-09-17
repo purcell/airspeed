@@ -821,6 +821,7 @@ class TestTemplating:
         template = "#set( $myObject = {'k1': 'v1', 'k2': 'v2'} )$myObject.toString()"
         test_render(template)
 
+
 class TestInternals:
     """
     White-box tests that are testing the internals of the engine, e.g., passing in class
