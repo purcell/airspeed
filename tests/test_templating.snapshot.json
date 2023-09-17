@@ -1012,5 +1012,26 @@
       "render-result-1-cli": "\n        {\n          \"operation\": \"PutItem\",\n          \"key\": \"user1\",\n          \"domain\": \"domain1\"\n        }\n        ",
       "render-result-1": "\n                {\n          \"operation\": \"PutItem\",\n          \"key\": \"user1\",\n          \"domain\": \"domain1\"\n        }\n        "
     }
+  },
+  "tests/test_templating.py::TestTemplating::test_dict_to_string": {
+    "recorded-date": "17-09-2023, 12:41:16",
+    "recorded-content": {
+      "render-result-1-cli": "{k1=v1, k2=v2}",
+      "render-result-1": "{k1=v1, k2=v2}"
+    }
+  },
+  "tests/test_templating.py::TestTemplating::test_string_contains_true": {
+    "recorded-date": "17-09-2023, 12:45:26",
+    "recorded-content": {
+      "render-result-1-cli": " yes!",
+      "render-result-1": " yes!"
+    }
+  },
+  "tests/test_templating.py::TestTemplating::test_string_contains_false": {
+    "recorded-date": "17-09-2023, 12:46:09",
+    "recorded-content": {
+      "render-result-1-cli": " yes!",
+      "render-result-1": " yes!"
+    }
   }
 }

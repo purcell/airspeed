@@ -32,6 +32,7 @@ __additional_methods__ = {
         "length": lambda self: len(self),
         "replaceAll": lambda self, pattern, repl: re.sub(pattern, repl, self),
         "startsWith": lambda self, prefix: self.startswith(prefix),
+        "contains": lambda self, value: value in self,
     },
     list: {
         "size": lambda self: len(self),
@@ -43,6 +44,7 @@ __additional_methods__ = {
         "put": dict_put,
         "putAll": lambda self, values: self.update(values),
         "keySet": lambda self: self.keys(),
+        "toString": lambda self: str(self)
     },
 }
 

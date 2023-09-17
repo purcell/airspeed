@@ -783,6 +783,12 @@ class TestTemplating:
     def test_string_starts_with_false(self, test_render):
         test_render("#set($foo = 'nofoobar123') #if($foo.startsWith('foo'))yes!#end")
 
+    def test_string_contains_true(self, test_render):
+        test_render("#set($foo = 'foobar123') #if($foo.contains('foo'))yes!#end")
+
+    def test_string_contains_false(self, test_render):
+        test_render("#set($foo = 'nofoobar123') #if($foo.contains('foo'))yes!#end")
+
     def test_dict_put_item(self, test_render):
         template = (
             "#set( $ignore = $test_dict.put('k', 'new value') )"
@@ -811,6 +817,9 @@ class TestTemplating:
         """
         test_render(template, {"test_dict": {"k1": "v1"}})
 
+    def test_dict_to_string(self, test_render):
+        template = "#set( $myObject = {'k1': 'v1', 'k2': 'v2'} )$myObject.toString()"
+        test_render(template)
 
 class TestInternals:
     """
