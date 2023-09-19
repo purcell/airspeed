@@ -27,11 +27,16 @@ def dict_put(self, key, value):
     return existing
 
 
+def dict_to_string(obj: dict) -> str:
+    return "{" + ", ".join([f"{k}={v}" for k, v in obj.items()]) + "}"
+
+
 __additional_methods__ = {
     str: {
         "length": lambda self: len(self),
         "replaceAll": lambda self, pattern, repl: re.sub(pattern, repl, self),
         "startsWith": lambda self, prefix: self.startswith(prefix),
+        "contains": lambda self, value: value in self,
     },
     list: {
         "size": lambda self: len(self),
@@ -43,6 +48,7 @@ __additional_methods__ = {
         "put": dict_put,
         "putAll": lambda self, values: self.update(values),
         "keySet": lambda self: self.keys(),
+        "toString": lambda self: dict_to_string(self),
     },
 }
 

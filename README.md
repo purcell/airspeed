@@ -8,7 +8,7 @@ This is a fork of the original [`airspeed`](https://github.com/purcell/airspeed)
 ⚠️ Note: This fork of `airspeed` focuses on providing maximum parity with AWS' implementation of Velocity templates (used in, e.g., API Gateway or AppSync). In some cases, the behavior may diverge from the VTL spec, or from the Velocity [reference implementation](https://velocity.apache.org/download.cgi).
 
 ## Change Log:
-
+* v0.6.2: add support to contains and toString functions
 * v0.6.1: improve handling of multi-line dict expressions
 * v0.6.0: add initial setup for snapshot testing against AWS and Java VTL; enhance AWS parity
 
