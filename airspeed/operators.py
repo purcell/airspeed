@@ -11,6 +11,7 @@ import six
 
 LOG = logging.getLogger(__name__)
 
+
 # A dict that maps classes to dicts of additional methods.
 # This allows support for methods that are available in Java-based Velocity
 # implementations, e.g., .size() of a list or .length() of a string.
