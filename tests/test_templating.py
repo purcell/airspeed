@@ -729,6 +729,9 @@ class TestTemplating:
     def test_array_notation_dict_index(self, test_render):
         test_render('$a["foo"]', {"a": {"foo": "bar"}})
 
+    def test_array_notation_dict_index_with_string_literal(self, test_render):
+        test_render("$a.b.c['foo:bar']", {"a": {"b": {"c": {"foo:bar": "baz"}}}})
+
     def test_array_notation_variable_index(self, test_render):
         test_render("#set($i = 1)$a[ $i ]", {"a": ["foo", "bar"]}, skip_cli=True)
 

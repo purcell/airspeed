@@ -590,7 +590,7 @@ class Value(_Element):
 
 
 class NameOrCall(_Element):
-    NAME = re.compile(r"([a-zA-Z0-9_]+)(.*)$", re.S)
+    NAME = re.compile(r"([a-zA-Z0-9_-]+)(.*)$", re.S)
     parameters = None
     index = None
 
@@ -689,10 +689,8 @@ class VariableExpression(_Element):
 
     def parse(self):
         self.part = self.next_element(NameOrCall)
-        try:
+        with contextlib.suppress(NoMatch):
             self.subexpression = self.next_element(SubExpression)
-        except NoMatch:
-            pass
 
     def calculate(self, namespace, loader, global_namespace=None):
         if global_namespace is None:
@@ -700,7 +698,7 @@ class VariableExpression(_Element):
         value = self.part.calculate(namespace, loader, global_namespace)
         if self.subexpression:
             value = self.subexpression.calculate(value, loader, global_namespace)
-        return value
+        return "" if value is None else value
 
 
 class ParameterList(_Element):
@@ -732,6 +730,7 @@ class ArrayIndex(_Element):
             (
                 FormalReference,
                 IntegerLiteral,
+                StringLiteral,
                 InterpolatedStringLiteral,
                 ParenthesizedExpression,
             ),
@@ -1046,9 +1045,7 @@ class IfDirective(_Element):
 # set($one.two().three = something)
 # yet
 class Assignment(_Element):
-    START = re.compile(
-        r"\s*\(\s*\$([a-z_][a-z0-9_]*(?:\.[a-z_][a-z0-9_]*)*)\s*=\s*(.*)$", re.S + re.I
-    )
+    START = re.compile(r"\s*\(\s*\$(\w*(?:\.[\w-]+|\[\"\$\w+\"\]*)*)\s*=\s*(.*)$", re.S + re.I)
     END = re.compile(r"\s*\)(?:[ \t]*\r?\n)?(.*)$", re.S + re.M)
 
     def parse(self):
@@ -1359,6 +1356,7 @@ class Block(_Element):
                             UserDefinedDirective,
                             ReturnDirective,
                             EvaluateDirective,
+                            ReturnDirective,
                             MacroCall,
                             FallthroughHashText,
                         )
