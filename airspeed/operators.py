@@ -1046,7 +1046,9 @@ class IfDirective(_Element):
 # set($one.two().three = something)
 # yet
 class Assignment(_Element):
-    START = re.compile(r"\s*\(\s*\$(\w*(?:\.[\w-]+|\[\"\$\w+\"\]*)*)\s*=\s*(.*)$", re.S + re.I)
+    START = re.compile(
+        r"\s*\(\s*\$(\w*(?:\.[\w-]+|\[\"\$\w+\"\]*)*)\s*=\s*(.*)$", re.S + re.I
+    )
     END = re.compile(r"\s*\)(?:[ \t]*\r?\n)?(.*)$", re.S + re.M)
 
     def parse(self):
