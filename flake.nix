@@ -13,7 +13,12 @@
       in
       {
         devShell = pkgs.mkShell {
-          buildInputs = with pkgs; [ poetry poetry2nix (python37.withPackages (p: [ p.setuptools p.six ])) python37Packages.flake8 python310Packages.pylint ];
+          buildInputs = with pkgs; [
+            (python3.withPackages (p: [ p.setuptools p.six ]))
+            twine pyright
+            python3Packages.flake8
+            python3Packages.pylint
+          ];
         };
       }
     );
