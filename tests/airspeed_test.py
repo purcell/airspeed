@@ -1210,6 +1210,16 @@ line")''')
         output = template.merge({'test_dict': {'k': 'initial value'}})
         self.assertEqual(output, "new value")
 
+    def test_dict_isEmpty(self):
+        template = airspeed.Template("#set( $emptyDict = {} )"
+                                     "$emptyDict.isEmpty()")
+        output = template.merge({})
+        self.assertEqual(output, "True")
+
+        template = airspeed.Template("#set( $emptyDict = {'foo': 'bar'} )"
+                                     "$emptyDict.isEmpty()")
+        output = template.merge({})
+        self.assertEqual(output, "False")
 
     def test_evaluate(self):
         template = airspeed.Template('''#set($source1 = "abc")
