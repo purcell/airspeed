@@ -389,6 +389,14 @@ class TemplateTestCase(TestCase):
         template = airspeed.Template('$multiply($value1,$value2)')
         self.assertEqual("48", template.merge(locals()))
 
+    def test_extract_array_index_from_function_result(self):
+        def get_array():
+            return ['p1', ['p2', 'p3']]
+        template = airspeed.Template('$get_array()[0]')
+        self.assertEqual("p1", template.merge(locals()))
+        template = airspeed.Template('$get_array()[1][1]')
+        self.assertEqual("p3", template.merge(locals()))
+
     def test_velocity_style_escaping(self):  # example from Velocity docs
         template = airspeed.Template(r'''
 #set( $email = "foo" )
@@ -667,7 +675,8 @@ $email
                 'parse',
                 'include',
                 'stop',
-                'end'):
+                'end',
+                'define'):
             template = airspeed.Template(
                 '#macro ( %s $value) $value #end' %
                 reserved)
@@ -693,11 +702,11 @@ $email
         self.assertEqual('<strong>hello</strong>cheese',
                           template.merge({'text': 'hello', 'monkey': 'cheese'}))
 
-    # we use commas with our macros and it seems to work
+    # We use commas with our macros and it seems to work
     # so it's correct behavior by definition; the real
-    # question is whether using them w/o a comma is a legal variant
-    # or not.  This should effect the above test; the following test
-    # should be legal by defintion
+    # question is whether using them without a comma is a legal variant
+    # or not.  This should affect the above test; the following test
+    # should be legal by definition
 
     def test_define_and_use_macro_with_two_parameters_with_comma(self):
         template = airspeed.Template(
@@ -732,6 +741,52 @@ $email
         template = airspeed.Template(
             '#macro (hello $value1 $value2 )hello $value1 and $value2#end\n#hello (1,\n 2)')
         self.assertEqual('hello 1 and 2', template.merge({}))
+
+    def test_use_define_with_no_parameters(self):
+        template = airspeed.Template('#define ( $hello)hi#end$hello()$hello()')
+        self.assertEqual('hihi', template.merge({}))
+
+    def test_use_define_with_parameters(self):
+        template = airspeed.Template('#define ( $echo $v1 $v2)$v1$v2#end$echo(1,"a")$echo("b",2)')
+        self.assertEqual('1ab2', template.merge({'text': 'hello'}))
+        template = airspeed.Template('#define ( $echo $v1 $v2)$v1$v2#end$echo(1,"a")$echo($echo(2,"b"),"c")')
+        self.assertEqual('1a2bc', template.merge({}))
+        template = airspeed.Template('#define ( $echo $v1 $v2)$v1$v2#end$echo(1,"a")$echo("b",$echo(3,"c"))')
+        self.assertEqual('1ab3c', template.merge({}))
+
+    def test_define_with_local_namespace(self):
+        template = airspeed.Template("#define ( $showindex )$foreach.index#end#foreach($x in [1,2,3])$showindex#end")
+        self.assertEqual('012', template.merge({}))
+
+    def test_use_defined_func_multiple_times(self):
+        template = airspeed.Template("""
+            #define( $myfunc )$ctx#end
+            #set( $ctx = 'foo' )
+            $myfunc
+            #set( $ctx = 'bar' )
+            $myfunc
+        """)
+        result = template.merge({}).replace("\n", "").replace(" ", "")
+        self.assertEqual('foobar', result)
+
+    def test_use_defined_func_create_json_loop(self):
+        template = airspeed.Template("""
+        #define( $loop ) {
+            #foreach($e in $map.keySet())
+                #set( $k = $e )
+                #set( $v = $map.get($k))
+                "$k": "$v"
+                #if( $foreach.hasNext ) , #end
+            #end
+        }
+        #end
+        $loop
+        #set( $map = {'foo':'bar'} )
+        $loop
+        """)
+        context = {"map": {"test": 123, "test2": "abc"}}
+        result = re.sub(r"\s", "", template.merge(context), flags=re.MULTILINE)
+        self.assertEqual('{"test":"123","test2":"abc"}{"foo":"bar"}', result)
 
     def test_include_directive_gives_error_if_no_loader_provided(self):
         template = airspeed.Template('#include ("foo.tmpl")')
@@ -1069,6 +1124,14 @@ line")''')
     def test_array_notation_int_index(self):
         template = airspeed.Template('$a[1]')
         self.assertEqual("bar", template.merge({"a": ["foo", "bar"]}))
+
+    def test_array_notation_nested_indexes(self):
+        template = airspeed.Template('$a[1][1]')
+        self.assertEqual("bar2", template.merge({"a": ["foo", ["bar1", "bar2"]]}))
+
+    def test_array_notation_dot(self):
+        template = airspeed.Template('$a[1].bar1')
+        self.assertEqual("bar2", template.merge({"a": ["foo", {"bar1": "bar2"}]}))
 
     def test_array_notation_dict_index(self):
         template = airspeed.Template('$a["foo"]')
