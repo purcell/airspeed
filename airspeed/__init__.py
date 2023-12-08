@@ -27,7 +27,8 @@ __additional_methods__ = {
     str: {
         'length': lambda self: len(self),
         'replaceAll': lambda self, pattern, repl: re.sub(pattern, repl, self),
-        'startsWith': lambda self, prefix: self.startswith(prefix)
+        'startsWith': lambda self, prefix: self.startswith(prefix),
+        'matches': lambda self, pattern: re.match(pattern, self)
     },
     list: {
         'size': lambda self: len(self),
@@ -36,8 +37,9 @@ __additional_methods__ = {
         'add': lambda self, value: self.append(value)
     },
     dict: {
+        'isEmpty': lambda self: not bool(self),
+        'keySet': lambda self: self.keys(),
         'put': lambda self, key, value: self.update({key: value}),
-        'keySet': lambda self: self.keys()
     }
 }
 

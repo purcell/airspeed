@@ -1250,7 +1250,20 @@ line")''')
         self.assertEqual(output, " yes!")
 
     def test_string_starts_with_false(self):
-        template = airspeed.Template("#set($foo = 'nofoobar123') #if($foo.startsWith('foo'))yes!#end")
+        template = airspeed.Template(
+            "#set($foo = 'nofoobar123') #if($foo.startsWith('foo'))yes!#end")
+        output = template.merge({})
+        self.assertEqual(output, " ")
+
+    def test_string_matches_true(self):
+        template = airspeed.Template(
+            "#set($foo = 'nofoobar123') #if($foo.matches('.*foo.*'))yes!#end")
+        output = template.merge({})
+        self.assertEqual(output, " yes!")
+
+    def test_string_matches_false(self):
+        template = airspeed.Template(
+            "#set($foo = 'bar') #if($foo.matches('foo'))yes!#end")
         output = template.merge({})
         self.assertEqual(output, " ")
 
@@ -1260,6 +1273,16 @@ line")''')
         output = template.merge({'test_dict': {'k': 'initial value'}})
         self.assertEqual(output, "new value")
 
+    def test_dict_isEmpty(self):
+        template = airspeed.Template("#set( $emptyDict = {} )"
+                                     "$emptyDict.isEmpty()")
+        output = template.merge({})
+        self.assertEqual(output, "True")
+
+        template = airspeed.Template("#set( $emptyDict = {'foo': 'bar'} )"
+                                     "$emptyDict.isEmpty()")
+        output = template.merge({})
+        self.assertEqual(output, "False")
 
     def test_evaluate(self):
         template = airspeed.Template('''#set($source1 = "abc")
