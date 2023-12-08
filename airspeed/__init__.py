@@ -37,7 +37,7 @@ __additional_methods__ = {
         'add': lambda self, value: self.append(value)
     },
     dict: {
-        'isEmpty': lambda self: self == {},
+        'isEmpty': lambda self: not bool(self),
         'keySet': lambda self: self.keys(),
         'put': lambda self, key, value: self.update({key: value}),
     }
