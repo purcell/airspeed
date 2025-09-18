@@ -14,7 +14,7 @@
       {
         devShell = pkgs.mkShell {
           buildInputs = with pkgs; [
-            (python3.withPackages (p: [ p.setuptools p.six ]))
+            (python3.withPackages (p: [ p.setuptools p.six p.build ]))
             twine pyright
             python3Packages.flake8
             python3Packages.pylint
