@@ -1123,6 +1123,10 @@ line")''')
         template = airspeed.Template('$a["foo"]')
         self.assertEqual("bar", template.merge({"a": {"foo": "bar"}}))
 
+    def test_array_notation_dict_index_with_string_literal(self):
+        template = airspeed.Template("$a.b.c['foo:bar']")
+        self.assertEqual("baz", template.merge({"a": {"b": {"c": {"foo:bar": "baz"}}}}))
+
     def test_array_notation_empty_array_variable(self):
         template = airspeed.Template('$!a[1]')
         self.assertEqual("", template.merge({"a": []}))

@@ -677,6 +677,7 @@ class ArrayIndex(_Element):
         self.index = self.require_next_element(
             (FormalReference,
              IntegerLiteral,
+             StringLiteral,
              InterpolatedStringLiteral,
              ParenthesizedExpression),
             'integer index or object key')
