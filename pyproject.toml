@@ -1,3 +1,62 @@
 [build-system]
 requires = ["setuptools"]
 build-backend = "setuptools.build_meta"
+
+[project]
+name = "airspeed"
+authors = [
+    { name = "Steve Purcell", email = "steve@pythonconsulting.com" },
+    { name = "Chris Tarttelin" }
+]
+version = "0.6.1"
+description = "A Python framework for building HTTP-based server applications"
+dependencies = [
+    "cachetools"
+]
+requires-python = ">=3.7"
+license = {file = "LICENCE"}
+classifiers = [
+  "Development Status :: 5 - Production/Stable",
+    "Environment :: Web Environment",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: BSD License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python",
+    "Topic :: Internet :: WWW/HTTP :: Dynamic Content",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Programming Language :: Python :: 3.7",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13"
+]
+dynamic = ["readme"]
+
+
+[project.optional-dependencies]
+dev = [
+]
+
+[tool.setuptools]
+include-package-data = false
+
+[tool.setuptools.dynamic]
+readme = {file = ["README.md"], content-type = "text/markdown"}
+
+[tool.setuptools.packages.find]
+include = ["airspeed*"]
+exclude = ["tests*", "examples"]
+
+[tool.setuptools.package-data]
+"*" = ["*.md"]
+
+[tool.coverage.report]
+exclude_lines = [
+    "if __name__ == .__main__.:",
+    "raise NotImplemented.",
+    "return NotImplemented",
+    "def __repr__",
+    "__all__",
+]

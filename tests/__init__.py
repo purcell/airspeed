@@ -1,24 +1,10 @@
 # -*- coding: utf-8 -*-
-
+import airspeed
 import re
 import sys
-if sys.version_info >= (3, 0) and sys.version_info <= (3, 3):
-    import imp
-elif sys.version_info >= (3, 4):
-    import importlib
+import importlib
 from unittest import TestCase
-
-# Make these tests runnable without needing 'nose' installed
-try:
-    import airspeed
-except ImportError:
-    import sys
-    import os
-    sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
-    import airspeed
-
-import six
-
+from io import StringIO
 
 class TemplateTestCase(TestCase):
     def assertRaisesExecutionError(self, exctype, func, *args, **kwargs):
@@ -338,7 +324,7 @@ class TemplateTestCase(TestCase):
 
     def test_merge_to_stream(self):
         template = airspeed.Template('Hello $name!')
-        output = six.StringIO()
+        output = StringIO()
         template.merge_to({"name": "Chris"}, output)
         self.assertEqual('Hello Chris!', output.getvalue())
 
@@ -981,7 +967,7 @@ $email
             def __str__(self):
                 return self.value
         value = Clazz(u'£12,000')
-        self.assertEqual(six.text_type(value), template.merge(locals()))
+        self.assertEqual(str(value), template.merge(locals()))
 
     def test_can_define_macros_in_parsed_files(self):
         class Loader:
@@ -1304,12 +1290,7 @@ line")''')
 # macro call.  Confirm against Velocity.
 
 if __name__ == '__main__':
-    if sys.version_info >= (3, 0) and sys.version_info <= (3, 3):
-        imp.reload(airspeed)
-    elif sys.version_info >= (3, 4):
-        importlib.reload(airspeed)
-    else:
-        reload(airspeed)
+    importlib.reload(airspeed)
     import unittest
     try:
         unittest.main()

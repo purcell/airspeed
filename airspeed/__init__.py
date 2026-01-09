@@ -5,8 +5,7 @@ import operator
 import os
 import string
 import sys
-
-import six
+from io import StringIO
 
 __all__ = [
     'Template',
@@ -42,34 +41,6 @@ __additional_methods__ = {
         'put': lambda self, key, value: self.update({key: value}),
     }
 }
-
-try:
-    dict
-except NameError:
-    from UserDict import UserDict
-
-    class dict(UserDict):
-
-        def __init__(self):
-            self.data = {}
-try:
-    operator.__gt__
-except AttributeError:
-    operator.__gt__ = lambda a, b: a > b
-    operator.__lt__ = lambda a, b: a < b
-    operator.__ge__ = lambda a, b: a >= b
-    operator.__le__ = lambda a, b: a <= b
-    operator.__eq__ = lambda a, b: a == b
-    operator.__ne__ = lambda a, b: a != b
-    operator.mod = lambda a, b: a % b
-try:
-    basestring
-
-    def is_string(s):
-        return isinstance(s, basestring)
-except NameError:
-    def is_string(s):
-        return isinstance(s, type(''))
 
 ###############################################################################
 # Public interface
@@ -113,19 +84,19 @@ class TemplateError(Exception):
 
 
 class TemplateExecutionError(TemplateError):
-    def __init__(self, element, exc_info):
-        cause, value, traceback = exc_info
-        self.__cause__ = value
+    "This exception will always have a __cause__ attached."
+    def __init__(self, element):
         self.element = element
         self.start, self.end, self.filename = (element.start, element.end,
                                                element.filename)
-        self.msg = "Error in template '%s' at position " \
-                   "%d-%d in expression: %s\n%s: %s" % \
-                   (self.filename, self.start, self.end,
-                    element.my_text(), cause.__name__, value)
 
     def __str__(self):
-        return self.msg
+        return "Error in template '%s' at position " \
+            "%d-%d in expression: %s\n%s: %s" % \
+                   (self.filename, self.start, self.end,
+                    self.element.my_text(),
+                    self.__cause__.__class__.__name__,
+                    self.__cause__)
 
 
 class TemplateSyntaxError(TemplateError):
@@ -207,14 +178,14 @@ class CachingFileLoader:
         return template
 
 
-class StoppableStream(six.StringIO):
+class StoppableStream(StringIO):
     def __init__(self, buf=''):
         self.stop = False
-        six.StringIO.__init__(self, buf)
+        StringIO.__init__(self, buf)
 
     def write(self, s):
         if not self.stop:
-            six.StringIO.write(self, s)
+            StringIO.write(self, s)
 
 
 ###############################################################################
@@ -356,11 +327,9 @@ class _Element:
             return self.evaluate_raw(*args)
         except TemplateExecutionError:
             raise
-        except:
-            exc_info = sys.exc_info()
-            six.reraise(TemplateExecutionError,
-                        TemplateExecutionError(self, exc_info), exc_info[2])
-
+        except Exception as e:
+            _type, value, _tb = sys.exc_info()
+            raise TemplateExecutionError(self) from e
 
 class Text(_Element):
     PLAIN = re.compile(
@@ -621,7 +590,7 @@ class NameOrCall(_Element):
             # If list make sure index is an integer
             if isinstance(
                     result, list) and not isinstance(
-                    array_index, six.integer_types):
+                        array_index, int):
                 raise ValueError(
                     "expected integer for array index, got '%s'" %
                     (array_index))
@@ -714,8 +683,7 @@ class ArrayIndex(_Element):
         self.require_match(self.END, ']')
 
     def calculate(self, namespace, loader):
-        result = self.index.calculate(namespace, loader)
-        return result
+        return self.index.calculate(namespace, loader)
 
 class AlternateValue(_Element):
     START = re.compile(r'\|(.*)$', re.S)
@@ -757,10 +725,10 @@ class FormalReference(_Element):
                 value = ''
             else:
                 value = self.my_text()
-        if is_string(value):
+        if isinstance(value, str):
             stream.write(value)
         else:
-            stream.write(six.text_type(value))
+            stream.write(str(value))
 
 
 class Null:
