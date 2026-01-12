@@ -676,7 +676,6 @@ class ParameterList(_Element):
 class ArrayIndex(_Element):
     START = re.compile(r'\[[ \t]*(.*)$', re.S)
     END = re.compile(r'[ \t]*\](.*)$', re.S)
-    index = 0
 
     def parse(self):
         self.identity_match(self.START)
