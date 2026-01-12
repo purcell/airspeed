@@ -6,6 +6,7 @@ import os
 import string
 import sys
 from io import StringIO
+import abc
 
 __all__ = [
     'Template',
@@ -235,12 +236,15 @@ class LocalNamespace(dict):
         return dict.__repr__(self) + '->' + repr(self.parent)
 
 
-class _Element:
+class _Element(abc.ABC):
     def __init__(self, filename, text, start=0):
         self.filename = filename
         self._full_text = text
         self.start = self.end = start
         self.parse()
+
+    @abc.abstractmethod
+    def parse(self): pass
 
     def next_text(self):
         return self._full_text[self.end:]
@@ -322,9 +326,11 @@ class _Element:
             expected = ', '.join([cls.__name__ for cls in element_spec])
             raise self.syntax_error('one of: ' + expected)
 
-    def evaluate(self, *args):
+    def evaluate_raw(self, stream, namespace, loader): pass
+
+    def evaluate(self, stream, namespace, loader):
         try:
-            return self.evaluate_raw(*args)
+            return self.evaluate_raw(stream, namespace, loader)
         except TemplateExecutionError:
             raise
         except Exception as e:
