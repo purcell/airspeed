@@ -1283,6 +1283,12 @@ line")''')
         output = template.merge({})
         self.assertEqual(output, "abc")
 
+    def test_string_contains_methods(self):
+        template = airspeed.Template(
+            "$foo.contains($bar)")
+        self.assertEqual(template.merge({"foo": "hello", "bar": "ell"}), 'True')
+        self.assertEqual(template.merge({"foo": "hello", "bar": "bye"}), 'False')
+
 # TODO:
 #
 #  Report locations for template errors in files included via loaders
