@@ -1086,6 +1086,10 @@ hello##
         self.assertEqual('2.0', template.merge({}))
         # TODO: is that how Velocity would format a floating point?
 
+    def test_floating_point_starting_with_decimal(self):
+        template = airspeed.Template('#set($x = .5*.1)$x')
+        self.assertEqual('0.05', template.merge({}))
+
     def test_multiline_arguments_to_function_calls(self):
         class Thing:
             def func(self, arg):

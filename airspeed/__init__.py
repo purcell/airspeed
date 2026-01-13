@@ -392,7 +392,7 @@ class IntegerLiteral(_Element):
 
 
 class FloatingPointLiteral(_Element):
-    FLOAT = re.compile(r'(-?\d+\.\d+)(.*)', re.S)
+    FLOAT = re.compile(r'(-?\d*\.\d+)(.*)', re.S)
 
     def parse(self):
         self.value, = self.identity_match(self.FLOAT)
