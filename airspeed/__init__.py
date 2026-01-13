@@ -45,6 +45,7 @@ __additional_methods__ = {
         'isEmpty': lambda self: not bool(self),
         'keySet': lambda self: self.keys(),
         'put': lambda self, key, value: self.update({key: value}),
+        'putAll': lambda self, values: self.update(values),
         "toString": lambda self: dict_to_string(self),
     }
 }
