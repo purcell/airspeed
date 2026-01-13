@@ -412,6 +412,15 @@ class BooleanLiteral(_Element):
     def calculate(self, namespace, loader):
         return self.value
 
+class NullLiteral(_Element):
+    NULL = re.compile(r'(null)(.*)', re.S | re.I)
+
+    def parse(self):
+        self.identity_match(self.NULL)
+
+    def calculate(self, namespace, loader):
+        return None
+
 
 class StringLiteral(_Element):
     STRING = re.compile(r"'((?:\\['nrbt\\\\\\$]|[^'\\])*)'(.*)", re.S)
@@ -551,7 +560,8 @@ class Value(_Element):
              DictionaryLiteral,
              ParenthesizedExpression,
              UnaryOperatorValue,
-             BooleanLiteral))
+             BooleanLiteral,
+             NullLiteral))
 
     def calculate(self, namespace, loader):
         return self.expression.calculate(namespace, loader)

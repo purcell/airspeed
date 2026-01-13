@@ -1345,6 +1345,18 @@ line")''')
         """)
         self.assertEqual("one", template.merge({ "foo": ["one"]}).strip())
 
+    def test_put_null_in_map(self):
+        template = airspeed.Template("""
+            #set( $myMap = {} )
+            #set($ignore = $myMap.put('k', null))
+            #if("$myMap.k" == "")
+                does-not-have-value
+            #else
+                has-value
+            #end
+        """)
+        self.assertEqual('has-value', template.merge({}).strip())
+
 # TODO:
 #
 #  Report locations for template errors in files included via loaders
