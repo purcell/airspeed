@@ -15,6 +15,10 @@ __all__ = [
     'TemplateSyntaxError',
     'CachingFileLoader']
 
+
+def dict_to_string(obj: dict) -> str:
+    return "{" + ", ".join([f"{k}={v}" for k, v in obj.items()]) + "}"
+
 # A dict that maps classes to dicts of additional methods.
 # This allows support for methods that are available in Java-based Velocity
 # implementations, e.g., .size() of a list or .length() of a string.
@@ -41,6 +45,7 @@ __additional_methods__ = {
         'isEmpty': lambda self: not bool(self),
         'keySet': lambda self: self.keys(),
         'put': lambda self, key, value: self.update({key: value}),
+        "toString": lambda self: dict_to_string(self),
     }
 }
 

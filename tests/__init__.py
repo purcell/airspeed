@@ -1289,6 +1289,13 @@ line")''')
         self.assertEqual(template.merge({"foo": "hello", "bar": "ell"}), 'True')
         self.assertEqual(template.merge({"foo": "hello", "bar": "bye"}), 'False')
 
+    def test_dict_to_string(self):
+        template = airspeed.Template(
+            "$foo.toString()")
+        output = template.merge({ "foo": { 1: "one", "two": 2 }  })
+        self.assertEqual(output, '{1=one, two=2}')
+
+
 # TODO:
 #
 #  Report locations for template errors in files included via loaders
