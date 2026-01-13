@@ -844,6 +844,9 @@ $email
         template = airspeed.Template(
             '#set($values = [2..-2])#foreach($value in $values)$value,#end')
         self.assertEqual('2,1,0,-1,-2,', template.merge({}))
+        template = airspeed.Template(
+            "#set($values = [2\n ..\t\n-2])#foreach($value in $values)$value,#end")
+        self.assertEqual('2,1,0,-1,-2,', template.merge({}))
 
     def test_local_namespace_methods_are_not_available_in_context(self):
         template = airspeed.Template('#macro(tryme)$values#end#tryme()')
@@ -989,6 +992,10 @@ $email
         # Test for bug #15
         template = airspeed.Template('#foreach( $v in [1..5] )$v\n#end')
         self.assertEqual('1\n2\n3\n4\n5\n', template.merge({}))
+
+    def test_foreach_with_extra_whitespace(self):
+        template = airspeed.Template("#foreach(\n $v \n\t in\n [1..5] \n)$v#end")
+        self.assertEqual('12345', template.merge({}))
 
     def test_can_loop_over_numeric_ranges_backwards(self):
         template = airspeed.Template('#foreach( $v in [5..-2] )$v,#end')
@@ -1306,6 +1313,37 @@ line")''')
         output = template.merge({ "foo": { 1: "one", "two": 2 }  })
         self.assertEqual(output, '{1=one, two=2}')
 
+    def test_multiline_dict_in_set_statement(self):
+        template = airspeed.Template(r"""
+        #set( $myObject = {
+          "userId": "user1",
+          "domain": "domain1"
+        } )
+        $myObject.userId $myObject.domain
+        """)
+        self.assertEqual("user1 domain1", template.merge({}).strip() )
+
+    def test_multiline_list_in_set_statement(self):
+        template = airspeed.Template(r"""
+        #set(
+          $myObject
+         =
+            [
+          "one",
+          "two"
+        ]
+        )
+        $myObject[0] $myObject[1]
+        """)
+        self.assertEqual("one two", template.merge({}).strip())
+
+    def test_multiline_array_index(self):
+        template = airspeed.Template(r"""
+        $foo[
+           0
+        ]
+        """)
+        self.assertEqual("one", template.merge({ "foo": ["one"]}).strip())
 
 # TODO:
 #

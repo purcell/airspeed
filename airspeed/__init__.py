@@ -454,7 +454,7 @@ class InterpolatedStringLiteral(StringLiteral):
 
 
 class Range(_Element):
-    MIDDLE = re.compile(r'([ \t]*\.\.[ \t]*)(.*)$', re.S)
+    MIDDLE = re.compile(r'(\s*\.\.\s*)(.*)$', re.S)
 
     def parse(self):
         self.value1 = self.next_element((FormalReference, IntegerLiteral))
@@ -494,8 +494,8 @@ class _EmptyValues:
 
 
 class ArrayLiteral(_Element):
-    START = re.compile(r'\[[ \t]*(.*)$', re.S)
-    END = re.compile(r'[ \t]*\](.*)$', re.S)
+    START = re.compile(r'\[\s*(.*)$', re.S)
+    END = re.compile(r'\s*\](.*)$', re.S)
     values = _EmptyValues()
 
     def parse(self):
@@ -509,10 +509,10 @@ class ArrayLiteral(_Element):
 
 
 class DictionaryLiteral(_Element):
-    START = re.compile(r'{[ \t]*(.*)$', re.S)
-    END = re.compile(r'[ \t]*}(.*)$', re.S)
-    KEYVALSEP = re.compile(r'[ \t]*:[ \t]*(.*)$', re.S)
-    PAIRSEP = re.compile(r'[ \t]*,[ \t]*(.*)$', re.S)
+    START = re.compile(r'{\s*(.*)$', re.S)
+    END = re.compile(r'\s*}(.*)$', re.S)
+    KEYVALSEP = re.compile(r'\s*:\s*(.*)$', re.S)
+    PAIRSEP = re.compile(r'\s*,\s*(.*)$', re.S)
 
     def parse(self):
         self.identity_match(self.START)
@@ -681,8 +681,8 @@ class ParameterList(_Element):
 
 
 class ArrayIndex(_Element):
-    START = re.compile(r'\[[ \t]*(.*)$', re.S)
-    END = re.compile(r'[ \t]*\](.*)$', re.S)
+    START = re.compile(r'\[\s*(.*)$', re.S)
+    END = re.compile(r'\s*\](.*)$', re.S)
 
     def parse(self):
         self.identity_match(self.START)
@@ -989,8 +989,8 @@ class Assignment(_Element):
 
 class EvaluateDirective(_Element):
     START = re.compile(r'#evaluate\b(.*)')
-    OPEN_PAREN = re.compile(r'[ \t]*\(\s*(.*)$', re.S)
-    CLOSE_PAREN = re.compile(r'[ \t]*\)(.*)$', re.S)
+    OPEN_PAREN = re.compile(r'\s*\(\s*(.*)$', re.S)
+    CLOSE_PAREN = re.compile(r'\s*\)(.*)$', re.S)
 
     def parse(self):
         self.identity_match(self.START)
@@ -1006,9 +1006,9 @@ class EvaluateDirective(_Element):
 
 class _FunctionDefinition(_Element):
     # Must be overridden to provide START and NAME patterns
-    OPEN_PAREN = re.compile(r'[ \t]*\(\s*(.*)$', re.S)
-    CLOSE_PAREN = re.compile(r'[ \t]*\)(.*)$', re.S)
-    ARG_NAME = re.compile(r'[, \t]+\$([a-z][a-z_0-9]*)(.*)$', re.S + re.I)
+    OPEN_PAREN = re.compile(r'\s*\(\s*(.*)$', re.S)
+    CLOSE_PAREN = re.compile(r'\s*\)(.*)$', re.S)
+    ARG_NAME = re.compile(r'[,\n\s]+\$([a-z][a-z_0-9]*)(.*)$', re.S + re.I)
     RESERVED_NAMES = []
 
     def parse(self):
@@ -1063,8 +1063,8 @@ class MacroDefinition(_FunctionDefinition):
 
 class MacroCall(_Element):
     START = re.compile(r'#([a-z][a-z_0-9]*)\b(.*)', re.S + re.I)
-    OPEN_PAREN = re.compile(r'[ \t]*\(\s*(.*)$', re.S)
-    CLOSE_PAREN = re.compile(r'[ \t]*\)(.*)$', re.S)
+    OPEN_PAREN = re.compile(r'\s*\(\s*(.*)$', re.S)
+    CLOSE_PAREN = re.compile(r'\s*\)(.*)$', re.S)
     SPACE_OR_COMMA = re.compile(r'\s*(?:,|\s)\s*(.*)$', re.S)
 
     def parse(self):
@@ -1101,8 +1101,8 @@ class DefineDefinition(_FunctionDefinition):
 
 class IncludeDirective(_Element):
     START = re.compile(r'#include\b(.*)', re.S + re.I)
-    OPEN_PAREN = re.compile(r'[ \t]*\(\s*(.*)$', re.S)
-    CLOSE_PAREN = re.compile(r'[ \t]*\)(.*)$', re.S)
+    OPEN_PAREN = re.compile(r'\s*\(\s*(.*)$', re.S)
+    CLOSE_PAREN = re.compile(r'\s*\)(.*)$', re.S)
 
     def parse(self):
         self.identity_match(self.START)
@@ -1120,8 +1120,8 @@ class IncludeDirective(_Element):
 
 class ParseDirective(_Element):
     START = re.compile(r'#parse\b(.*)', re.S + re.I)
-    OPEN_PAREN = re.compile(r'[ \t]*\(\s*(.*)$', re.S)
-    CLOSE_PAREN = re.compile(r'[ \t]*\)(.*)$', re.S)
+    OPEN_PAREN = re.compile(r'\s*\(\s*(.*)$', re.S)
+    CLOSE_PAREN = re.compile(r'\s*\)(.*)$', re.S)
 
     def parse(self):
         self.identity_match(self.START)
@@ -1174,10 +1174,10 @@ class SetDirective(_Element):
 
 class ForeachDirective(_Element):
     START = re.compile(r'#foreach\b(.*)$', re.S + re.I)
-    OPEN_PAREN = re.compile(r'[ \t]*\(\s*(.*)$', re.S)
-    IN = re.compile(r'[ \t]+in[ \t]+(.*)$', re.S)
+    OPEN_PAREN = re.compile(r'\s*\(\s*(.*)$', re.S)
+    IN = re.compile(r'\s+in\s+(.*)$', re.S)
     LOOP_VAR_NAME = re.compile(r'\$([a-z_][a-z0-9_]*)(.*)$', re.S + re.I)
-    CLOSE_PAREN = re.compile(r'[ \t]*\)(.*)$', re.S)
+    CLOSE_PAREN = re.compile(r'\s*\)(.*)$', re.S)
 
     def parse(self):
         # Could be cleaner b/c syntax error if no '('
