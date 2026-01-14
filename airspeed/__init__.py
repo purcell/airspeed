@@ -754,10 +754,7 @@ class FormalReference(_Element):
                 value = ''
             else:
                 value = self.my_text()
-        if isinstance(value, str):
-            stream.write(value)
-        else:
-            stream.write(str(value))
+        stream.write(str(value))
 
 
 class Null:
