@@ -1357,6 +1357,22 @@ line")''')
         """)
         self.assertEqual('has-value', template.merge({}).strip())
 
+    def test_array_set_item(self):
+        template = airspeed.Template(
+            "#set($test_array = ['one', 'two', 'three'] )"
+            "$test_array.set(1, 'foo')"
+            "#foreach ($item in $test_array)$item#end"
+        )
+        self.assertEqual("twoonefoothree", template.merge({}))
+
+    def test_array_set_item_outside_range(self):
+        template = airspeed.Template(
+            "#set($test_array = ['one', 'two', 'three'] )"
+            "$test_array.set(5, 'foo')"
+            "$test_array"
+        )
+        self.assertRaisesExecutionError(IndexError, template.merge, {})
+
 # TODO:
 #
 #  Report locations for template errors in files included via loaders

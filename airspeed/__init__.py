@@ -19,6 +19,11 @@ __all__ = [
 def dict_to_string(obj: dict) -> str:
     return "{" + ", ".join([f"{k}={v}" for k, v in obj.items()]) + "}"
 
+def array_set(self: list, index, value):
+    existing = self[index]
+    self[index] = value
+    return existing
+
 # A dict that maps classes to dicts of additional methods.
 # This allows support for methods that are available in Java-based Velocity
 # implementations, e.g., .size() of a list or .length() of a string.
@@ -39,7 +44,8 @@ __additional_methods__ = {
         'size': lambda self: len(self),
         'get': lambda self, index: self[index],
         'contains': lambda self, value: value in self,
-        'add': lambda self, value: self.append(value)
+        'add': lambda self, value: self.append(value),
+        'set': array_set
     },
     dict: {
         'isEmpty': lambda self: not bool(self),
