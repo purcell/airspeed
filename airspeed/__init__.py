@@ -60,13 +60,6 @@ __additional_methods__ = {
 # Public interface
 ###############################################################################
 
-
-def boolean_value(variable_value):
-    if not variable_value:
-        return False
-    return not (variable_value is None)
-
-
 def is_valid_vtl_identifier(text):
     return text and text[0] in set(string.ascii_letters + '_')
 
@@ -787,10 +780,10 @@ class BinaryOperator(_Element):
                  '==': operator.eq, 'eq': operator.eq,
                  '!=': operator.ne, 'ne': operator.ne,
                  '%': operator.mod,
-                 '||': lambda a, b: boolean_value(a) or boolean_value(b),
-                 '&&': lambda a, b: boolean_value(a) and boolean_value(b),
-                 'or': lambda a, b: boolean_value(a) or boolean_value(b),
-                 'and': lambda a, b: boolean_value(a) and boolean_value(b),
+                 '||': lambda a, b: bool(a) or bool(b),
+                 '&&': lambda a, b: bool(a) and bool(b),
+                 'or': lambda a, b: bool(a) or bool(b),
+                 'and': lambda a, b: bool(a) and bool(b),
                  '+': operator.add,
                  '-': operator.sub,
                  '*': operator.mul,
