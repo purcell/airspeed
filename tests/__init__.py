@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 import airspeed
 import re
-import sys
 import importlib
 from unittest import TestCase
 from io import StringIO
