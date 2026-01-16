@@ -263,32 +263,26 @@ class _Element(abc.ABC):
         return TemplateSyntaxError(self, expected)
 
     def identity_match(self, pattern):
-        m = pattern.match(self._full_text, self.end)
-        if not m:
+        m = self.next_match(pattern)
+        if m is None:
             raise NoMatch()
-        self.end = m.start(pattern.groups)
-        return m.groups()[:-1]
+        return m
+
+    def optional_match(self, pattern):
+        return self.next_match(pattern) is not None
 
     def next_match(self, pattern):
         m = pattern.match(self._full_text, self.end)
         if not m:
-            return False
+            return None
         self.end = m.start(pattern.groups)
         return m.groups()[:-1]
-
-    def optional_match(self, pattern):
-        m = pattern.match(self._full_text, self.end)
-        if not m:
-            return False
-        self.end = m.start(pattern.groups)
-        return True
 
     def require_match(self, pattern, expected):
-        m = pattern.match(self._full_text, self.end)
-        if not m:
+        m = self.next_match(pattern)
+        if m is None:
             raise self.syntax_error(expected)
-        self.end = m.start(pattern.groups)
-        return m.groups()[:-1]
+        return m
 
     def next_element(self, element_spec):
         if callable(element_spec):
