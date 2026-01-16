@@ -344,12 +344,12 @@ class Text(_Element):
     ESCAPED_CHAR = re.compile(r'\\([\$#]\S+)')
 
     def parse(self):
-        text, = self.identity_match(self.PLAIN)
+        raw, = self.identity_match(self.PLAIN)
 
         def unescape(match):
             return match.group(1)
 
-        self.text = self.ESCAPED_CHAR.sub(unescape, text)
+        self.text = self.ESCAPED_CHAR.sub(unescape, raw)
 
     def evaluate_raw(self, stream, namespace, loader):
         stream.write(self.text)
@@ -375,8 +375,8 @@ class IntegerLiteral(_Element):
     INTEGER = re.compile(r'(-?\d+)(.*)', re.S)
 
     def parse(self):
-        self.value, = self.identity_match(self.INTEGER)
-        self.value = int(self.value)
+        raw, = self.identity_match(self.INTEGER)
+        self.value = int(raw)
 
     def calculate(self, namespace, loader):
         return self.value
@@ -386,8 +386,8 @@ class FloatingPointLiteral(_Element):
     FLOAT = re.compile(r'(-?\d*\.\d+)(.*)', re.S)
 
     def parse(self):
-        self.value, = self.identity_match(self.FLOAT)
-        self.value = float(self.value)
+        raw, = self.identity_match(self.FLOAT)
+        self.value = float(raw)
 
     def calculate(self, namespace, loader):
         return self.value
@@ -397,8 +397,8 @@ class BooleanLiteral(_Element):
     BOOLEAN = re.compile(r'((?:true)|(?:false))(.*)', re.S | re.I)
 
     def parse(self):
-        self.value, = self.identity_match(self.BOOLEAN)
-        self.value = self.value.lower() == 'true'
+        raw, = self.identity_match(self.BOOLEAN)
+        self.value = raw.lower() == 'true'
 
     def calculate(self, namespace, loader):
         return self.value
@@ -755,9 +755,6 @@ class Comment(_Element, Null):
 
     def parse(self):
         self.identity_match(self.COMMENT)
-
-    def evaluate(self, *args):
-        pass
 
 
 class BinaryOperator(_Element):
@@ -1224,6 +1221,7 @@ class ForeachDirective(_Element):
 class TemplateBody(_Element):
     def parse(self):
         self.block = self.next_element(Block)
+        # No text should be left over
         if self.next_text():
             raise self.syntax_error('block element')
 

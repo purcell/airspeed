@@ -22,6 +22,14 @@ class TemplateTestCase(TestCase):
         template = airspeed.Template("Hello $name")
         self.assertEqual("Hello Chris", template.merge({"name": "Chris"}))
 
+    def test_empty_template(self):
+        template = airspeed.Template("")
+        self.assertEqual("", template.merge({}))
+
+    def test_spaces_only(self):
+        template = airspeed.Template("  ")
+        self.assertEqual("  ", template.merge({}))
+
     def test_dollar_left_untouched(self):
         template = airspeed.Template("Hello $ ")
         self.assertEqual("Hello $ ", template.merge({}))
