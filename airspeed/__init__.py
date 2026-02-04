@@ -956,31 +956,6 @@ class IfDirective(_Element):
             self.else_block.evaluate(stream, namespace, loader)
 
 
-# This can't deal with assignments like
-# set($one.two().three = something)
-# yet
-class Assignment(_Element):
-    START = re.compile(
-        r'\s*\(\s*\$([a-z_][a-z0-9_]*(?:\.[a-z_][a-z0-9_]*)*)\s*=\s*(.*)$',
-        re.S +
-        re.I)
-    END = re.compile(r'\s*\)(?:[ \t]*\r?\n)?(.*)$', re.S + re.M)
-
-    def parse(self):
-        var_name, = self.identity_match(self.START)
-        self.terms = var_name.split('.')
-        self.value = self.require_next_element(Expression, "expression")
-        self.require_match(self.END, ')')
-
-    def evaluate_raw(self, stream, namespace, loader):
-        val = self.value.calculate(namespace, loader)
-        if len(self.terms) == 1:
-            namespace.set_inherited(self.terms[0], val)
-        else:
-            cur = namespace
-            for term in self.terms[:-1]:
-                cur = cur[term]
-            cur[self.terms[-1]] = val
 
 class EvaluateDirective(_Element):
     START = re.compile(r'#evaluate\b(.*)')
@@ -1157,14 +1132,30 @@ class UserDefinedDirective(_Element):
 
 
 class SetDirective(_Element):
-    START = re.compile(r'#set\b(.*)', re.S + re.I)
+    START = re.compile(r'#set\s*\((.*)', re.S + re.I)
+    PLACE = re.compile(
+        r'\s*\$([a-z_][a-z0-9_]*(?:\.[a-z_][a-z0-9_]*)*)(.*)$',
+        re.S + re.I)
+    EQUALS = re.compile(r'\s*\=\s*(.*)$', re.S)
+    END = re.compile(r'\s*\)(?:[ \t]*\r?\n)?(.*)$', re.S)
 
     def parse(self):
         self.identity_match(self.START)
-        self.assignment = self.require_next_element(Assignment, 'assignment')
+        var_name, = self.require_match(self.PLACE, "place")
+        self.terms = var_name.split('.')
+        self.require_match(self.EQUALS, "=")
+        self.value = self.require_next_element(Expression, "expression")
+        self.require_match(self.END, "closing paren")
 
     def evaluate_raw(self, stream, namespace, loader):
-        self.assignment.evaluate(stream, namespace, loader)
+        val = self.value.calculate(namespace, loader)
+        if len(self.terms) == 1:
+            namespace.set_inherited(self.terms[0], val)
+        else:
+            cur = namespace
+            for term in self.terms[:-1]:
+                cur = cur[term]
+            cur[self.terms[-1]] = val
 
 
 class ForeachDirective(_Element):

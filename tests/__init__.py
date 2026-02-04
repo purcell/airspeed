@@ -1175,7 +1175,7 @@ line")''')
             self.fail("expected exception")
         except airspeed.TemplateExecutionError as e:
             self.assertEqual("mytemplate", e.filename)
-            self.assertEqual(105, e.start)
+            self.assertEqual(101, e.start)
             self.assertEqual(142, e.end)
             self.assertTrue(isinstance(e.__cause__, TypeError))
 
