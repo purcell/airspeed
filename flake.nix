@@ -27,6 +27,7 @@
                   coverage
                 ]
               ))
+              ruff
               ty
               uv
             ];
