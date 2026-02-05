@@ -58,10 +58,6 @@ __additional_methods__ = {
 # Public interface
 ###############################################################################
 
-def is_valid_vtl_identifier(text):
-    return text and text[0] in set(string.ascii_letters + '_')
-
-
 class Template:
     def __init__(self, content, filename="<string>"):
         self.content = content
@@ -559,14 +555,12 @@ class Value(_Element):
 
 
 class NameOrCall(_Element):
-    NAME = re.compile(r'([a-zA-Z0-9_]+)(.*)$', re.S)
+    NAME = re.compile(r'([_a-z][a-z0-9_]*)(.*)$', re.S + re.I)
     parameters = None
     index = None
 
     def parse(self):
         self.name, = self.identity_match(self.NAME)
-        if not is_valid_vtl_identifier(self.name):
-            raise NoMatch('Invalid VTL identifier %s.' % self.name)
         try:
             self.parameters = self.next_element(ParameterList)
         except NoMatch:
@@ -1009,7 +1003,7 @@ class _FunctionDefinition(_Element):
 
 class MacroDefinition(_FunctionDefinition):
     START = re.compile(r'#macro\b(.*)', re.S + re.I)
-    NAME = re.compile(r'\s*([a-z][a-z_0-9]*)\b(.*)', re.S + re.I)
+    NAME = re.compile(r'\s*([_a-z][a-z_0-9]*)\b(.*)', re.S + re.I)
     RESERVED_NAMES = (
         'if',
         'else',
