@@ -412,18 +412,17 @@ $email
 \# end
 #set( foo = "foo" )
 ''', template.merge({}))
-
-# def test_velocity_style_escaping_when_var_unset(self): # example from Velocity docs
-#        template = airspeed.Template('''\
-#$email
-#\$email
-#\\$email
-#\\\$email''')
-#        self.assertEquals('''\
-#$email
-#\$email
-#\\$email
-#\\\$email''', template.merge({}))
+        def test_velocity_style_escaping_when_var_unset(self): # example from Velocity docs
+            template = airspeed.Template(r'''\
+$email
+\$email
+\\$email
+\\\$email''')
+            self.assertEquals(r'''\
+$email
+\$email
+\\$email
+\\\$email''', template.merge({}))
 
     def test_true_elseif_evaluated_when_if_is_false(self):
         template = airspeed.Template(
@@ -1015,7 +1014,7 @@ $email
 
     def test_user_defined_directive(self):
         class DummyDirective(airspeed._Element):
-            PLAIN = re.compile(r'#(monkey)man(.*)$', re.S + re.I)
+            PLAIN = re.compile(r'#(monkey)man', re.S + re.I)
 
             def parse(self):
                 self.text, = self.identity_match(self.PLAIN)

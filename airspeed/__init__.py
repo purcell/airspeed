@@ -193,7 +193,7 @@ class StoppableStream(StringIO):
 # Internals
 ###############################################################################
 
-WHITESPACE_TO_END_OF_LINE = re.compile(r'[ \t\r]*\n(.*)', re.S)
+WHITESPACE_TO_END_OF_LINE = re.compile(r'[ \t\r]*\n', re.S)
 
 
 class NoMatch(Exception):
@@ -267,12 +267,12 @@ class _Element(abc.ABC):
     def optional_match(self, pattern):
         return self.next_match(pattern) is not None
 
-    def next_match(self, pattern):
+    def next_match(self, pattern: re.Pattern):
         m = pattern.match(self._full_text, self.end)
         if not m:
             return None
-        self.end = m.start(pattern.groups)
-        return m.groups()[:-1]
+        self.end = m.end()
+        return m.groups()
 
     def require_match(self, pattern, expected):
         m = self.next_match(pattern)
@@ -333,10 +333,8 @@ class _Element(abc.ABC):
 
 class Text(_Element):
     PLAIN = re.compile(
-        r'((?:[^\\\$#]+|\\[\$#])+|\$[^!\{a-z0-9_]|\$$|#$'
-        r'|#[^\{\}a-zA-Z0-9#\*]+|\\.)(.*)$',
-        re.S +
-        re.I)
+        r'((?:[^\\\$#]+|\\[\$#])+|\$[^!\{a-z0-9_]|\$$|#$|#[^\{\}a-zA-Z0-9#\*]+|\\.)',
+        re.S + re.I)
     ESCAPED_CHAR = re.compile(r'\\([\$#]\S+)')
 
     def parse(self):
@@ -357,7 +355,7 @@ class FallthroughHashText(_Element):
     Note that it MUST NOT match block-ending directives.
     """
     # because of earlier elements, this will always start with a hash
-    PLAIN = re.compile(r'(\#(?!end|else|elseif|\{(?:end|else|elseif)\}))(.*)$',
+    PLAIN = re.compile(r'(\#(?!end|else|elseif|\{(?:end|else|elseif)\}))',
                        re.S)
 
     def parse(self):
@@ -368,7 +366,7 @@ class FallthroughHashText(_Element):
 
 
 class IntegerLiteral(_Element):
-    INTEGER = re.compile(r'(-?\d+)(.*)', re.S)
+    INTEGER = re.compile(r'(-?\d+)', re.S)
 
     def parse(self):
         raw, = self.identity_match(self.INTEGER)
@@ -379,7 +377,7 @@ class IntegerLiteral(_Element):
 
 
 class FloatingPointLiteral(_Element):
-    FLOAT = re.compile(r'(-?\d*\.\d+)(.*)', re.S)
+    FLOAT = re.compile(r'(-?\d*\.\d+)', re.S)
 
     def parse(self):
         raw, = self.identity_match(self.FLOAT)
@@ -390,7 +388,7 @@ class FloatingPointLiteral(_Element):
 
 
 class BooleanLiteral(_Element):
-    BOOLEAN = re.compile(r'((?:true)|(?:false))(.*)', re.S | re.I)
+    BOOLEAN = re.compile(r'((?:true)|(?:false))', re.S | re.I)
 
     def parse(self):
         raw, = self.identity_match(self.BOOLEAN)
@@ -400,7 +398,7 @@ class BooleanLiteral(_Element):
         return self.value
 
 class NullLiteral(_Element):
-    NULL = re.compile(r'(null)(.*)', re.S | re.I)
+    NULL = re.compile(r'(null)', re.S | re.I)
 
     def parse(self):
         self.identity_match(self.NULL)
@@ -410,7 +408,7 @@ class NullLiteral(_Element):
 
 
 class StringLiteral(_Element):
-    STRING = re.compile(r"'((?:\\['nrbt\\\\\\$]|[^'\\])*)'(.*)", re.S)
+    STRING = re.compile(r"'((?:\\['nrbt\\\\\\$]|[^'\\])*)'", re.S)
     ESCAPED_CHAR = re.compile(r"\\([nrbt'\\])")
 
     def parse(self):
@@ -436,7 +434,7 @@ class StringLiteral(_Element):
 
 
 class InterpolatedStringLiteral(StringLiteral):
-    STRING = re.compile(r'"((?:\\["nrbt\\\\\\$]|[^"\\])*)"(.*)', re.S)
+    STRING = re.compile(r'"((?:\\["nrbt\\\\\\$]|[^"\\])*)"', re.S)
     ESCAPED_CHAR = re.compile(r'\\([nrbt"\\])')
 
     def parse(self):
@@ -450,7 +448,7 @@ class InterpolatedStringLiteral(StringLiteral):
 
 
 class Range(_Element):
-    MIDDLE = re.compile(r'(\s*\.\.\s*)(.*)$', re.S)
+    MIDDLE = re.compile(r'(\s*\.\.\s*)', re.S)
 
     def parse(self):
         self.value1 = self.next_element((FormalReference, IntegerLiteral))
@@ -466,7 +464,7 @@ class Range(_Element):
 
 
 class ValueList(_Element):
-    COMMA = re.compile(r'\s*,\s*(.*)$', re.S)
+    COMMA = re.compile(r'\s*,\s*', re.S)
 
     def parse(self):
         self.values = []
@@ -490,8 +488,8 @@ class _EmptyValues:
 
 
 class ArrayLiteral(_Element):
-    START = re.compile(r'\[\s*(.*)$', re.S)
-    END = re.compile(r'\s*\](.*)$', re.S)
+    START = re.compile(r'\[\s*', re.S)
+    END = re.compile(r'\s*\]', re.S)
     values = _EmptyValues()
 
     def parse(self):
@@ -505,10 +503,10 @@ class ArrayLiteral(_Element):
 
 
 class DictionaryLiteral(_Element):
-    START = re.compile(r'{\s*(.*)$', re.S)
-    END = re.compile(r'\s*}(.*)$', re.S)
-    KEYVALSEP = re.compile(r'\s*:\s*(.*)$', re.S)
-    PAIRSEP = re.compile(r'\s*,\s*(.*)$', re.S)
+    START = re.compile(r'{\s*', re.S)
+    END = re.compile(r'\s*}', re.S)
+    KEYVALSEP = re.compile(r'\s*:\s*', re.S)
+    PAIRSEP = re.compile(r'\s*,\s*', re.S)
 
     def parse(self):
         self.identity_match(self.START)
@@ -555,7 +553,7 @@ class Value(_Element):
 
 
 class NameOrCall(_Element):
-    NAME = re.compile(r'([_a-z][a-z0-9_]*)(.*)$', re.S + re.I)
+    NAME = re.compile(r'([_a-z][a-z0-9_]*)', re.S + re.I)
     parameters = None
     index = None
 
@@ -610,7 +608,7 @@ class NameOrCall(_Element):
 
 
 class SubExpression(_Element):
-    DOT = re.compile(r'\.(.*)', re.S)
+    DOT = re.compile(r'\.', re.S)
 
     def parse(self):
         try:
@@ -658,9 +656,9 @@ class VariableExpression(_Element):
 
 
 class ParameterList(_Element):
-    START = re.compile(r'\(\s*(.*)$', re.S)
-    COMMA = re.compile(r'\s*,\s*(.*)$', re.S)
-    END = re.compile(r'\s*\)(.*)$', re.S)
+    START = re.compile(r'\(\s*', re.S)
+    COMMA = re.compile(r'\s*,\s*', re.S)
+    END = re.compile(r'\s*\)', re.S)
     values = _EmptyValues()
 
     def parse(self):
@@ -676,8 +674,8 @@ class ParameterList(_Element):
 
 
 class ArrayIndex(_Element):
-    START = re.compile(r'\[\s*(.*)$', re.S)
-    END = re.compile(r'\s*\](.*)$', re.S)
+    START = re.compile(r'\[\s*', re.S)
+    END = re.compile(r'\s*\]', re.S)
 
     def parse(self):
         self.identity_match(self.START)
@@ -694,7 +692,7 @@ class ArrayIndex(_Element):
         return self.index.calculate(namespace, loader)
 
 class AlternateValue(_Element):
-    START = re.compile(r'\|(.*)$', re.S)
+    START = re.compile(r'\|', re.S)
 
     def parse(self):
         self.identity_match(self.START)
@@ -703,8 +701,8 @@ class AlternateValue(_Element):
 
 
 class FormalReference(_Element):
-    START = re.compile(r'\$(!?)(\{?)(.*)$', re.S)
-    CLOSING_BRACE = re.compile(r'\}(.*)$', re.S)
+    START = re.compile(r'\$(!?)(\{?)', re.S)
+    CLOSING_BRACE = re.compile(r'\}', re.S)
 
     def parse(self):
         self.silent, braces = self.identity_match(self.START)
@@ -743,7 +741,7 @@ class Null:
 
 class Comment(_Element, Null):
     COMMENT = re.compile(
-        '#(?:#.*?(?:\n|$)|\\*.*?\\*#(?:[ \t]*\n)?)(.*)$',
+        '#(?:#.*?(?:\n|$)|\\*.*?\\*#(?:[ \t]*\n)?)',
         re.M +
         re.S)
 
@@ -754,7 +752,7 @@ class Comment(_Element, Null):
 class BinaryOperator(_Element):
     BINARY_OP = re.compile(
         r'\s*(>=|<=|<|==|!=|>|%|\|\||&&|or|and|\+|\-|\*|\/|\%|gt|lt|ne|eq|ge'
-        r'|le|not)\s*(.*)$',
+        r'|le|not)\s*',
         re.S)
     OPERATORS = {'>': operator.gt, 'gt': operator.gt,
                  '>=': operator.ge, 'ge': operator.ge,
@@ -800,7 +798,7 @@ class BinaryOperator(_Element):
 
 
 class UnaryOperatorValue(_Element):
-    UNARY_OP = re.compile(r'\s*(!|(?:not))\s*(.*)$', re.S)
+    UNARY_OP = re.compile(r'\s*(!|(?:not))\s*', re.S)
     OPERATORS = {'!': operator.__not__, 'not': operator.__not__}
 
     def parse(self):
@@ -873,8 +871,8 @@ class Expression(_Element):
 
 
 class ParenthesizedExpression(_Element):
-    START = re.compile(r'\(\s*(.*)$', re.S)
-    END = re.compile(r'\s*\)(.*)$', re.S)
+    START = re.compile(r'\(\s*', re.S)
+    END = re.compile(r'\s*\)', re.S)
 
     def parse(self):
         self.identity_match(self.START)
@@ -892,7 +890,7 @@ class Condition(_Element):
 
 
 class End(_Element):
-    END = re.compile(r'#(?:end|\{end\})(.*)', re.I + re.S)
+    END = re.compile(r'#(?:end|\{end\})', re.I + re.S)
 
     def parse(self):
         self.identity_match(self.END)
@@ -900,7 +898,7 @@ class End(_Element):
 
 
 class ElseBlock(_Element):
-    START = re.compile(r'#(?:else|\{else\})(.*)$', re.S + re.I)
+    START = re.compile(r'#(?:else|\{else\})', re.S + re.I)
 
     def parse(self):
         self.identity_match(self.START)
@@ -909,7 +907,7 @@ class ElseBlock(_Element):
 
 
 class ElseifBlock(_Element):
-    START = re.compile(r'#elseif\b\s*(.*)$', re.S + re.I)
+    START = re.compile(r'#elseif\b\s*', re.S + re.I)
 
     def parse(self):
         self.identity_match(self.START)
@@ -920,7 +918,7 @@ class ElseifBlock(_Element):
 
 
 class IfDirective(_Element):
-    START = re.compile(r'#if\b\s*(.*)$', re.S + re.I)
+    START = re.compile(r'#if\b\s*', re.S + re.I)
     else_block = Null()
 
     def parse(self):
@@ -952,9 +950,9 @@ class IfDirective(_Element):
 
 
 class EvaluateDirective(_Element):
-    START = re.compile(r'#evaluate\b(.*)')
-    OPEN_PAREN = re.compile(r'\s*\(\s*(.*)$', re.S)
-    CLOSE_PAREN = re.compile(r'\s*\)(.*)$', re.S)
+    START = re.compile(r'#evaluate\b')
+    OPEN_PAREN = re.compile(r'\s*\(\s*', re.S)
+    CLOSE_PAREN = re.compile(r'\s*\)', re.S)
 
     def parse(self):
         self.identity_match(self.START)
@@ -970,9 +968,9 @@ class EvaluateDirective(_Element):
 
 class _FunctionDefinition(_Element):
     # Must be overridden to provide START and NAME patterns
-    OPEN_PAREN = re.compile(r'\s*\(\s*(.*)$', re.S)
-    CLOSE_PAREN = re.compile(r'\s*\)(.*)$', re.S)
-    ARG_NAME = re.compile(r'[,\n\s]+\$([a-z][a-z_0-9]*)(.*)$', re.S + re.I)
+    OPEN_PAREN = re.compile(r'\s*\(\s*', re.S)
+    CLOSE_PAREN = re.compile(r'\s*\)', re.S)
+    ARG_NAME = re.compile(r'[,\n\s]+\$([a-z][a-z_0-9]*)', re.S + re.I)
     RESERVED_NAMES = []
 
     def parse(self):
@@ -1002,8 +1000,8 @@ class _FunctionDefinition(_Element):
         self.block.evaluate(stream, local_namespace, loader)
 
 class MacroDefinition(_FunctionDefinition):
-    START = re.compile(r'#macro\b(.*)', re.S + re.I)
-    NAME = re.compile(r'\s*([_a-z][a-z_0-9]*)\b(.*)', re.S + re.I)
+    START = re.compile(r'#macro\b', re.S + re.I)
+    NAME = re.compile(r'\s*([_a-z][a-z_0-9]*)\b', re.S + re.I)
     RESERVED_NAMES = (
         'if',
         'else',
@@ -1026,10 +1024,10 @@ class MacroDefinition(_FunctionDefinition):
         global_ns[macro_key] = self
 
 class MacroCall(_Element):
-    START = re.compile(r'#([a-z][a-z_0-9]*)\b(.*)', re.S + re.I)
-    OPEN_PAREN = re.compile(r'\s*\(\s*(.*)$', re.S)
-    CLOSE_PAREN = re.compile(r'\s*\)(.*)$', re.S)
-    SPACE_OR_COMMA = re.compile(r'\s*(?:,|\s)\s*(.*)$', re.S)
+    START = re.compile(r'#([a-z][a-z_0-9]*)\b', re.S + re.I)
+    OPEN_PAREN = re.compile(r'\s*\(\s*', re.S)
+    CLOSE_PAREN = re.compile(r'\s*\)', re.S)
+    SPACE_OR_COMMA = re.compile(r'\s*(?:,|\s)\s*', re.S)
 
     def parse(self):
         macro_name, = self.identity_match(self.START)
@@ -1057,16 +1055,16 @@ class MacroCall(_Element):
         macro.execute_function(stream, namespace, arg_values, loader)
 
 class DefineDefinition(_FunctionDefinition):
-    START = re.compile(r'#define\b(.*)', re.S + re.I)
-    NAME = re.compile(r'\s*\$([a-z][a-z_0-9]*)\b(.*)', re.S + re.I)
+    START = re.compile(r'#define\b', re.S + re.I)
+    NAME = re.compile(r'\s*\$([a-z][a-z_0-9]*)\b', re.S + re.I)
 
     def evaluate_raw(self, stream, namespace, loader):
         namespace[self.function_name] = self
 
 class IncludeDirective(_Element):
-    START = re.compile(r'#include\b(.*)', re.S + re.I)
-    OPEN_PAREN = re.compile(r'\s*\(\s*(.*)$', re.S)
-    CLOSE_PAREN = re.compile(r'\s*\)(.*)$', re.S)
+    START = re.compile(r'#include\b', re.S + re.I)
+    OPEN_PAREN = re.compile(r'\s*\(\s*', re.S)
+    CLOSE_PAREN = re.compile(r'\s*\)', re.S)
 
     def parse(self):
         self.identity_match(self.START)
@@ -1083,9 +1081,9 @@ class IncludeDirective(_Element):
 
 
 class ParseDirective(_Element):
-    START = re.compile(r'#parse\b(.*)', re.S + re.I)
-    OPEN_PAREN = re.compile(r'\s*\(\s*(.*)$', re.S)
-    CLOSE_PAREN = re.compile(r'\s*\)(.*)$', re.S)
+    START = re.compile(r'#parse\b', re.S + re.I)
+    OPEN_PAREN = re.compile(r'\s*\(\s*', re.S)
+    CLOSE_PAREN = re.compile(r'\s*\)', re.S)
 
     def parse(self):
         self.identity_match(self.START)
@@ -1104,7 +1102,7 @@ class ParseDirective(_Element):
 
 
 class StopDirective(_Element):
-    STOP = re.compile(r'#stop\b(.*)', re.S + re.I)
+    STOP = re.compile(r'#stop\b', re.S + re.I)
 
     def parse(self):
         self.identity_match(self.STOP)
@@ -1126,12 +1124,12 @@ class UserDefinedDirective(_Element):
 
 
 class SetDirective(_Element):
-    START = re.compile(r'#set\s*\((.*)', re.S + re.I)
+    START = re.compile(r'#set\s*\(', re.S + re.I)
     PLACE = re.compile(
-        r'\s*\$([a-z_][a-z0-9_]*(?:\.[a-z_][a-z0-9_]*)*)(.*)$',
+        r'\s*\$([a-z_][a-z0-9_]*(?:\.[a-z_][a-z0-9_]*)*)',
         re.S + re.I)
-    EQUALS = re.compile(r'\s*\=\s*(.*)$', re.S)
-    END = re.compile(r'\s*\)(?:[ \t]*\r?\n)?(.*)$', re.S)
+    EQUALS = re.compile(r'\s*\=\s*', re.S)
+    END = re.compile(r'\s*\)(?:[ \t]*\r?\n)?', re.S)
 
     def parse(self):
         self.identity_match(self.START)
@@ -1153,11 +1151,11 @@ class SetDirective(_Element):
 
 
 class ForeachDirective(_Element):
-    START = re.compile(r'#foreach\b(.*)$', re.S + re.I)
-    OPEN_PAREN = re.compile(r'\s*\(\s*(.*)$', re.S)
-    IN = re.compile(r'\s+in\s+(.*)$', re.S)
-    LOOP_VAR_NAME = re.compile(r'\$([a-z_][a-z0-9_]*)(.*)$', re.S + re.I)
-    CLOSE_PAREN = re.compile(r'\s*\)(.*)$', re.S)
+    START = re.compile(r'#foreach\b', re.S + re.I)
+    OPEN_PAREN = re.compile(r'\s*\(\s*', re.S)
+    IN = re.compile(r'\s+in\s+', re.S)
+    LOOP_VAR_NAME = re.compile(r'\$([a-z_][a-z0-9_]*)', re.S + re.I)
+    CLOSE_PAREN = re.compile(r'\s*\)', re.S)
 
     def parse(self):
         # Could be cleaner b/c syntax error if no '('
