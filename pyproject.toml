@@ -8,7 +8,7 @@ authors = [
     { name = "Steve Purcell", email = "steve@pythonconsulting.com" },
     { name = "Chris Tarttelin" }
 ]
-version = "0.6.1"
+version = "0.7.0"
 description = "A Python framework for building HTTP-based server applications"
 dependencies = [
     "cachetools"
