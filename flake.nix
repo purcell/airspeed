@@ -3,23 +3,36 @@
 
   inputs = {
     nixpkgs.url = "nixpkgs/nixpkgs-unstable";
-    flake-utils.url = "github:numtide/flake-utils";
   };
 
-  outputs = { self, nixpkgs, flake-utils }@inputs:
-    flake-utils.lib.eachDefaultSystem (system:
+  outputs =
+    { self, nixpkgs }:
+    (
       let
-        pkgs = import nixpkgs { inherit system; };
+        forAllSystems = nixpkgs.lib.genAttrs nixpkgs.lib.platforms.all;
       in
       {
-        devShell = pkgs.mkShell {
-          buildInputs = with pkgs; [
-            (python3.withPackages (p: [ p.setuptools p.six p.build ]))
-            twine pyright
-            python3Packages.flake8
-            python3Packages.pylint
-          ];
-        };
+        devShell = forAllSystems (
+          system:
+          let
+            pkgs = import nixpkgs { inherit system; };
+          in
+          pkgs.mkShell {
+            buildInputs = with pkgs; [
+              (python3.withPackages (
+                p: with p; [
+                  setuptools
+                  cachetools
+                  build
+                  coverage
+                ]
+              ))
+              ruff
+              ty
+              uv
+            ];
+          }
+        );
       }
     );
 }

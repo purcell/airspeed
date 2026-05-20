@@ -1,24 +1,9 @@
 # -*- coding: utf-8 -*-
-
+import airspeed
 import re
-import sys
-if sys.version_info >= (3, 0) and sys.version_info <= (3, 3):
-    import imp
-elif sys.version_info >= (3, 4):
-    import importlib
+import importlib
 from unittest import TestCase
-
-# Make these tests runnable without needing 'nose' installed
-try:
-    import airspeed
-except ImportError:
-    import sys
-    import os
-    sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
-    import airspeed
-
-import six
-
+from io import StringIO
 
 class TemplateTestCase(TestCase):
     def assertRaisesExecutionError(self, exctype, func, *args, **kwargs):
@@ -36,6 +21,14 @@ class TemplateTestCase(TestCase):
     def test_parser_substitutes_string_added_to_the_context(self):
         template = airspeed.Template("Hello $name")
         self.assertEqual("Hello Chris", template.merge({"name": "Chris"}))
+
+    def test_empty_template(self):
+        template = airspeed.Template("")
+        self.assertEqual("", template.merge({}))
+
+    def test_spaces_only(self):
+        template = airspeed.Template("  ")
+        self.assertEqual("  ", template.merge({}))
 
     def test_dollar_left_untouched(self):
         template = airspeed.Template("Hello $ ")
@@ -338,7 +331,7 @@ class TemplateTestCase(TestCase):
 
     def test_merge_to_stream(self):
         template = airspeed.Template('Hello $name!')
-        output = six.StringIO()
+        output = StringIO()
         template.merge_to({"name": "Chris"}, output)
         self.assertEqual('Hello Chris!', output.getvalue())
 
@@ -419,18 +412,17 @@ $email
 \# end
 #set( foo = "foo" )
 ''', template.merge({}))
-
-# def test_velocity_style_escaping_when_var_unset(self): # example from Velocity docs
-#        template = airspeed.Template('''\
-#$email
-#\$email
-#\\$email
-#\\\$email''')
-#        self.assertEquals('''\
-#$email
-#\$email
-#\\$email
-#\\\$email''', template.merge({}))
+        def test_velocity_style_escaping_when_var_unset(self): # example from Velocity docs
+            template = airspeed.Template(r'''\
+$email
+\$email
+\\$email
+\\\$email''')
+            self.assertEquals(r'''\
+$email
+\$email
+\\$email
+\\\$email''', template.merge({}))
 
     def test_true_elseif_evaluated_when_if_is_false(self):
         template = airspeed.Template(
@@ -858,6 +850,9 @@ $email
         template = airspeed.Template(
             '#set($values = [2..-2])#foreach($value in $values)$value,#end')
         self.assertEqual('2,1,0,-1,-2,', template.merge({}))
+        template = airspeed.Template(
+            "#set($values = [2\n ..\t\n-2])#foreach($value in $values)$value,#end")
+        self.assertEqual('2,1,0,-1,-2,', template.merge({}))
 
     def test_local_namespace_methods_are_not_available_in_context(self):
         template = airspeed.Template('#macro(tryme)$values#end#tryme()')
@@ -981,7 +976,7 @@ $email
             def __str__(self):
                 return self.value
         value = Clazz(u'£12,000')
-        self.assertEqual(six.text_type(value), template.merge(locals()))
+        self.assertEqual(str(value), template.merge(locals()))
 
     def test_can_define_macros_in_parsed_files(self):
         class Loader:
@@ -1004,6 +999,10 @@ $email
         template = airspeed.Template('#foreach( $v in [1..5] )$v\n#end')
         self.assertEqual('1\n2\n3\n4\n5\n', template.merge({}))
 
+    def test_foreach_with_extra_whitespace(self):
+        template = airspeed.Template("#foreach(\n $v \n\t in\n [1..5] \n)$v#end")
+        self.assertEqual('12345', template.merge({}))
+
     def test_can_loop_over_numeric_ranges_backwards(self):
         template = airspeed.Template('#foreach( $v in [5..-2] )$v,#end')
         self.assertEqual('5,4,3,2,1,0,-1,-2,', template.merge({}))
@@ -1015,7 +1014,7 @@ $email
 
     def test_user_defined_directive(self):
         class DummyDirective(airspeed._Element):
-            PLAIN = re.compile(r'#(monkey)man(.*)$', re.S + re.I)
+            PLAIN = re.compile(r'#(monkey)man', re.S + re.I)
 
             def parse(self):
                 self.text, = self.identity_match(self.PLAIN)
@@ -1100,6 +1099,10 @@ hello##
         self.assertEqual('2.0', template.merge({}))
         # TODO: is that how Velocity would format a floating point?
 
+    def test_floating_point_starting_with_decimal(self):
+        template = airspeed.Template('#set($x = .5*.1)$x')
+        self.assertEqual('0.05', template.merge({}))
+
     def test_multiline_arguments_to_function_calls(self):
         class Thing:
             def func(self, arg):
@@ -1137,6 +1140,10 @@ line")''')
         template = airspeed.Template('$a["foo"]')
         self.assertEqual("bar", template.merge({"a": {"foo": "bar"}}))
 
+    def test_array_notation_dict_index_with_string_literal(self):
+        template = airspeed.Template("$a.b.c['foo:bar']")
+        self.assertEqual("baz", template.merge({"a": {"b": {"c": {"foo:bar": "baz"}}}}))
+
     def test_array_notation_empty_array_variable(self):
         template = airspeed.Template('$!a[1]')
         self.assertEqual("", template.merge({"a": []}))
@@ -1167,7 +1174,7 @@ line")''')
             self.fail("expected exception")
         except airspeed.TemplateExecutionError as e:
             self.assertEqual("mytemplate", e.filename)
-            self.assertEqual(105, e.start)
+            self.assertEqual(101, e.start)
             self.assertEqual(142, e.end)
             self.assertTrue(isinstance(e.__cause__, TypeError))
 
@@ -1273,6 +1280,13 @@ line")''')
         output = template.merge({'test_dict': {'k': 'initial value'}})
         self.assertEqual(output, "new value")
 
+
+    def test_dict_putall_items(self):
+        template = airspeed.Template("#set( $ignore = $test_dict.putAll({'k1': 'v3', 'k2': 'v2'}))"
+                                     "$test_dict.k1 - $test_dict.k2")
+        output = template.merge({'test_dict': {'k1': 'v1'}})
+        self.assertEqual(output, "v3 - v2")
+
     def test_dict_isEmpty(self):
         template = airspeed.Template("#set( $emptyDict = {} )"
                                      "$emptyDict.isEmpty()")
@@ -1293,6 +1307,78 @@ line")''')
         output = template.merge({})
         self.assertEqual(output, "abc")
 
+    def test_string_contains_methods(self):
+        template = airspeed.Template(
+            "$foo.contains($bar)")
+        self.assertEqual(template.merge({"foo": "hello", "bar": "ell"}), 'True')
+        self.assertEqual(template.merge({"foo": "hello", "bar": "bye"}), 'False')
+
+    def test_dict_to_string(self):
+        template = airspeed.Template(
+            "$foo.toString()")
+        output = template.merge({ "foo": { 1: "one", "two": 2 }  })
+        self.assertEqual(output, '{1=one, two=2}')
+
+    def test_multiline_dict_in_set_statement(self):
+        template = airspeed.Template(r"""
+        #set( $myObject = {
+          "userId": "user1",
+          "domain": "domain1"
+        } )
+        $myObject.userId $myObject.domain
+        """)
+        self.assertEqual("user1 domain1", template.merge({}).strip() )
+
+    def test_multiline_list_in_set_statement(self):
+        template = airspeed.Template(r"""
+        #set(
+          $myObject
+         =
+            [
+          "one",
+          "two"
+        ]
+        )
+        $myObject[0] $myObject[1]
+        """)
+        self.assertEqual("one two", template.merge({}).strip())
+
+    def test_multiline_array_index(self):
+        template = airspeed.Template(r"""
+        $foo[
+           0
+        ]
+        """)
+        self.assertEqual("one", template.merge({ "foo": ["one"]}).strip())
+
+    def test_put_null_in_map(self):
+        template = airspeed.Template("""
+            #set( $myMap = {} )
+            #set($ignore = $myMap.put('k', null))
+            #if("$myMap.k" == "")
+                does-not-have-value
+            #else
+                has-value
+            #end
+        """)
+        self.assertEqual('has-value', template.merge({}).strip())
+
+    def test_array_set_item(self):
+        template = airspeed.Template(
+            "#set($test_array = ['one', 'two', 'three'] )"
+            "$test_array.set(1, 'foo')"
+            "#foreach ($item in $test_array)$item#end"
+        )
+        self.assertEqual("twoonefoothree", template.merge({}))
+
+    def test_array_set_item_outside_range(self):
+        template = airspeed.Template(
+            "#set($test_array = ['one', 'two', 'three'] )"
+            "$test_array.set(5, 'foo')"
+            "$test_array"
+        )
+        self.assertRaisesExecutionError(IndexError, template.merge, {})
+
 # TODO:
 #
 #  Report locations for template errors in files included via loaders
@@ -1304,12 +1390,7 @@ line")''')
 # macro call.  Confirm against Velocity.
 
 if __name__ == '__main__':
-    if sys.version_info >= (3, 0) and sys.version_info <= (3, 3):
-        imp.reload(airspeed)
-    elif sys.version_info >= (3, 4):
-        importlib.reload(airspeed)
-    else:
-        reload(airspeed)
+    importlib.reload(airspeed)
     import unittest
     try:
         unittest.main()
