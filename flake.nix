@@ -25,6 +25,7 @@
                   cachetools
                   build
                   coverage
+		  twine
                 ]
               ))
               ruff
