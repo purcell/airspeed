@@ -30,9 +30,13 @@ def array_set(self: list, index, value):
 #
 # For example, given a template variable "$foo = [1,2,3]", "$foo.size()" will
 # result in calling method __additional_methods__[list]['size']($foo)
+# Java String.trim() removes characters up to U+0020, not Unicode whitespace.
+_JAVA_TRIM_CHARS = ''.join(chr(value) for value in range(0x21))
+
 __additional_methods__ = {
     str: {
         'length': lambda self: len(self),
+        'trim': lambda self: self.strip(_JAVA_TRIM_CHARS),
         'replaceAll': lambda self, pattern, repl: re.sub(pattern, repl, self),
         'startsWith': lambda self, prefix: self.startswith(prefix),
         'matches': lambda self, pattern: re.match(pattern, self),

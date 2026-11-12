@@ -1246,6 +1246,29 @@ line")''')
         output = template.merge({})
         self.assertEqual(output, " 9")
 
+    def test_string_trim(self):
+        template = airspeed.Template('#set($some="      some  ")$some.trim()')
+        self.assertEqual('some', template.merge({}))
+
+        template = airspeed.Template('$foo.trim()')
+        for value, expected in [
+                ('', ''),
+                (' \t\r\n', ''),
+                (''.join(chr(value) for value in range(0x21)), ''),
+                ('unchanged', 'unchanged'),
+                ('\x00\x1f hello \t world\x1f\x00', 'hello \t world'),
+                (' \u00a0hello\u2003 ', '\u00a0hello\u2003')]:
+            with self.subTest(value=value):
+                self.assertEqual(expected, template.merge({'foo': value}))
+        self.assertEqual('hello', airspeed.Template('$foo.strip()').merge(
+            {'foo': ' \u00a0hello\u2003 '}))
+
+    def test_string_trim_result_can_be_used_in_expressions(self):
+        template = airspeed.Template(
+            '#set($trimmed = $foo.trim())'
+            '#if($trimmed == "hello")$foo.trim().length()#end')
+        self.assertEqual('5', template.merge({'foo': ' hello '}))
+
     def test_string_replace_all(self):
         template = airspeed.Template("#set($foo = 'foobar123bab') $foo.replaceAll('ba.', 'foo')")
         output = template.merge({})
