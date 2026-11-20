@@ -935,6 +935,19 @@ $email
         template = airspeed.Template('<a href="#">bob</a>')
         self.assertEqual('<a href="#">bob</a>', template.merge({}))
 
+    def test_standalone_hash_before_variable(self):
+        for source, expected in (
+                ('# $now Some Text', '# today Some Text'),
+                ('# ${now}', '# today'),
+                ('# $!missing', '# '),
+                ('#\t$now', '#\ttoday'),
+                ('#\n$now', '#\ntoday'),
+                (r'# \$now', '# $now'),
+                ('## $now\n$now', 'today')):
+            with self.subTest(source=source):
+                self.assertEqual(expected,
+                                 airspeed.Template(source).merge({'now': 'today'}))
+
     def test_large_areas_of_text_handled_without_error(self):
         text = "qwerty uiop asdfgh jkl zxcvbnm. 1234" * 300
         template = airspeed.Template(text)

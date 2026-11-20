@@ -337,7 +337,7 @@ class _Element(abc.ABC):
 
 class Text(_Element):
     PLAIN = re.compile(
-        r'((?:[^\\\$#]+|\\[\$#])+|\$[^!\{a-z0-9_]|\$$|#$|#[^\{\}a-zA-Z0-9#\*]+|\\.)',
+        r'((?:[^\\\$#]+|\\[\$#])+|\$[^!\{a-z0-9_]|\$$|#$|#[^\{\}a-zA-Z0-9#\*\$\\]+|\\.)',
         re.S + re.I)
     ESCAPED_CHAR = re.compile(r'\\([\$#]\S+)')
 
