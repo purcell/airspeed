@@ -39,7 +39,7 @@ __additional_methods__ = {
         'trim': lambda self: self.strip(_JAVA_TRIM_CHARS),
         'replaceAll': lambda self, pattern, repl: re.sub(pattern, repl, self),
         'startsWith': lambda self, prefix: self.startswith(prefix),
-        'matches': lambda self, pattern: re.match(pattern, self),
+        'matches': lambda self, pattern: re.fullmatch(pattern, self) is not None,
         'contains': lambda self, value: value in self,
     },
     list: {
