@@ -22,6 +22,17 @@ def array_set(self: list, index, value):
     self[index] = value
     return existing
 
+
+def array_add(self: list, value):
+    self.append(value)
+    return True
+
+
+def dict_put(self: dict, key, value):
+    existing = self.get(key)
+    self[key] = value
+    return existing
+
 # A dict that maps classes to dicts of additional methods.
 # This allows support for methods that are available in Java-based Velocity
 # implementations, e.g., .size() of a list or .length() of a string.
@@ -46,13 +57,13 @@ __additional_methods__ = {
         'size': lambda self: len(self),
         'get': lambda self, index: self[index],
         'contains': lambda self, value: value in self,
-        'add': lambda self, value: self.append(value),
+        'add': array_add,
         'set': array_set
     },
     dict: {
         'isEmpty': lambda self: not bool(self),
         'keySet': lambda self: self.keys(),
-        'put': lambda self, key, value: self.update({key: value}),
+        'put': dict_put,
         'putAll': lambda self, values: self.update(values),
         "toString": lambda self: dict_to_string(self),
     }

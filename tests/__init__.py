@@ -1316,6 +1316,25 @@ line")''')
         output = template.merge({'test_dict': {'k': 'initial value'}})
         self.assertEqual(output, "new value")
 
+    def test_dict_put_returns_previous_value(self):
+        template = airspeed.Template(
+            '#set($previous = $values.put("key", "new"))$previous|$values.key')
+        self.assertEqual('old|new', template.merge({'values': {'key': 'old'}}))
+        self.assertEqual('0|new', template.merge({'values': {'key': 0}}))
+
+    def test_dict_put_missing_key_returns_null(self):
+        template = airspeed.Template(
+            '#set($previous = $values.put("key", "new"))$!previous|$values.key')
+        self.assertEqual('|new', template.merge({'values': {}}))
+
+    def test_list_add_returns_true(self):
+        template = airspeed.Template(
+            '#set($added = $values.add("new"))'
+            '#if($added == true)$values.size():$values.get(1)#end')
+        values = ['old']
+        self.assertEqual('2:new', template.merge({'values': values}))
+        self.assertEqual(['old', 'new'], values)
+
 
     def test_dict_putall_items(self):
         template = airspeed.Template("#set( $ignore = $test_dict.putAll({'k1': 'v3', 'k2': 'v2'}))"
