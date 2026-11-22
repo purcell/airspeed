@@ -1310,6 +1310,25 @@ line")''')
         output = template.merge({})
         self.assertEqual(output, " ")
 
+    def test_string_matches_requires_the_whole_string(self):
+        template = airspeed.Template('#if($value.matches($pattern))yes#else no#end')
+        for value, pattern in [('foobar', 'foo'), ('foo\n', 'foo'), ('foo', '')]:
+            with self.subTest(value=value, pattern=pattern):
+                self.assertEqual(' no', template.merge({'value': value, 'pattern': pattern}))
+
+    def test_string_matches_returns_a_boolean(self):
+        template = airspeed.Template(
+            '#set($matched = $value.matches($pattern))'
+            '#if($matched == true)yes#else no#end')
+        for value, pattern in [('foo', 'foo'), ('', ''), ('foobar', 'foo|foobar')]:
+            with self.subTest(value=value, pattern=pattern):
+                self.assertEqual('yes', template.merge({'value': value, 'pattern': pattern}))
+
+    def test_string_matches_false_is_a_boolean(self):
+        template = airspeed.Template(
+            '#set($matched = $value.matches("bar"))#if($matched == false)yes#end')
+        self.assertEqual('yes', template.merge({'value': 'foo'}))
+
     def test_dict_put_item(self):
         template = airspeed.Template("#set( $ignore = $test_dict.put('k', 'new value') )"
                                      "$test_dict.k")
