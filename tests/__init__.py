@@ -678,6 +678,41 @@ $email
         template = airspeed.Template('#undefined()')
         self.assertRaises(airspeed.TemplateExecutionError, template.merge, {})
 
+    def test_forward_macro_call(self):
+        template = airspeed.Template(
+            '#set($name="Ada")#hello($name)'
+            '#macro(hello $person)Hello $person!#end#hello("Grace")')
+        self.assertEqual('Hello Ada!Hello Grace!', template.merge({}))
+
+    def test_forward_macro_call_from_another_macro(self):
+        template = airspeed.Template(
+            '#outer("Ada")#macro(outer $person)#inner($person)#end'
+            '#macro(inner $person)Hello $person!#end')
+        self.assertEqual('Hello Ada!', template.merge({}))
+
+    def test_forward_macro_call_in_interpolated_string(self):
+        template = airspeed.Template(
+            '#set($text="#hello()")$text#macro(hello)Hello!#end')
+        self.assertEqual('Hello!', template.merge({}))
+
+    def test_forward_macro_call_in_conditional_block(self):
+        template = airspeed.Template(
+            '#if($enabled)#hello()#macro(hello)Hello!#end#end')
+        self.assertEqual('Hello!', template.merge({'enabled': True}))
+        self.assertEqual('', template.merge({'enabled': False}))
+
+    def test_forward_macro_call_in_parsed_template(self):
+        class Loader:
+            def load_template(self, name):
+                return airspeed.Template('#hello()#macro(hello)Hello!#end')
+        template = airspeed.Template('#parse("child.vm")#hello()')
+        self.assertEqual('Hello!Hello!', template.merge({}, loader=Loader()))
+
+    def test_unentered_blocks_do_not_register_macros(self):
+        template = airspeed.Template(
+            '#if(false)#macro(hidden)hidden#end#end#hidden()')
+        self.assertRaises(airspeed.TemplateExecutionError, template.merge, {})
+
     def test_define_and_use_macro_with_no_parameters(self):
         template = airspeed.Template('#macro ( hello)hi#end#hello ()#hello()')
         self.assertEqual('hihi', template.merge({'text': 'hello'}))
