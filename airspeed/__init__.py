@@ -1245,5 +1245,10 @@ class Block(_Element):
                 break
 
     def evaluate_raw(self, stream, namespace, loader):
+        # Definitions in this block are available to calls that precede them.
         for child in self.children:
-            child.evaluate(stream, namespace, loader)
+            if isinstance(child, MacroDefinition):
+                child.evaluate(stream, namespace, loader)
+        for child in self.children:
+            if not isinstance(child, MacroDefinition):
+                child.evaluate(stream, namespace, loader)
