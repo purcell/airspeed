@@ -94,6 +94,28 @@ The
 shows how to write templates.  Our unit tests show how to use the
 templates from your code.
 
+### Hyphenated identifiers
+
+Hyphens in variable, property and macro names are opt-in, like Velocity's
+`parser.allow_hyphen_in_identifiers` setting:
+
+```python
+from airspeed import Template
+
+template = Template("Hello $first-name", allow_hyphen_in_identifiers=True)
+assert template.merge({"first-name": "Ada"}) == "Hello Ada"
+```
+
+The option applies to this template, including interpolated strings and
+`#evaluate`. For file-based templates, pass the same option to
+`CachingFileLoader(directory, allow_hyphen_in_identifiers=True)` so that templates
+loaded by `#parse` use it too. Custom loaders choose the option when constructing
+their `Template` objects.
+
+With hyphens enabled, put whitespace around subtraction, for example
+`#set($remaining = $item-count - 1)`. The default remains unchanged: `$name-suffix`
+renders `$name` followed by the literal `-suffix`.
+
 ### Reporting bugs
 
 Please feel free to create tickets for bugs or desired features.
