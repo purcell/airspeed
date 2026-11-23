@@ -74,8 +74,9 @@ __additional_methods__ = {
 ###############################################################################
 
 class Template:
-    def __init__(self, content, filename="<string>"):
+    def __init__(self, content, filename="<string>", *, allow_hyphen_in_identifiers=False):
         self.content = content
+        self.allow_hyphen_in_identifiers = allow_hyphen_in_identifiers
         self.filename = filename
         self.root_element = None
 
@@ -86,7 +87,9 @@ class Template:
 
     def ensure_compiled(self):
         if not self.root_element:
-            self.root_element = TemplateBody(self.filename, self.content)
+            self.root_element = TemplateBody(
+                self.filename, self.content,
+                allow_hyphen_in_identifiers=self.allow_hyphen_in_identifiers)
 
     def merge_to(self, namespace, fileobj, loader=None):
         if loader is None:
@@ -157,8 +160,9 @@ class NullLoader:
 
 
 class CachingFileLoader:
-    def __init__(self, basedir, debugging=False):
+    def __init__(self, basedir, debugging=False, *, allow_hyphen_in_identifiers=False):
         self.basedir = basedir
+        self.allow_hyphen_in_identifiers = allow_hyphen_in_identifiers
         self.known_templates = {}  # name -> (template, file_mod_time)
         self.debugging = debugging
         if debugging:
@@ -188,7 +192,8 @@ class CachingFileLoader:
                 return template
         if self.debugging:
             print("loading text from disk")
-        template = Template(self.load_text(name), filename=name)
+        template = Template(self.load_text(name), filename=name,
+                            allow_hyphen_in_identifiers=self.allow_hyphen_in_identifiers)
         template.ensure_compiled()
         self.known_templates[name] = (template, mtime)
         return template
@@ -252,9 +257,10 @@ class LocalNamespace(dict):
 
 
 class _Element(abc.ABC):
-    def __init__(self, filename, text, start=0):
+    def __init__(self, filename, text, start=0, *, allow_hyphen_in_identifiers=False):
         self.filename = filename
         self._full_text = text
+        self.allow_hyphen_in_identifiers = allow_hyphen_in_identifiers
         self.start = self.end = start
         self.parse()
 
@@ -295,16 +301,26 @@ class _Element(abc.ABC):
             raise self.syntax_error(expected)
         return m
 
+    def make_element(self, element_class):
+        options = {}
+        if self.allow_hyphen_in_identifiers:
+            options['allow_hyphen_in_identifiers'] = True
+        return element_class(self.filename, self._full_text, self.end, **options)
+
+    def identifier_pattern(self, name):
+        if self.allow_hyphen_in_identifiers:
+            return getattr(self, name + '_WITH_HYPHENS')
+        return getattr(self, name)
+
     def next_element(self, element_spec):
         if callable(element_spec):
-            element = element_spec(self.filename, self._full_text, self.end)
+            element = self.make_element(element_spec)
             self.end = element.end
             return element
         else:
             for element_class in element_spec:
                 try:
-                    element = element_class(self.filename, self._full_text,
-                                            self.end)
+                    element = self.make_element(element_class)
                 except NoMatch:
                     pass
                 else:
@@ -315,8 +331,7 @@ class _Element(abc.ABC):
     def require_next_element(self, element_spec, expected):
         if callable(element_spec):
             try:
-                element = element_spec(self.filename, self._full_text,
-                                       self.end)
+                element = self.make_element(element_spec)
             except NoMatch:
                 raise self.syntax_error(expected)
             else:
@@ -325,8 +340,7 @@ class _Element(abc.ABC):
         else:
             for element_class in element_spec:
                 try:
-                    element = element_class(self.filename, self._full_text,
-                                            self.end)
+                    element = self.make_element(element_class)
                 except NoMatch:
                     pass
                 else:
@@ -454,7 +468,8 @@ class InterpolatedStringLiteral(StringLiteral):
 
     def parse(self):
         StringLiteral.parse(self)
-        self.block = Block(self.filename, self.value, 0)
+        self.block = Block(self.filename, self.value, 0,
+                           allow_hyphen_in_identifiers=self.allow_hyphen_in_identifiers)
 
     def calculate(self, namespace, loader):
         output = StoppableStream()
@@ -569,11 +584,12 @@ class Value(_Element):
 
 class NameOrCall(_Element):
     NAME = re.compile(r'([_a-z][a-z0-9_]*)', re.S + re.I)
+    NAME_WITH_HYPHENS = re.compile(r'([_a-z][a-z0-9_-]*)', re.S + re.I)
     parameters = None
     index = None
 
     def parse(self):
-        self.name, = self.identity_match(self.NAME)
+        self.name, = self.identity_match(self.identifier_pattern('NAME'))
         try:
             self.parameters = self.next_element(ParameterList)
         except NoMatch:
@@ -977,7 +993,9 @@ class EvaluateDirective(_Element):
 
     def evaluate_raw(self, stream, namespace, loader):
         val = self.value.calculate(namespace, loader)
-        Template(val, "#evaluate").merge_to(namespace, stream, loader)
+        Template(val, "#evaluate",
+                 allow_hyphen_in_identifiers=self.allow_hyphen_in_identifiers).merge_to(
+                     namespace, stream, loader)
 
 
 
@@ -986,17 +1004,18 @@ class _FunctionDefinition(_Element):
     OPEN_PAREN = re.compile(r'\s*\(\s*', re.S)
     CLOSE_PAREN = re.compile(r'\s*\)', re.S)
     ARG_NAME = re.compile(r'[,\n\s]+\$([a-z][a-z_0-9]*)', re.S + re.I)
+    ARG_NAME_WITH_HYPHENS = re.compile(r'[,\n\s]+\$([a-z][a-z_0-9-]*)', re.S + re.I)
     RESERVED_NAMES = []
 
     def parse(self):
         self.identity_match(self.START)
         self.require_match(self.OPEN_PAREN, '(')
-        self.function_name, = self.require_match(self.NAME, 'function name')
+        self.function_name, = self.require_match(self.identifier_pattern('NAME'), 'function name')
         if self.function_name.lower() in self.RESERVED_NAMES:
             raise self.syntax_error('non-reserved name')
         self.arg_names = []
         while True:
-            m = self.next_match(self.ARG_NAME)
+            m = self.next_match(self.identifier_pattern('ARG_NAME'))
             if not m:
                 break
             self.arg_names.append(m[0])
@@ -1017,6 +1036,7 @@ class _FunctionDefinition(_Element):
 class MacroDefinition(_FunctionDefinition):
     START = re.compile(r'#macro\b', re.S + re.I)
     NAME = re.compile(r'\s*([_a-z][a-z_0-9]*)\b', re.S + re.I)
+    NAME_WITH_HYPHENS = re.compile(r'\s*([_a-z][a-z_0-9-]*)', re.S + re.I)
     RESERVED_NAMES = (
         'if',
         'else',
@@ -1040,12 +1060,13 @@ class MacroDefinition(_FunctionDefinition):
 
 class MacroCall(_Element):
     START = re.compile(r'#([a-z][a-z_0-9]*)\b', re.S + re.I)
+    START_WITH_HYPHENS = re.compile(r'#([a-z][a-z_0-9-]*)', re.S + re.I)
     OPEN_PAREN = re.compile(r'\s*\(\s*', re.S)
     CLOSE_PAREN = re.compile(r'\s*\)', re.S)
     SPACE_OR_COMMA = re.compile(r'\s*(?:,|\s)\s*', re.S)
 
     def parse(self):
-        macro_name, = self.identity_match(self.START)
+        macro_name, = self.identity_match(self.identifier_pattern('START'))
         self.macro_name = macro_name.lower()
         self.args = []
         if self.macro_name in MacroDefinition.RESERVED_NAMES:
@@ -1072,6 +1093,7 @@ class MacroCall(_Element):
 class DefineDefinition(_FunctionDefinition):
     START = re.compile(r'#define\b', re.S + re.I)
     NAME = re.compile(r'\s*\$([a-z][a-z_0-9]*)\b', re.S + re.I)
+    NAME_WITH_HYPHENS = re.compile(r'\s*\$([a-z][a-z_0-9-]*)', re.S + re.I)
 
     def evaluate_raw(self, stream, namespace, loader):
         namespace[self.function_name] = self
@@ -1143,12 +1165,15 @@ class SetDirective(_Element):
     PLACE = re.compile(
         r'\s*\$([a-z_][a-z0-9_]*(?:\.[a-z_][a-z0-9_]*)*)',
         re.S + re.I)
+    PLACE_WITH_HYPHENS = re.compile(
+        r'\s*\$([a-z_][a-z0-9_-]*(?:\.[a-z_][a-z0-9_-]*)*)',
+        re.S + re.I)
     EQUALS = re.compile(r'\s*\=\s*', re.S)
     END = re.compile(r'\s*\)(?:[ \t]*\r?\n)?', re.S)
 
     def parse(self):
         self.identity_match(self.START)
-        var_name, = self.require_match(self.PLACE, "place")
+        var_name, = self.require_match(self.identifier_pattern('PLACE'), 'place')
         self.terms = var_name.split('.')
         self.require_match(self.EQUALS, "=")
         self.value = self.require_next_element(Expression, "expression")
@@ -1170,6 +1195,7 @@ class ForeachDirective(_Element):
     OPEN_PAREN = re.compile(r'\s*\(\s*', re.S)
     IN = re.compile(r'\s+in\s+', re.S)
     LOOP_VAR_NAME = re.compile(r'\$([a-z_][a-z0-9_]*)', re.S + re.I)
+    LOOP_VAR_NAME_WITH_HYPHENS = re.compile(r'\$([a-z_][a-z0-9_-]*)', re.S + re.I)
     CLOSE_PAREN = re.compile(r'\s*\)', re.S)
 
     def parse(self):
@@ -1177,7 +1203,7 @@ class ForeachDirective(_Element):
         self.identity_match(self.START)
         self.require_match(self.OPEN_PAREN, '(')
         self.loop_var_name, = self.require_match(
-            self.LOOP_VAR_NAME, 'loop var name')
+            self.identifier_pattern('LOOP_VAR_NAME'), 'loop var name')
         self.require_match(self.IN, 'in')
         self.value = self.next_element(Value)
         self.require_match(self.CLOSE_PAREN, ')')
