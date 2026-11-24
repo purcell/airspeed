@@ -371,7 +371,7 @@ class FallthroughHashText(_Element):
     """
     # because of earlier elements, this will always start with a hash
     PLAIN = re.compile(r'(\#(?!end|else|elseif|\{(?:end|else|elseif)\}))',
-                       re.S)
+                       re.S + re.I)
 
     def parse(self):
         self.text, = self.identity_match(self.PLAIN)
