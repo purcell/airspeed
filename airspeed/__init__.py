@@ -33,6 +33,47 @@ def dict_put(self: dict, key, value):
     self[key] = value
     return existing
 
+
+def string_replace_all(self: str, pattern, replacement):
+    def expand(match):
+        result = []
+        pos = 0
+        while pos < len(replacement):
+            char = replacement[pos]
+            pos += 1
+            if char == '\\':
+                if pos == len(replacement):
+                    raise ValueError('Trailing backslash in replacement')
+                result.append(replacement[pos])
+                pos += 1
+            elif char == '$':
+                if pos == len(replacement):
+                    raise ValueError('Missing replacement group')
+                if replacement[pos] == '{':
+                    end = replacement.find('}', pos + 1)
+                    name = replacement[pos + 1:end]
+                    if end < 0 or not re.fullmatch(r'[A-Za-z][A-Za-z0-9]*', name):
+                        raise ValueError('Invalid named replacement group')
+                    result.append(match.group(name) or '')
+                    pos = end + 1
+                else:
+                    if replacement[pos] not in string.digits:
+                        raise ValueError('Invalid replacement group')
+                    group = int(replacement[pos])
+                    pos += 1
+                    while pos < len(replacement) and replacement[pos] in string.digits:
+                        candidate = group * 10 + int(replacement[pos])
+                        if candidate > match.re.groups:
+                            break
+                        group = candidate
+                        pos += 1
+                    result.append(match.group(group) or '')
+            else:
+                result.append(char)
+        return ''.join(result)
+
+    return re.sub(pattern, expand, self)
+
 # A dict that maps classes to dicts of additional methods.
 # This allows support for methods that are available in Java-based Velocity
 # implementations, e.g., .size() of a list or .length() of a string.
@@ -48,7 +89,7 @@ __additional_methods__ = {
     str: {
         'length': lambda self: len(self),
         'trim': lambda self: self.strip(_JAVA_TRIM_CHARS),
-        'replaceAll': lambda self, pattern, repl: re.sub(pattern, repl, self),
+        'replaceAll': string_replace_all,
         'startsWith': lambda self, prefix: self.startswith(prefix),
         'matches': lambda self, pattern: re.fullmatch(pattern, self) is not None,
         'contains': lambda self, value: value in self,
