@@ -1193,25 +1193,29 @@ class ForeachDirective(_Element):
             if hasattr(iterable, 'keys'):
                 iterable = iterable.keys()
             try:
-                iter(iterable)
+                iterator = iter(iterable)
             except TypeError:
                 raise ValueError(
                     "value for $%s is not iterable in #foreach: %s" %
                     (self.loop_var_name, iterable))
-            length = len(iterable)
-            for item in iterable:
+            exhausted = object()
+            item = next(iterator, exhausted)
+            while item is not exhausted:
+                next_item = next(iterator, exhausted)
+                has_next = next_item is not exhausted
                 localns = LocalNamespace(namespace)
                 localns['velocityCount'] = counter
-                localns['velocityHasNext'] = counter < length
+                localns['velocityHasNext'] = has_next
                 localns['foreach'] = {
                     "count": counter,
                     "index": counter - 1,
-                    "hasNext": counter < length,
+                    "hasNext": has_next,
                     "first": counter == 1,
-                    "last": counter == length}
+                    "last": not has_next}
                 localns[self.loop_var_name] = item
                 self.block.evaluate(stream, localns, loader)
                 counter += 1
+                item = next_item
         except TypeError:
             raise
 

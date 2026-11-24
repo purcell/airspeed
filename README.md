@@ -50,6 +50,10 @@ people = [{'name': 'Bill', 'age': 100}, {'name': 'Bob', 'age': 90}, {'name': 'Ma
 print t.merge(locals())
 ```
 
+`#foreach` also accepts Python iterators and generators without loading all
+their items into a list. Loop metadata such as `$foreach.hasNext` and
+`$foreach.last` remains available.
+
 You can also use "Loaders" to allow templates to include each other using the `#include` or `#parse` directives:
 
 ```
