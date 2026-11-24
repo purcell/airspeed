@@ -723,10 +723,8 @@ class FormalReference(_Element):
         self.silent, braces = self.identity_match(self.START)
         try:
             self.expression = self.next_element(VariableExpression)
-            self.calculate = self.expression.calculate
         except NoMatch:
             self.expression = None
-            self.calculate = None
         self.alternate = None
         if braces:
           try:
@@ -735,14 +733,18 @@ class FormalReference(_Element):
               pass
           self.require_match(self.CLOSING_BRACE, '}')
 
-    def evaluate_raw(self, stream, namespace, loader):
+    def calculate(self, namespace, loader):
         value = None
         if self.expression is not None:
             value = self.expression.calculate(namespace, loader)
-        if value is None:
-            if self.alternate is not None:
-                value = self.alternate.calculate(namespace, loader)
-            elif self.silent and self.expression is not None:
+        if self.alternate is not None and not value:
+            return self.alternate.calculate(namespace, loader)
+        return value
+
+    def evaluate_raw(self, stream, namespace, loader):
+        value = self.calculate(namespace, loader)
+        if value is None and self.alternate is None:
+            if self.silent and self.expression is not None:
                 value = ''
             else:
                 value = self.my_text()
