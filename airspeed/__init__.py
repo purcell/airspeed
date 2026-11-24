@@ -33,6 +33,15 @@ def dict_put(self: dict, key, value):
     self[key] = value
     return existing
 
+
+def _velocity_divide(left, right):
+    if isinstance(left, int) and isinstance(right, int):
+        # Java integer division truncates towards zero; avoid a float
+        # conversion, which loses precision for large integer operands.
+        quotient = abs(left) // abs(right)
+        return -quotient if (left < 0) != (right < 0) else quotient
+    return operator.truediv(left, right)
+
 # A dict that maps classes to dicts of additional methods.
 # This allows support for methods that are available in Java-based Velocity
 # implementations, e.g., .size() of a list or .length() of a string.
@@ -783,7 +792,7 @@ class BinaryOperator(_Element):
                  '+': operator.add,
                  '-': operator.sub,
                  '*': operator.mul,
-                 '/': operator.floordiv}
+                 '/': _velocity_divide}
     # Based on http://introcs.cs.princeton.edu/java/11precedence/
     PRECEDENCE = {'>': 7, '<': 7, '==': 8, '>=': 7, '<=': 7, '!=': 9,
                   '||': 13, '&&': 12, 'or': 13, 'and': 12,
