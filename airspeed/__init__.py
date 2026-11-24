@@ -92,7 +92,10 @@ class Template:
         if loader is None:
             loader = NullLoader()
         self.ensure_compiled()
-        self.root_element.evaluate(fileobj, namespace, loader)
+        try:
+            self.root_element.evaluate(fileobj, namespace, loader)
+        except _BreakSignal:
+            pass
 
 
 class TemplateError(Exception):
@@ -213,6 +216,10 @@ WHITESPACE_TO_END_OF_LINE = re.compile(r'[ \t\r]*\n', re.S)
 
 class NoMatch(Exception):
     pass
+
+
+class _BreakSignal(Exception):
+    """Stop the nearest rendering scope without treating it as an error."""
 
 
 class LocalNamespace(dict):
@@ -340,7 +347,7 @@ class _Element(abc.ABC):
     def evaluate(self, stream, namespace, loader):
         try:
             return self.evaluate_raw(stream, namespace, loader)
-        except TemplateExecutionError:
+        except (TemplateExecutionError, _BreakSignal):
             raise
         except Exception as e:
             _type, value, _tb = sys.exc_info()
@@ -1012,7 +1019,10 @@ class _FunctionDefinition(_Element):
                 (self.function_name, len(self.arg_names), len(arg_values)))
         local_namespace = LocalNamespace(namespace)
         local_namespace.update(zip(self.arg_names, arg_values))
-        self.block.evaluate(stream, local_namespace, loader)
+        try:
+            self.block.evaluate(stream, local_namespace, loader)
+        except _BreakSignal:
+            pass
 
 class MacroDefinition(_FunctionDefinition):
     START = re.compile(r'#macro\b', re.S + re.I)
@@ -1027,6 +1037,7 @@ class MacroDefinition(_FunctionDefinition):
         'parse',
         'include',
         'stop',
+        'break',
         'end',
         'define')
 
@@ -1127,6 +1138,21 @@ class StopDirective(_Element):
             stream.stop = True
 
 
+class BreakDirective(_Element):
+    BREAK = re.compile(r'#(?:break\b|\{break\})', re.S + re.I)
+    OPEN_PAREN = re.compile(r'\s*\(', re.S)
+    CLOSE_PAREN = re.compile(r'\s*\)', re.S)
+
+    def parse(self):
+        self.identity_match(self.BREAK)
+        if self.optional_match(self.OPEN_PAREN):
+            self.require_match(self.CLOSE_PAREN,
+                               ') (#break scope arguments are not supported)')
+
+    def evaluate_raw(self, stream, namespace, loader):
+        raise _BreakSignal()
+
+
 # Represents a SINGLE user-defined directive
 class UserDefinedDirective(_Element):
     DIRECTIVES = []
@@ -1212,8 +1238,8 @@ class ForeachDirective(_Element):
                 localns[self.loop_var_name] = item
                 self.block.evaluate(stream, localns, loader)
                 counter += 1
-        except TypeError:
-            raise
+        except _BreakSignal:
+            pass
 
 
 class TemplateBody(_Element):
@@ -1248,6 +1274,7 @@ class Block(_Element):
                          MacroDefinition,
                          DefineDefinition,
                          StopDirective,
+                         BreakDirective,
                          UserDefinedDirective,
                          EvaluateDirective,
                          MacroCall,

@@ -79,6 +79,13 @@ Airspeed currently implements a very significant subset of the
 Velocity functionality, including `$variables`, the `#if`, `#foreach`,
 `#macro`, `#include` and `#parse` directives, and `"$interpolated #strings()"`. Templates are unicode-safe.
 
+The `#break` directive stops the nearest loop, macro, defined block, parsed or
+evaluated template, or the top-level template. For example,
+`#foreach($n in [1..5])#if($n == 3)#break#end$n#end` renders `12`.
+Rendering resumes after that scope; statements following `#break` inside it are
+not executed. `#{break}` and `#break()` are also accepted. Explicit scope
+arguments, such as `#break($foreach.parent)`, are not supported.
+
 The output of templates in Airspeed is not yet 'whitespace compatible'
 with Velocity's rendering of the same templates, which generally does
 not matter for web applications.
