@@ -14,6 +14,31 @@ class TemplateTestCase(TestCase):
         except airspeed.TemplateExecutionError as e:
             self.assertEqual(exctype, type(e.__cause__))
 
+    def test_foreach_accepts_iterators_and_preserves_loop_metadata(self):
+        template = airspeed.Template(
+            '#foreach($item in $items)'
+            '$item:$foreach.index:$foreach.count:$foreach.first:'
+            '$foreach.last:$foreach.hasNext:$velocityHasNext;#end')
+        for items in (iter([10, 20]), (n for n in [10, 20])):
+            self.assertEqual(
+                template.merge({'items': items}),
+                '10:0:1:True:False:True:True;20:1:2:False:True:False:False;')
+        self.assertEqual(template.merge({'items': iter([])}), '')
+        self.assertEqual(template.merge({'items': iter([10])}),
+                         '10:0:1:True:True:False:False;')
+
+    def test_foreach_consumes_iterators_with_bounded_lookahead(self):
+        rendered = []
+
+        def items():
+            for number in range(5):
+                self.assertGreaterEqual(len(rendered), max(0, number - 1))
+                yield number
+
+        template = airspeed.Template('#foreach($item in $items)$!record($item)#end')
+        self.assertEqual(template.merge({'items': items(), 'record': rendered.append}), '')
+        self.assertEqual(rendered, list(range(5)))
+
     def test_parser_returns_input_when_there_is_nothing_to_substitute(self):
         template = airspeed.Template("<html></html>")
         self.assertEqual("<html></html>", template.merge({}))
