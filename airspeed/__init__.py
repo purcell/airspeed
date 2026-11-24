@@ -1,5 +1,6 @@
 import re
 import operator
+import math
 import os
 import string
 import sys
@@ -12,6 +13,15 @@ __all__ = [
     'TemplateExecutionError',
     'TemplateSyntaxError',
     'CachingFileLoader']
+
+
+def _velocity_remainder(left, right):
+    if isinstance(left, int) and isinstance(right, int):
+        remainder = abs(left) % abs(right)
+        return -remainder if left < 0 else remainder
+    if (isinstance(left, float) or isinstance(right, float)) and right != 0:
+        return math.fmod(left, right)
+    return operator.mod(left, right)
 
 
 def dict_to_string(obj: dict) -> str:
@@ -775,7 +785,7 @@ class BinaryOperator(_Element):
                  '<=': operator.le, 'le': operator.le,
                  '==': operator.eq, 'eq': operator.eq,
                  '!=': operator.ne, 'ne': operator.ne,
-                 '%': operator.mod,
+                 '%': _velocity_remainder,
                  '||': lambda a, b: bool(a) or bool(b),
                  '&&': lambda a, b: bool(a) and bool(b),
                  'or': lambda a, b: bool(a) or bool(b),
