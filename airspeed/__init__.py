@@ -4,6 +4,7 @@ import os
 import string
 import sys
 from io import StringIO
+from reprlib import recursive_repr
 import abc
 
 __all__ = [
@@ -14,8 +15,27 @@ __all__ = [
     'CachingFileLoader']
 
 
+@recursive_repr('(this Map)')
 def dict_to_string(obj: dict) -> str:
-    return "{" + ", ".join([f"{k}={v}" for k, v in obj.items()]) + "}"
+    return "{" + ", ".join(
+        f"{_java_string(k)}={_java_string(v)}" for k, v in obj.items()) + "}"
+
+
+@recursive_repr('(this Collection)')
+def _list_to_string(obj: list) -> str:
+    return "[" + ", ".join(_java_string(value) for value in obj) + "]"
+
+
+def _java_string(value) -> str:
+    if isinstance(value, dict):
+        return dict_to_string(value)
+    if isinstance(value, list):
+        return _list_to_string(value)
+    if value is None:
+        return 'null'
+    if isinstance(value, bool):
+        return 'true' if value else 'false'
+    return str(value)
 
 def array_set(self: list, index, value):
     existing = self[index]
