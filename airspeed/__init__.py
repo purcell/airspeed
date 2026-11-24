@@ -617,7 +617,7 @@ class NameOrCall(_Element):
                     (array_index))
             try:
                 result = result[array_index]
-            except:
+            except (KeyError, IndexError):
                 result = None
         return result
 
