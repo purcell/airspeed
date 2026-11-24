@@ -588,6 +588,10 @@ class NameOrCall(_Element):
             result = current_object[self.name]
         except (KeyError, TypeError, AttributeError):
             pass
+        else:
+            # A null entry still takes precedence over object/helper methods.
+            if result is None:
+                return None
         if result is None and not isinstance(current_object, LocalNamespace):
             try:
                 result = getattr(current_object, self.name)
