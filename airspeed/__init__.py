@@ -46,7 +46,8 @@ _JAVA_TRIM_CHARS = ''.join(chr(value) for value in range(0x21))
 
 __additional_methods__ = {
     str: {
-        'length': lambda self: len(self),
+        # Java strings count UTF-16 code units, including unpaired surrogates.
+        'length': lambda self: len(self.encode('utf-16-le', 'surrogatepass')) // 2,
         'trim': lambda self: self.strip(_JAVA_TRIM_CHARS),
         'replaceAll': lambda self, pattern, repl: re.sub(pattern, repl, self),
         'startsWith': lambda self, prefix: self.startswith(prefix),
