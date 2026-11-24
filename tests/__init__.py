@@ -1488,6 +1488,40 @@ line")''')
         )
         self.assertRaisesExecutionError(IndexError, template.merge, {})
 
+    def test_array_methods_reject_negative_indexes(self):
+        for expression in ("$items.get($index)", "$items.set($index, 'changed')"):
+            for index in (-1, -3, -4):
+                with self.subTest(expression=expression, index=index):
+                    items = ['one', 'two', 'three']
+                    self.assertRaisesExecutionError(
+                        IndexError, airspeed.Template(expression).merge,
+                        {'items': items, 'index': index})
+                    self.assertEqual(items, ['one', 'two', 'three'])
+
+    def test_array_methods_keep_integer_index_behavior(self):
+        class Index:
+            def __index__(self):
+                return 1
+
+        items = ['one', 'two', 'three']
+        context = {'items': items, 'index': Index()}
+        self.assertEqual('two', airspeed.Template('$items.get($index)').merge(context))
+        self.assertEqual('two', airspeed.Template("$items.set($index, 'new')").merge(context))
+        self.assertEqual(items, ['one', 'new', 'three'])
+        self.assertEqual('three', airspeed.Template('$items[-1]').merge(context))
+        for index in (3, 100):
+            for expression in ('$items.get($index)', "$items.set($index, 'new')"):
+                with self.subTest(index=index, expression=expression):
+                    self.assertRaisesExecutionError(
+                        IndexError, airspeed.Template(expression).merge,
+                        {'items': items, 'index': index})
+        for index in ('1', 1.5):
+            for expression in ('$items.get($index)', "$items.set($index, 'new')"):
+                with self.subTest(index=index, expression=expression):
+                    self.assertRaisesExecutionError(
+                        TypeError, airspeed.Template(expression).merge,
+                        {'items': items, 'index': index})
+
 # TODO:
 #
 #  Report locations for template errors in files included via loaders

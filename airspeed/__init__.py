@@ -17,7 +17,15 @@ __all__ = [
 def dict_to_string(obj: dict) -> str:
     return "{" + ", ".join([f"{k}={v}" for k, v in obj.items()]) + "}"
 
+def _array_index(index):
+    index = operator.index(index)
+    if index < 0:
+        raise IndexError('list index out of range')
+    return index
+
+
 def array_set(self: list, index, value):
+    index = _array_index(index)
     existing = self[index]
     self[index] = value
     return existing
@@ -55,7 +63,7 @@ __additional_methods__ = {
     },
     list: {
         'size': lambda self: len(self),
-        'get': lambda self, index: self[index],
+        'get': lambda self, index: self[_array_index(index)],
         'contains': lambda self, value: value in self,
         'add': array_add,
         'set': array_set
