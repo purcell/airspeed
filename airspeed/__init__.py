@@ -348,7 +348,7 @@ class _Element(abc.ABC):
 
 class Text(_Element):
     PLAIN = re.compile(
-        r'((?:[^\\\$#]+|\\[\$#])+|\$[^!\{a-z0-9_]|\$$|#$|#[^\{\}a-zA-Z0-9#\*\$\\]+|\\.)',
+        r'((?:[^\\\$#]+|\\[\$#])+|\$[^!\{a-z0-9_]|\$$|#$|#[^\{\}a-zA-Z0-9_#\*\$\\]+|\\.)',
         re.S + re.I)
     ESCAPED_CHAR = re.compile(r'\\([\$#]\S+)')
 
@@ -985,7 +985,7 @@ class _FunctionDefinition(_Element):
     # Must be overridden to provide START and NAME patterns
     OPEN_PAREN = re.compile(r'\s*\(\s*', re.S)
     CLOSE_PAREN = re.compile(r'\s*\)', re.S)
-    ARG_NAME = re.compile(r'[,\n\s]+\$([a-z][a-z_0-9]*)', re.S + re.I)
+    ARG_NAME = re.compile(r'[,\n\s]+\$([_a-z][a-z_0-9]*)', re.S + re.I)
     RESERVED_NAMES = []
 
     def parse(self):
@@ -1039,7 +1039,7 @@ class MacroDefinition(_FunctionDefinition):
         global_ns[macro_key] = self
 
 class MacroCall(_Element):
-    START = re.compile(r'#([a-z][a-z_0-9]*)\b', re.S + re.I)
+    START = re.compile(r'#([_a-z][a-z_0-9]*)\b', re.S + re.I)
     OPEN_PAREN = re.compile(r'\s*\(\s*', re.S)
     CLOSE_PAREN = re.compile(r'\s*\)', re.S)
     SPACE_OR_COMMA = re.compile(r'\s*(?:,|\s)\s*', re.S)
@@ -1071,7 +1071,7 @@ class MacroCall(_Element):
 
 class DefineDefinition(_FunctionDefinition):
     START = re.compile(r'#define\b', re.S + re.I)
-    NAME = re.compile(r'\s*\$([a-z][a-z_0-9]*)\b', re.S + re.I)
+    NAME = re.compile(r'\s*\$([_a-z][a-z_0-9]*)\b', re.S + re.I)
 
     def evaluate_raw(self, stream, namespace, loader):
         namespace[self.function_name] = self
