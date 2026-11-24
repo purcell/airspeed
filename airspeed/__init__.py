@@ -1190,8 +1190,8 @@ class ForeachDirective(_Element):
         try:
             if iterable is None:
                 return
-            if hasattr(iterable, 'keys'):
-                iterable = iterable.keys()
+            if hasattr(iterable, 'values'):
+                iterable = iterable.values()
             try:
                 iter(iterable)
             except TypeError:
