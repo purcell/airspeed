@@ -182,7 +182,7 @@ class CachingFileLoader:
         mtime = os.path.getmtime(self.filename_of(name))
         if name in self.known_templates:
             template, prev_mtime = self.known_templates[name]
-            if mtime <= prev_mtime:
+            if mtime == prev_mtime:
                 if self.debugging:
                     print("loading parsed template from cache")
                 return template
