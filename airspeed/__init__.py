@@ -785,10 +785,10 @@ class BinaryOperator(_Element):
                  '*': operator.mul,
                  '/': operator.floordiv}
     # Based on http://introcs.cs.princeton.edu/java/11precedence/
-    PRECEDENCE = {'>': 7, '<': 7, '==': 8, '>=': 7, '<=': 7, '!=': 9,
+    PRECEDENCE = {'>': 7, '<': 7, '==': 8, '>=': 7, '<=': 7, '!=': 8,
                   '||': 13, '&&': 12, 'or': 13, 'and': 12,
                   '+': 5, '-': 5, '*': 4, '/': 4, '%': 4,
-                  'gt': 7, 'lt': 7, 'ne': 9, 'eq': 8, 'ge': 7, 'le': 7,
+                  'gt': 7, 'lt': 7, 'ne': 8, 'eq': 8, 'ge': 7, 'le': 7,
                   }
 
     # In velocity, if + is applied to one string and one numeric
@@ -798,6 +798,7 @@ class BinaryOperator(_Element):
 
     def parse(self):
         op_string, = self.identity_match(self.BINARY_OP)
+        self.symbol = op_string
         self.apply_to = self.OPERATORS[op_string]
         self.precedence = self.PRECEDENCE[op_string]
 
@@ -848,18 +849,12 @@ class Expression(_Element):
         valuestack = [self.expression[0]]
         terms = self.expression[1:]
 
-        # use top of opstack on top 2 values of valuestack
-        def stack_calculate(ops, values, namespace, loader):
+        # Build the precedence tree without evaluating operands: a logical
+        # operator may skip its entire right subtree.
+        def stack_combine(ops, values):
             value2 = values.pop()
-            if isinstance(value2, Value):
-                value2 = value2.calculate(namespace, loader)
             value1 = values.pop()
-            if isinstance(value1, Value):
-                value1 = value1.calculate(namespace, loader)
-            result = ops.pop().apply_to(value1, value2)
-            # TODO this doesn't short circuit -- does velocity?
-            # also note they're eval'd out of order
-            values.append(result)
+            values.append((ops.pop(), value1, value2))
 
         while terms:
             # next is a binary operator
@@ -868,21 +863,41 @@ class Expression(_Element):
                 valuestack.append(terms[1])
                 terms = terms[2:]
             else:
-                stack_calculate(opstack, valuestack, namespace, loader)
+                stack_combine(opstack, valuestack)
 
         # now clean out the stacks
         while opstack:
-            stack_calculate(opstack, valuestack, namespace, loader)
+            stack_combine(opstack, valuestack)
 
         if len(valuestack) != 1:
             print ("evaluation of expression in Condition.calculate "
                    "is messed up: final length of stack is not one")
             # TODO handle this officially
 
-        result = valuestack[0]
-        if isinstance(result, Value):
-            result = result.calculate(namespace, loader)
-        return result
+        # Evaluate left to right with an explicit stack so long, flat
+        # expressions do not consume Python's recursion limit.
+        pending = [(valuestack[0], 0)]
+        values = []
+        while pending:
+            node, stage = pending.pop()
+            if isinstance(node, Value):
+                values.append(node.calculate(namespace, loader))
+                continue
+            op, left, right = node
+            if stage == 0:
+                pending.extend([(node, 1), (left, 0)])
+            elif stage == 1:
+                if op.symbol in ('&&', 'and', '||', 'or'):
+                    values[-1] = bool(values[-1])
+                    if (op.symbol in ('&&', 'and') and not values[-1]
+                            or op.symbol in ('||', 'or') and values[-1]):
+                        continue
+                pending.extend([(node, 2), (right, 0)])
+            else:
+                right_value = values.pop()
+                left_value = values.pop()
+                values.append(op.apply_to(left_value, right_value))
+        return values[0]
 
 
 class ParenthesizedExpression(_Element):
