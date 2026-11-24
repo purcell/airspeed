@@ -641,7 +641,7 @@ class SubExpression(_Element):
         args = [current_object, loader]
         if not isinstance(self.expression, ArrayIndex):
             return self.expression.calculate(*(args + [global_namespace]))
-        index = self.expression.calculate(*args)
+        index = self.expression.calculate(global_namespace, loader)
         result = current_object[index]
         if self.subexpression:
             result = self.subexpression.calculate(result, loader, global_namespace)
