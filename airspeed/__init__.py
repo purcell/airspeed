@@ -5,6 +5,10 @@ import string
 import sys
 from io import StringIO
 import abc
+from contextvars import ContextVar
+
+
+_rendering = ContextVar('airspeed_rendering', default=False)
 
 __all__ = [
     'Template',
@@ -92,7 +96,16 @@ class Template:
         if loader is None:
             loader = NullLoader()
         self.ensure_compiled()
-        self.root_element.evaluate(fileobj, namespace, loader)
+        enclosing_render = _rendering.get()
+        token = _rendering.set(True)
+        try:
+            self.root_element.evaluate(fileobj, namespace, loader)
+        except _StopRendering:
+            # A stop in a parsed/evaluated template ends the entire render.
+            if enclosing_render:
+                raise
+        finally:
+            _rendering.reset(token)
 
 
 class TemplateError(Exception):
@@ -212,6 +225,12 @@ WHITESPACE_TO_END_OF_LINE = re.compile(r'[ \t\r]*\n', re.S)
 
 
 class NoMatch(Exception):
+    pass
+
+
+class _StopRendering(Exception):
+    """Internal control flow caught at the outermost template render."""
+
     pass
 
 
@@ -340,7 +359,7 @@ class _Element(abc.ABC):
     def evaluate(self, stream, namespace, loader):
         try:
             return self.evaluate_raw(stream, namespace, loader)
-        except TemplateExecutionError:
+        except (TemplateExecutionError, _StopRendering):
             raise
         except Exception as e:
             _type, value, _tb = sys.exc_info()
@@ -1123,8 +1142,7 @@ class StopDirective(_Element):
         self.identity_match(self.STOP)
 
     def evaluate_raw(self, stream, namespace, loader):
-        if hasattr(stream, 'stop'):
-            stream.stop = True
+        raise _StopRendering()
 
 
 # Represents a SINGLE user-defined directive

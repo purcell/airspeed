@@ -79,6 +79,11 @@ Airspeed currently implements a very significant subset of the
 Velocity functionality, including `$variables`, the `#if`, `#foreach`,
 `#macro`, `#include` and `#parse` directives, and `"$interpolated #strings()"`. Templates are unicode-safe.
 
+`#stop` ends the current rendering operation, including calling templates
+when it occurs in a macro, parsed template or evaluated template. Later
+expressions are not executed. It works with both `merge()` and `merge_to()`;
+a stream supplied to `merge_to()` remains available for the caller to use.
+
 The output of templates in Airspeed is not yet 'whitespace compatible'
 with Velocity's rendering of the same templates, which generally does
 not matter for web applications.
