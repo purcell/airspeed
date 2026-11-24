@@ -594,9 +594,11 @@ class NameOrCall(_Element):
             except AttributeError:
                 pass
         if result is None:
-            methods_for_type = __additional_methods__.get(current_object.__class__)
-            if methods_for_type and self.name in methods_for_type:
-                result = lambda *args: methods_for_type[self.name](current_object, *args)
+            for object_type in type(current_object).__mro__:
+                methods_for_type = __additional_methods__.get(object_type)
+                if methods_for_type and self.name in methods_for_type:
+                    result = lambda *args: methods_for_type[self.name](current_object, *args)
+                    break
         if result is None:
             return None  # TODO: an explicit 'not found' exception?
         if isinstance(result, _FunctionDefinition):
