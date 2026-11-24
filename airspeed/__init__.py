@@ -4,6 +4,7 @@ import os
 import string
 import sys
 from io import StringIO
+from numbers import Number
 import abc
 
 __all__ = [
@@ -32,6 +33,14 @@ def dict_put(self: dict, key, value):
     existing = self.get(key)
     self[key] = value
     return existing
+
+
+def add_values(left, right):
+    if isinstance(left, str) and isinstance(right, Number):
+        return left + str(right)
+    if isinstance(left, Number) and isinstance(right, str):
+        return str(left) + right
+    return operator.add(left, right)
 
 # A dict that maps classes to dicts of additional methods.
 # This allows support for methods that are available in Java-based Velocity
@@ -780,7 +789,7 @@ class BinaryOperator(_Element):
                  '&&': lambda a, b: bool(a) and bool(b),
                  'or': lambda a, b: bool(a) or bool(b),
                  'and': lambda a, b: bool(a) and bool(b),
-                 '+': operator.add,
+                 '+': add_values,
                  '-': operator.sub,
                  '*': operator.mul,
                  '/': operator.floordiv}
