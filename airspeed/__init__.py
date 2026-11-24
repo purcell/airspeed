@@ -1034,6 +1034,8 @@ class MacroDefinition(_FunctionDefinition):
         global_ns = namespace.top()
         macro_key = '#' + self.function_name.lower()
         if macro_key in global_ns:
+            if global_ns[macro_key] is self:
+                return
             raise Exception("cannot redefine macro {0}".format(macro_key))
 
         global_ns[macro_key] = self
