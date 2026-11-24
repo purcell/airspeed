@@ -917,6 +917,7 @@ class ElseBlock(_Element):
 
     def parse(self):
         self.identity_match(self.START)
+        self.optional_match(WHITESPACE_TO_END_OF_LINE)
         self.block = self.require_next_element(Block, 'block')
         self.evaluate = self.block.evaluate
 
@@ -1181,6 +1182,7 @@ class ForeachDirective(_Element):
         self.require_match(self.IN, 'in')
         self.value = self.next_element(Value)
         self.require_match(self.CLOSE_PAREN, ')')
+        self.optional_match(WHITESPACE_TO_END_OF_LINE)
         self.block = self.next_element(Block)
         self.require_next_element(End, '#end')
 
