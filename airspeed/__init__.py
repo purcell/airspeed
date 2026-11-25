@@ -1161,8 +1161,14 @@ class SetDirective(_Element):
         else:
             cur = namespace
             for term in self.terms[:-1]:
-                cur = cur[term]
-            cur[self.terms[-1]] = val
+                if hasattr(type(cur), '__getitem__'):
+                    cur = cur[term]
+                else:
+                    cur = getattr(cur, term)
+            if hasattr(type(cur), '__setitem__'):
+                cur[self.terms[-1]] = val
+            else:
+                setattr(cur, self.terms[-1], val)
 
 
 class ForeachDirective(_Element):
