@@ -1080,19 +1080,25 @@ class IncludeDirective(_Element):
     START = re.compile(r'#include\b', re.S + re.I)
     OPEN_PAREN = re.compile(r'\s*\(\s*', re.S)
     CLOSE_PAREN = re.compile(r'\s*\)', re.S)
+    SEPARATOR = re.compile(r'\s*,\s*|\s+', re.S)
 
     def parse(self):
         self.identity_match(self.START)
         self.require_match(self.OPEN_PAREN, '(')
-        self.name = self.require_next_element(
-            (StringLiteral,
-             InterpolatedStringLiteral,
-             FormalReference),
-            'template name')
-        self.require_match(self.CLOSE_PAREN, ')')
+        self.names = []
+        while True:
+            self.names.append(self.require_next_element(
+                (StringLiteral,
+                 InterpolatedStringLiteral,
+                 FormalReference),
+                'template name'))
+            if self.optional_match(self.CLOSE_PAREN):
+                break
+            self.require_match(self.SEPARATOR, 'comma, whitespace or )')
 
     def evaluate_raw(self, stream, namespace, loader):
-        stream.write(loader.load_text(self.name.calculate(namespace, loader)))
+        for name in self.names:
+            stream.write(loader.load_text(name.calculate(namespace, loader)))
 
 
 class ParseDirective(_Element):
