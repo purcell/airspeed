@@ -965,7 +965,7 @@ class IfDirective(_Element):
 
 
 class EvaluateDirective(_Element):
-    START = re.compile(r'#evaluate\b')
+    START = re.compile(r'#evaluate\b', re.S + re.I)
     OPEN_PAREN = re.compile(r'\s*\(\s*', re.S)
     CLOSE_PAREN = re.compile(r'\s*\)', re.S)
 
